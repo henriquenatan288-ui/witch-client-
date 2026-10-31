@@ -3,7 +3,7 @@
   "id": "witch",
   "version": "${version}",
   "name": "Witch Client",
-  "description": "Witch Client",
+  "description": "Witch Client is a modern utility and visual client for Minecraft Java. It combines a polished, themed interface with per-module configuration, world ESP and finders, movement and effects modules, and a time-aware design.",
   "authors": ["henriquenatan288-ui"],
   "icon": "assets/witch/icon.png",
   "license": "All-Rights-Reserved",
