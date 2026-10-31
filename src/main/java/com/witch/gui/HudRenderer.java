@@ -12,6 +12,7 @@ public final class HudRenderer {
 	public static void extract(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.gui.screen() instanceof ClickGuiScreen) return;
+		com.witch.module.AntiVanishModule.drawHud(g);
 
 		int x = 6;
 		int y = 6;

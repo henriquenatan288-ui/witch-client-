@@ -31,6 +31,7 @@ public final class ModuleManager {
 		MODULES.add(new FreecamModule());
 		MODULES.add(new WitchParticlesModule());
 		MODULES.add(new BreakWaveModule());
+		MODULES.add(new AntiVanishModule());
 		MODULES.add(new ParticlesModule());
 		MODULES.add(new FlyModule());
 		MODULES.add(new SpeedModule());

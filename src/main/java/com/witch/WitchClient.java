@@ -45,6 +45,9 @@ public class WitchClient implements ClientModInitializer {
 		));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			if (client.gui.screen() != null && client.gui.screen().getClass() == net.minecraft.client.gui.screens.TitleScreen.class) {
+				client.gui.setScreen(new com.witch.gui.WitchTitleScreen());
+			}
 			while (openGui.consumeClick()) {
 				if (client.gui.screen() == null) {
 					client.gui.setScreen(new ClickGuiScreen());
