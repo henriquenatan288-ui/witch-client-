@@ -3,6 +3,7 @@ package com.witch.gui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
@@ -87,6 +88,7 @@ public class WitchTitleScreen extends Screen {
 		// botoes
 		by0 = Math.max(ty + 8 * s + s + 8 * Math.max(1, s / 2) + 22, h / 2);
 		bx = (w - bw) / 2;
+		walker(g, w, h, sec);
 		for (int i = 0; i < LABELS.length; i++) {
 			int y = by0 + i * (bh + gap);
 			boolean hover = RenderUtil.inside(mx, my, bx, y, bw, bh);
@@ -103,7 +105,6 @@ public class WitchTitleScreen extends Screen {
 			int ty2 = y + (bh - FontUtil.height()) / 2;
 			spaced(g, label, bx + (bw - tw) / 2, ty2, RenderUtil.mix(0xFFD8C8F5, 0xFFFFFFFF, ha));
 		}
-		walker(g, w, h, sec);
 	}
 
 	private static int spacedWidth(String s) {
@@ -150,106 +151,109 @@ public class WitchTitleScreen extends Screen {
 		}
 	}
 
-	/** Boneco andando da esquerda pra direita na area direita da tela, com o nick em cima. */
+	private static long walkStart = 0L;
+
+	private void part(GuiGraphicsExtractor g, net.minecraft.resources.Identifier tex, int x, int y, int dw, int dh, int u, int v, int sw, int sh) {
+		if (dw <= 0) return;
+		g.blit(RenderPipelines.GUI_TEXTURED, tex, x, y, (float) u, (float) v, dw, dh, sw, sh, 64, 64);
+	}
+
+	/** A skin real do jogador: entra pela esquerda de lado, chega na direita, vira de frente e fica parado com o nick. */
 	private void walker(GuiGraphicsExtractor g, int w, int h, double sec) {
-		int s = Math.max(1, Math.min(3, h / 130));
-		int startX = bx + bw + 24;
-		int endX = w - 14 * s;
-		if (endX - startX < 20 * s) return;
-		int groundY = h - 22;
-		double cycle = 14.0;
-		double p = (sec % cycle) / cycle;
-		int x = (int) (startX + (endX - startX) * p);
-		float fade = (float) Math.min(1.0, Math.min(p * 10.0, (1.0 - p) * 10.0));
-		double ph = sec * 7.0;
-		double sw = Math.sin(ph);
-		int liftL = (int) Math.round(Math.max(0, sw) * 3 * s);
-		int liftR = (int) Math.round(Math.max(0, -sw) * 3 * s);
-		int armL = (int) Math.round(sw * 2 * s);
-		int armR = -armL;
-		int bob = (int) Math.round(Math.abs(sw) * s);
+		var tex = TitleSkin.texture();
+		if (tex == null) return;
+		if (walkStart == 0L) walkStart = System.nanoTime();
+		double t = (System.nanoTime() - walkStart) / 1_000_000_000.0;
 
-		// chao
-		g.fill(startX - 20, groundY, w, groundY + 1, RenderUtil.alpha(0xFFB57BEA, 0.45f * fade));
-		g.fill(startX - 20, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF2A1055, 0.7f));
-		// sombra
-		RenderUtil.roundRect(g, x - 5 * s, groundY - 1, 10 * s, 2, 1, RenderUtil.alpha(0xFF000000, 0.35f * fade));
+		int s = Math.max(1, Math.min(4, h / 105));
+		int groundY = h - 20;
+		int stopX = Math.min(w - 14 * s, Math.max(bx + bw + 40 + 8 * s, w - 26 * s));
+		double speed = 30.0 * s;
+		double dist = speed * t;
+		double startX = -8.0 * s;
+		boolean walking = startX + dist < stopX;
+		int cx = (int) Math.min(stopX, startX + dist);
+		double turnT = (stopX - startX) / speed; // instante em que parou
 
-		int legH = 12 * s;
-		int bodyH = 12 * s;
-		int top = groundY - legH - bodyH - 8 * s - bob;
-		int skin = 0xFFE0AC8A, hair = 0xFF3B2A20, shirt = 0xFF7B2FBF, pants = 0xFF2B2D6B, shoe = 0xFF1B1530;
-		// pernas
-		g.fill(x - 4 * s, top + 20 * s, x, groundY - liftL, RenderUtil.alpha(pants, fade));
-		g.fill(x, top + 20 * s, x + 4 * s, groundY - liftR, RenderUtil.alpha(pants, fade));
-		g.fill(x - 4 * s, groundY - liftL - s, x, groundY - liftL, RenderUtil.alpha(shoe, fade));
-		g.fill(x, groundY - liftR - s, x + 4 * s, groundY - liftR, RenderUtil.alpha(shoe, fade));
-		// bracos
-		g.fill(x - 8 * s, top + 8 * s + armL, x - 4 * s, top + 20 * s + armL, RenderUtil.alpha(skin, fade));
-		g.fill(x + 4 * s, top + 8 * s + armR, x + 8 * s, top + 20 * s + armR, RenderUtil.alpha(skin, fade));
-		// corpo
-		g.fill(x - 4 * s, top + 8 * s, x + 4 * s, top + 20 * s, RenderUtil.alpha(shirt, fade));
-		g.fill(x - 4 * s, top + 8 * s, x + 4 * s, top + 9 * s, RenderUtil.alpha(0xFFB57BEA, fade));
+		int top = groundY - 32 * s;
+		// sombra e chao
+		g.fill(0, groundY, w, groundY + 1, RenderUtil.alpha(0xFFB57BEA, 0.40f));
+		g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF2A1055, 0.7f));
+		RenderUtil.roundRect(g, cx - 6 * s, groundY - 1, 12 * s, 2, 1, RenderUtil.alpha(0xFF000000, 0.4f));
+
+		int armW = TitleSkin.slim() ? 3 : 4;
+		if (walking) {
+			double ph = dist / (7.0 * s) * Math.PI;
+			int sw = (int) Math.round(Math.sin(ph) * 3.0 * s);
+			int bob = (int) Math.round(Math.abs(Math.sin(ph)) * s * 0.7);
+			int ty = top - bob;
+			// membros do lado longe (esquerdos), corpo, cabeca, membros perto (direitos)
+			part(g, tex, cx - 2 * s - sw, ty + 8 * s, 4 * s, 12 * s, 32, 52, 4, 12);
+			part(g, tex, cx - 2 * s + sw, ty + 20 * s, 4 * s, 12 * s, 16, 52, 4, 12);
+			part(g, tex, cx - 2 * s, ty + 8 * s, 4 * s, 12 * s, 16, 20, 4, 12);
+			part(g, tex, cx - 2 * s, ty + 8 * s, 4 * s, 12 * s, 16, 36, 4, 12);
+			part(g, tex, cx - 4 * s, ty, 8 * s, 8 * s, 0, 8, 8, 8);
+			part(g, tex, cx - 4 * s, ty, 8 * s, 8 * s, 32, 8, 8, 8);
+			part(g, tex, cx - 2 * s - sw, ty + 20 * s, 4 * s, 12 * s, 0, 20, 4, 12);
+			part(g, tex, cx - 2 * s - sw, ty + 20 * s, 4 * s, 12 * s, 0, 36, 4, 12);
+			part(g, tex, cx - 2 * s + sw, ty + 8 * s, 4 * s, 12 * s, 40, 20, 4, 12);
+			part(g, tex, cx - 2 * s + sw, ty + 8 * s, 4 * s, 12 * s, 40, 36, 4, 12);
+			return;
+		}
+
+		// parado: gira de lado pra frente (largura passa por zero) e respira de leve
+		double since = t - turnT;
+		float turn = (float) Math.min(1.0, since / 0.45);
+		boolean showFront = turn >= 0.5f;
+		float k = showFront ? (turn - 0.5f) * 2f : 1f - turn * 2f; // 1 -> 0 -> 1
+		int idle = (int) Math.round(Math.sin(sec * 2.2) * 0.6 * s);
+		int ty = top + idle;
+		if (!showFront) {
+			int bw2 = Math.max(0, Math.round(8 * s * k));
+			int px = cx - bw2 / 2;
+			part(g, tex, px, ty, bw2, 8 * s, 0, 8, 8, 8);
+			part(g, tex, px, ty, bw2, 8 * s, 32, 8, 8, 8);
+			int bb = Math.max(0, Math.round(4 * s * k));
+			part(g, tex, cx - bb / 2, ty + 8 * s, bb, 12 * s, 16, 20, 4, 12);
+			part(g, tex, cx - bb / 2, ty + 20 * s, bb, 12 * s, 0, 20, 4, 12);
+			return;
+		}
+		int fw = Math.max(1, Math.round(k * 100) / 100 == 0 ? 1 : 1);
+		float sc = k;
+		int hx = Math.round(8 * s * sc);
+		int fullW = 16 * s;
+		int cw = Math.round(fullW * sc);
+		int left = cx - cw / 2;
 		// cabeca
-		g.fill(x - 4 * s, top, x + 4 * s, top + 8 * s, RenderUtil.alpha(skin, fade));
-		g.fill(x - 4 * s, top, x + 4 * s, top + 2 * s, RenderUtil.alpha(hair, fade));
-		g.fill(x - 3 * s, top + 4 * s, x - s, top + 5 * s, RenderUtil.alpha(0xFF2B2040, fade));
-		g.fill(x + s, top + 4 * s, x + 3 * s, top + 5 * s, RenderUtil.alpha(0xFF2B2040, fade));
-		// chapeu de bruxa
-		g.fill(x - 6 * s, top - s, x + 6 * s, top, RenderUtil.alpha(0xFF3B0F73, fade));
-		g.fill(x - 3 * s, top - 4 * s, x + 3 * s, top - s, RenderUtil.alpha(0xFF6A1FB5, fade));
-		g.fill(x - s, top - 7 * s, x + 2 * s, top - 4 * s, RenderUtil.alpha(0xFF6A1FB5, fade));
+		part(g, tex, cx - Math.round(4 * s * sc), ty, Math.round(8 * s * sc), 8 * s, 8, 8, 8, 8);
+		part(g, tex, cx - Math.round(4 * s * sc), ty, Math.round(8 * s * sc), 8 * s, 40, 8, 8, 8);
+		// corpo
+		part(g, tex, cx - Math.round(4 * s * sc), ty + 8 * s, Math.round(8 * s * sc), 12 * s, 20, 20, 8, 12);
+		part(g, tex, cx - Math.round(4 * s * sc), ty + 8 * s, Math.round(8 * s * sc), 12 * s, 20, 36, 8, 12);
+		// bracos
+		int aw = Math.round(armW * s * sc);
+		part(g, tex, cx - Math.round(4 * s * sc) - aw, ty + 8 * s, aw, 12 * s, 44, 20, armW, 12);
+		part(g, tex, cx - Math.round(4 * s * sc) - aw, ty + 8 * s, aw, 12 * s, 44, 36, armW, 12);
+		part(g, tex, cx + Math.round(4 * s * sc), ty + 8 * s, aw, 12 * s, 36, 52, armW, 12);
+		part(g, tex, cx + Math.round(4 * s * sc), ty + 8 * s, aw, 12 * s, 52, 52, armW, 12);
+		// pernas
+		int lw = Math.round(4 * s * sc);
+		part(g, tex, cx - lw, ty + 20 * s, lw, 12 * s, 4, 20, 4, 12);
+		part(g, tex, cx - lw, ty + 20 * s, lw, 12 * s, 4, 36, 4, 12);
+		part(g, tex, cx, ty + 20 * s, lw, 12 * s, 20, 52, 4, 12);
+		part(g, tex, cx, ty + 20 * s, lw, 12 * s, 4, 52, 4, 12);
 
-		// nick
-		String nick = Minecraft.getInstance().getUser().getName();
-		int nw = FontUtil.width(nick) + 10;
-		int nx = x - nw / 2;
-		int ny = top - 7 * s - 16;
-		RenderUtil.roundRect(g, nx, ny, nw, 13, 4, RenderUtil.alpha(0xFF150B2E, 0.8f * fade));
-		RenderUtil.roundRect(g, nx, ny + 11, nw, 2, 1, RenderUtil.alpha(0xFFB57BEA, 0.8f * fade));
-		FontUtil.draw(g, nick, nx + 5, ny + 2, RenderUtil.alpha(0xFFFFFFFF, fade));
-	}
-
-	private void drawWord(GuiGraphicsExtractor g, String word, int cx, int y, int s, float glow, double sec) {
-		int total = word.length() * 6 * s - s;
-		int x = cx - total / 2;
-		double sweep = ((sec * 0.35) % 1.6) - 0.3; // 0..1 atravessa a palavra
-		for (int i = 0; i < word.length(); i++) {
-			String[] gl = glyph(word.charAt(i));
-			if (gl != null) {
-				for (int row = 0; row < 7; row++) {
-					for (int col = 0; col < 5; col++) {
-						if (gl[row + 1].charAt(col) != '1') continue;
-						int px = x + col * s;
-						int py = y + row * s;
-						// brilho suave em volta
-						g.fill(px - 2, py - 2, px + s + 2, py + s + 2, RenderUtil.alpha(Theme.ACCENT, 0.16f * glow));
-						// extrusao (profundidade)
-						g.fill(px + 2, py + 3, px + s + 2, py + s + 3, RenderUtil.alpha(0xFF2A0F55, 0.9f));
-						g.fill(px + 1, py + 2, px + s + 1, py + s + 2, RenderUtil.alpha(0xFF4B1A80, 0.9f));
-					}
-				}
-				for (int row = 0; row < 7; row++) {
-					for (int col = 0; col < 5; col++) {
-						if (gl[row + 1].charAt(col) != '1') continue;
-						int px = x + col * s;
-						int py = y + row * s;
-						double pos = ((x - (cx - total / 2.0)) + col * s) / (double) total;
-						float shine = (float) Math.max(0.0, 1.0 - Math.abs(pos + row * 0.02 - sweep) * 7.0);
-						int base = RenderUtil.mix(0xFFFFFFFF, 0xFFD2B0F5, row / 6f);
-						g.fill(px, py, px + s, py + s, RenderUtil.mix(base, 0xFFFFFFFF, shine));
-					}
-				}
-			}
-			x += 6 * s;
+		// nick aparece depois que ele vira
+		float na = (float) Math.min(1.0, Math.max(0.0, (since - 0.45) / 0.4));
+		if (na > 0f) {
+			String nick = TitleSkin.nick();
+			int nw = FontUtil.width(nick) + 12;
+			int nx = cx - nw / 2;
+			int ny = ty - 20 + Math.round((1f - na) * 6f);
+			RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF150B2E, 0.85f * na));
+			RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFB57BEA, 0.9f * na));
+			FontUtil.draw(g, nick, nx + 6, ny + 3, RenderUtil.alpha(0xFFFFFFFF, na));
 		}
-	}
-
-	private static String[] glyph(char ch) {
-		for (String[] gl : GLYPHS) {
-			if (gl[0].charAt(0) == ch) return gl;
-		}
-		return null;
 	}
 
 	@Override
