@@ -7,7 +7,7 @@ import java.util.Random;
 /** Folhas caindo no fundo da GUI, desenhadas so com quadradinhos (sem shader). */
 public final class LeafParticles {
 	private static final int COUNT = 10;
-	private static final int[] PALETTE = {0xFF8A2BE2, 0xFFB57BEA, 0xFFD2B0F5, 0xFF6A1FB5};
+	private static final int[] PALETTE = {0xFF9A9A9A, 0xFFB5B5B5, 0xFF7A7A7A, 0xFFCFCFCF};
 
 	private static final class Leaf {
 		float x, y, vx, vy, size, angle, spin, phase;
@@ -54,7 +54,7 @@ public final class LeafParticles {
 		g.enableScissor(ox, oy, ox + w, oy + h);
 		for (Leaf l : leaves) {
 			if (l == null) continue;
-			drawLeaf(g, ox + l.x, oy + l.y, l.size, l.angle, RenderUtil.alpha(l.color, alpha * 0.45f));
+			drawLeaf(g, ox + l.x, oy + l.y, l.size, l.angle, RenderUtil.alpha(l.color, alpha * 0.18f));
 		}
 		g.disableScissor();
 	}

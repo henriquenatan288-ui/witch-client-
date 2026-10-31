@@ -25,11 +25,11 @@ public class ClickGuiScreen extends Screen {
 	private static final int MAX_W = 420;
 	private static final int MAX_H = 300;
 	private static final int MARGIN = 8;
-	private static final int PAD = 8;
-	private static final int SIDEBAR_W = 100;
-	private static final int CAT_H = 24;
-	private static final int ROW_H = 20;
-	private static final int SEARCH_H = 20;
+	private static final int PAD = 7;
+	private static final int SIDEBAR_W = 90;
+	private static final int CAT_H = 20;
+	private static final int ROW_H = 18;
+	private static final int SEARCH_H = 18;
 	private static final int DOTS_W = 30;
 	private static final int INT_ROW_H = 30;
 	private static final int COLOR_ROW_H = 38;
@@ -103,8 +103,6 @@ public class ClickGuiScreen extends Screen {
 		float speed = lastNanos == 0 ? 1f : Math.min(3f, (now - lastNanos) / 16_666_667f);
 		lastNanos = now;
 
-		TimeTheme.update();
-
 		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
 		float a = openAnim;
 
@@ -114,7 +112,7 @@ public class ClickGuiScreen extends Screen {
 		py = (this.height - panelH) / 2 + (int) ((1f - a) * 8f);
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x44000000, a));
-		RenderUtil.roundRect(g, px, py, panelW, panelH, 8, RenderUtil.alpha(TimeTheme.panel, a));
+		RenderUtil.roundRect(g, px, py, panelW, panelH, 4, RenderUtil.alpha(Theme.PANEL, a));
 
 		GuiVisuals.render(g, px, py, panelW, panelH, a);
 
@@ -137,12 +135,12 @@ public class ClickGuiScreen extends Screen {
 			boolean active = c == selected && search.isEmpty();
 			boolean hover = RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 4);
 			if (active) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 5, RenderUtil.alpha(Theme.SIDEBAR_ITEM_ACTIVE, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 4, RenderUtil.alpha(Theme.SIDEBAR_ITEM_ACTIVE, a));
 			} else if (hover) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 5, RenderUtil.alpha(TimeTheme.hover, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 4, RenderUtil.alpha(Theme.HOVER, a));
 			}
 			int ty = y + (CAT_H - 4 - FontUtil.height()) / 2;
-			FontUtil.draw(g, c.label, x + 10, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
+			FontUtil.draw(g, c.label, x + 10, ty, RenderUtil.alpha(active ? Theme.TEXT : Theme.DIM, a));
 			y += CAT_H;
 		}
 	}
@@ -151,17 +149,17 @@ public class ClickGuiScreen extends Screen {
 		int x = listX();
 		int y = py + PAD;
 		int w = listW();
-		RenderUtil.roundRect(g, x, y, w, SEARCH_H, 5, RenderUtil.alpha(TimeTheme.search, a));
+		RenderUtil.roundRect(g, x, y, w, SEARCH_H, 4, RenderUtil.alpha(Theme.SEARCH, a));
 
 		String shown;
 		int color;
 		if (search.isEmpty() && !searchFocused) {
 			shown = "Search all modules...";
-			color = TimeTheme.placeholder;
+			color = Theme.PLACEHOLDER;
 		} else {
 			boolean blink = searchFocused && (System.currentTimeMillis() / 500) % 2 == 0;
 			shown = search + (blink ? "|" : "");
-			color = TimeTheme.input;
+			color = Theme.INPUT;
 		}
 		FontUtil.draw(g, shown, x + 8, y + (SEARCH_H - FontUtil.height()) / 2, RenderUtil.alpha(color, a));
 	}
@@ -179,7 +177,7 @@ public class ClickGuiScreen extends Screen {
 		scroll = Mth.lerp(Math.min(1f, speed * 0.25f), scroll, scrollTarget);
 
 		if (mods.isEmpty()) {
-			FontUtil.draw(g, "No modules", x + 8, y + 4, RenderUtil.alpha(TimeTheme.placeholder, a));
+			FontUtil.draw(g, "No modules", x + 8, y + 4, RenderUtil.alpha(Theme.PLACEHOLDER, a));
 			return;
 		}
 
@@ -193,15 +191,17 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.25f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 
 			if (m.hoverAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 5,
-						RenderUtil.alpha(TimeTheme.hover, a * m.hoverAnim));
+				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 4,
+						RenderUtil.alpha(Theme.HOVER, a * m.hoverAnim));
 			}
 			if (m.toggleAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 5,
+				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 4,
 						RenderUtil.alpha(Theme.MODULE_ON, a * m.toggleAnim));
+				RenderUtil.roundRect(g, x + 2, ry + 4, 2, ROW_H - 2 - 8, 1,
+						RenderUtil.alpha(Theme.ACCENT, a * m.toggleAnim));
 			}
 
-			int textColor = RenderUtil.mix(TimeTheme.dim, Theme.TEXT, m.toggleAnim);
+			int textColor = RenderUtil.mix(Theme.DIM, Theme.TEXT, m.toggleAnim);
 			int ty = ry + (ROW_H - 2 - FontUtil.height()) / 2;
 			FontUtil.draw(g, m.name, x + 8, ty, RenderUtil.alpha(textColor, a));
 			if (!m.settings().isEmpty()) {
@@ -223,9 +223,9 @@ public class ClickGuiScreen extends Screen {
 		// linha "< Modulo" fica fixa no topo
 		boolean hoverBack = RenderUtil.inside(mx, my, x, y, w, ROW_H - 2);
 		if (hoverBack) {
-			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, 5, RenderUtil.alpha(TimeTheme.hover, a));
+			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, 4, RenderUtil.alpha(Theme.HOVER, a));
 		}
-		FontUtil.draw(g, "< " + settingsOf.name, x + 8, y + (ROW_H - 2 - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
+		FontUtil.draw(g, "< " + settingsOf.name, x + 8, y + (ROW_H - 2 - fh) / 2, RenderUtil.alpha(Theme.DIM, a));
 
 		int ly = y + ROW_H;
 		int lh = h - ROW_H;
@@ -241,27 +241,27 @@ public class ClickGuiScreen extends Screen {
 		int ry = ly + 4 - Math.round(scroll);
 		for (Setting s : settingsOf.settings()) {
 			if (s instanceof IntSetting is) {
-				FontUtil.draw(g, is.name, x + 8, ry, RenderUtil.alpha(TimeTheme.dim, a));
+				FontUtil.draw(g, is.name, x + 8, ry, RenderUtil.alpha(Theme.DIM, a));
 				String val = is.get() + is.suffix;
-				FontUtil.draw(g, val, x + w - 8 - FontUtil.width(val), ry, RenderUtil.alpha(TimeTheme.input, a));
+				FontUtil.draw(g, val, x + w - 8 - FontUtil.width(val), ry, RenderUtil.alpha(Theme.INPUT, a));
 
 				int tx = x + 8;
 				int tw = w - 16;
 				int ty = ry + fh + 6;
-				RenderUtil.roundRect(g, tx, ty, tw, 6, 3, RenderUtil.alpha(TimeTheme.search, a));
+				RenderUtil.roundRect(g, tx, ty, tw, 6, 3, RenderUtil.alpha(Theme.SEARCH, a));
 				int fw = Math.round(tw * is.fraction());
 				if (fw > 0) {
 					RenderUtil.roundRect(g, tx, ty, Math.max(fw, 4), 6, 3, RenderUtil.alpha(Theme.ACCENT, a));
 				}
 				RenderUtil.roundRect(g, tx + fw - 4, ty - 2, 8, 10, 3, RenderUtil.alpha(Theme.ACCENT, a));
 			} else if (s instanceof ColorSetting cs) {
-				FontUtil.draw(g, cs.name, x + 8, ry, RenderUtil.alpha(TimeTheme.dim, a));
+				FontUtil.draw(g, cs.name, x + 8, ry, RenderUtil.alpha(Theme.DIM, a));
 				int sy = ry + fh + 6;
 				for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
 					int sx = x + 8 + i * (SWATCH + SWATCH_GAP);
 					if (i == cs.index()) {
 						RenderUtil.roundRect(g, sx - 2, sy - 2, SWATCH + 4, SWATCH + 4, 4,
-								RenderUtil.alpha(TimeTheme.dim, a));
+								RenderUtil.alpha(Theme.DIM, a));
 					}
 					RenderUtil.roundRect(g, sx, sy, SWATCH, SWATCH, 3,
 							RenderUtil.alpha(ColorSetting.PALETTE[i], a));
@@ -271,19 +271,19 @@ public class ClickGuiScreen extends Screen {
 				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
 						&& RenderUtil.inside(mx, my, x, ly, w, lh);
 				if (hover) {
-					RenderUtil.roundRect(g, x, ry, w, rh, 5, RenderUtil.alpha(TimeTheme.hover, a));
+					RenderUtil.roundRect(g, x, ry, w, rh, 4, RenderUtil.alpha(Theme.HOVER, a));
 				}
 				int bx = x + 8;
 				int by = ry + (rh - 12) / 2;
-				RenderUtil.roundRect(g, bx, by, 12, 12, 3, RenderUtil.alpha(TimeTheme.search, a));
+				RenderUtil.roundRect(g, bx, by, 12, 12, 3, RenderUtil.alpha(Theme.SEARCH, a));
 				if (os.enabled()) {
 					RenderUtil.roundRect(g, bx + 2, by + 2, 8, 8, 2, RenderUtil.alpha(Theme.ACCENT, a));
 				}
-				int textColor = os.enabled() ? TimeTheme.input : TimeTheme.placeholder;
+				int textColor = os.enabled() ? Theme.INPUT : Theme.PLACEHOLDER;
 				FontUtil.draw(g, os.name, bx + 18, ry + (rh - fh) / 2, RenderUtil.alpha(textColor, a));
 
 				int cx = x + w - 8 - CHIP_W;
-				RenderUtil.roundRect(g, cx - 1, by - 2, CHIP_W + 2, 16, 5, RenderUtil.alpha(TimeTheme.dim, a * 0.5f));
+				RenderUtil.roundRect(g, cx - 1, by - 2, CHIP_W + 2, 16, 4, RenderUtil.alpha(Theme.DIM, a * 0.5f));
 				RenderUtil.roundRect(g, cx, by - 1, CHIP_W, 14, 4, RenderUtil.alpha(os.color(), a));
 			}
 			ry += rowH(s);
@@ -294,7 +294,7 @@ public class ClickGuiScreen extends Screen {
 		if (maxScroll > 0) {
 			int thumbH = Math.max(10, Math.round(lh * (lh / (float) contentH)));
 			int thumbY = ly + Math.round((lh - thumbH) * (scroll / maxScroll));
-			RenderUtil.roundRect(g, x + w - 3, thumbY, 2, thumbH, 1, RenderUtil.alpha(TimeTheme.dim, a * 0.6f));
+			RenderUtil.roundRect(g, x + w - 3, thumbY, 2, thumbH, 1, RenderUtil.alpha(Theme.DIM, a * 0.6f));
 		}
 	}
 

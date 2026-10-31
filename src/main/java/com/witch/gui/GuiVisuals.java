@@ -52,7 +52,7 @@ public final class GuiVisuals {
 			SY[i] = py + Y[i] * h;
 		}
 
-		int base = TimeTheme.dim;
+		int base = Theme.DIM;
 		int lines = 0;
 		for (int i = 0; i < N && lines < MAX_LINES; i++) {
 			for (int j = i + 1; j < N && lines < MAX_LINES; j++) {
@@ -62,7 +62,7 @@ public final class GuiVisuals {
 				if (d2 >= LINK * LINK) continue;
 				float d = (float) Math.sqrt(d2);
 				float t = 1f - d / LINK;
-				int c = RenderUtil.alpha(base, a * t * 0.5f);
+				int c = RenderUtil.alpha(base, a * t * 0.25f);
 				int steps = Math.max(1, (int) (d / 2f));
 				for (int s = 0; s <= steps; s++) {
 					int x = Math.round(SX[i] + dx * s / steps);
@@ -73,7 +73,7 @@ public final class GuiVisuals {
 			}
 		}
 
-		int dot = RenderUtil.alpha(base, a * 0.7f);
+		int dot = RenderUtil.alpha(base, a * 0.35f);
 		for (int i = 0; i < N; i++) {
 			int x = Math.round(SX[i]);
 			int y = Math.round(SY[i]);
