@@ -15,6 +15,7 @@ public final class ModuleManager {
 		MODULES.clear();
 		EspRenderer.clearSources();
 
+		// Visuals
 		MODULES.add(new XRayModule());
 		MODULES.add(new PlayerEspModule());
 		MODULES.add(new StorageEspModule());
@@ -24,11 +25,16 @@ public final class ModuleManager {
 		MODULES.add(new SusChunkFinderModule());
 		MODULES.add(new SlowHitModule());
 		MODULES.add(new ParticlesModule());
+
+		// Movement
 		MODULES.add(new FlyModule());
 		MODULES.add(new SpeedModule());
 		MODULES.add(new JesusModule());
+
+		// Utility
 		MODULES.add(new AutoEatModule());
 		MODULES.add(new AutoToolModule());
+		MODULES.add(new TriggerBotModule());
 
 		for (Module m : MODULES) {
 			if (m instanceof EspSource s) {
