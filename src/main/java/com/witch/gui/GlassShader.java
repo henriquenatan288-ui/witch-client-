@@ -23,10 +23,10 @@ public final class GlassShader {
 	public static void glow(GuiGraphicsExtractor g, int x, int y, int w, int h, float a) {
 		double t = (System.currentTimeMillis() % 4000L) / 4000.0;
 		float pulse = 0.75f + 0.25f * (float) Math.sin(t * Math.PI * 2);
-		int color = Theme.ACCENT;
+		int color = Theme.GUI_ACCENT;
 		for (int i = GLOW_LAYERS; i >= 1; i--) {
 			float k = 1f - (i - 1f) / GLOW_LAYERS;
-			int c = RenderUtil.alpha(color, a * pulse * (0.025f + 0.07f * k * k));
+			int c = RenderUtil.alpha(color, a * pulse * (0.012f + 0.035f * k * k));
 			int d = i * GLOW_STEP;
 			RenderUtil.roundRect(g, x - d, y - d, w + d * 2, h + d * 2, R + d, c);
 		}
@@ -87,7 +87,7 @@ public final class GlassShader {
 
 	/** Fundo fosco atras da barra lateral de categorias. */
 	public static void sidebar(GuiGraphicsExtractor g, int x, int y, int w, int h, float a) {
-		int c = RenderUtil.mix(0xFFFFFFFF, 0xFFB57BEA, TimeTheme.night);
+		int c = 0xFFFFFFFF;
 		RenderUtil.roundRect(g, x - 2, y - 2, w + 4, h + 4, 14, RenderUtil.alpha(c, a * 0.14f));
 	}
 }
