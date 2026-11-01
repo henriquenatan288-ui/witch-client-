@@ -1,12 +1,7 @@
 package com.witch.module;
 
-import com.witch.config.Config;
 import com.witch.render.EspRenderer;
 import com.witch.render.EspSource;
-import com.witch.setting.KeybindSetting;
-import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
-import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,19 +66,20 @@ public final class ModuleManager {
 		return null;
 	}
 
-	public static void pollKeys(Minecraft mc) {
-		Window window = mc.getWindow();
+	/** Liga/desliga modulos pela tecla configurada (so fora de telas). */
+	public static void pollKeys(net.minecraft.client.Minecraft mc) {
+		var window = mc.getWindow();
 		boolean free = mc.gui.screen() == null;
 		for (Module m : MODULES) {
-			KeybindSetting kb = m.keybind;
+			var kb = m.keybind;
 			if (kb.key() == 0) {
 				kb.wasDown = false;
 				continue;
 			}
-			boolean down = InputConstants.isKeyDown(window, kb.key());
+			boolean down = com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, kb.key());
 			if (down && !kb.wasDown && free) {
 				m.toggle();
-				Config.save();
+				com.witch.config.Config.save();
 			}
 			kb.wasDown = down;
 		}

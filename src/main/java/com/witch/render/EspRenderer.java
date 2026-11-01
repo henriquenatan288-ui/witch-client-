@@ -81,9 +81,19 @@ public final class EspRenderer {
 
 		PoseStack pose = context.poseStack();
 		Vec3 cam = context.levelState().cameraRenderState.pos;
+		// Origem dos tracers: 1 bloco a frente da camera, na direcao real da tela (a rotacao da camera esta
+		// na matriz de modelo-vista, nao no poseStack). Se a matriz vier sem rotacao, cai no olhar do jogador.
+		Vector3f front = new Matrix4f(RenderSystem.getModelViewMatrixCopy()).invert()
+				.transformPosition(new Vector3f(0f, 0f, -1f));
+		Vec3 origin;
+		if (Math.abs(front.x()) < 1.0E-4f && Math.abs(front.y()) < 1.0E-4f && Math.abs(front.z() + 1f) < 1.0E-4f) {
+			origin = mc.player.getEyePosition(pt).add(mc.player.getViewVector(pt));
+		} else {
+			origin = new Vec3(cam.x + front.x(), cam.y + front.y(), cam.z + front.z());
+		}
 		pose.pushPose();
 		pose.translate(-cam.x, -cam.y, -cam.z);
-		Esp esp = new Esp(pose.last().pose(), cam, pt, mc);
+		Esp esp = new Esp(pose.last().pose(), cam, pt, origin);
 		for (EspSource s : SOURCES) {
 			if (s.active()) s.collect(esp);
 		}
@@ -130,13 +140,11 @@ public final class EspRenderer {
 		private StagedVertexBuffer.Draw draw;
 		private VertexConsumer buf;
 
-		private Esp(Matrix4fc m, Vec3 cam, float partial, Minecraft mc) {
+		private Esp(Matrix4fc m, Vec3 cam, float partial, Vec3 origin) {
 			this.m = m;
 			this.cam = cam;
 			this.partial = partial;
-			Vec3 eye = mc.player.getEyePosition(partial);
-			Vec3 look = mc.player.getViewVector(partial);
-			this.start = eye.add(look);
+			this.start = origin;
 		}
 
 		public float partial() {
@@ -177,7 +185,17 @@ public final class EspRenderer {
 
 		/** Linha do centro da tela ate o ponto (x, y, z). */
 		public void tracer(double tx, double ty, double tz, int argb) {
-			float ax = (float) start.x, ay = (float) start.y, az = (float) start.z;
+			line(start.x, start.y, start.z, tx, ty, tz, argb, 1f);
+		}
+
+		/** Caixa so de preenchimento (sem contorno), com transparencia propria. */
+		public void solid(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float alpha) {
+			fillBox(b(), m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, rgba(argb, alpha));
+		}
+
+		/** Fita de A ate B (largura cresce com a distancia pra ficar visivel). */
+		public void line(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
+			float ax = (float) sx, ay = (float) sy, az = (float) sz;
 			float bx = (float) tx, by = (float) ty, bz = (float) tz;
 			float dx = bx - ax, dy = by - ay, dz = bz - az;
 			float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -203,7 +221,7 @@ public final class EspRenderer {
 
 			float w0 = Math.max(0.004f, K * dist(ax, ay, az));
 			float w1 = Math.max(0.004f, K * dist(bx, by, bz));
-			float[] c = rgba(argb, 1f);
+			float[] c = rgba(argb, alpha);
 			VertexConsumer vb = b();
 			quad(vb, m, c,
 					ax - ux * w0, ay - uy * w0, az - uz * w0,

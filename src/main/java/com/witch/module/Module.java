@@ -12,37 +12,37 @@ public abstract class Module {
 	private boolean enabled;
 	private final List<Setting> settings = new ArrayList<>();
 	public final KeybindSetting keybind = new KeybindSetting();
-	public float hoverAnim = 0.0f;
-	public float toggleAnim = 0.0f;
+
+	public float hoverAnim = 0f;
+	public float toggleAnim = 0f;
 
 	protected Module(String name, Category category) {
 		this.name = name;
 		this.category = category;
-		this.settings.add(this.keybind);
+		settings.add(keybind);
 	}
 
 	protected <T extends Setting> T add(T setting) {
-		this.settings.add(setting);
+		settings.add(setting);
 		return setting;
 	}
 
 	public List<Setting> settings() {
-		return this.settings;
+		return settings;
 	}
 
 	public boolean isEnabled() {
-		return this.enabled;
+		return enabled;
 	}
 
 	public void setEnabled(boolean value) {
 		if (this.enabled == value) return;
 		this.enabled = value;
-		if (value) this.onEnable();
-		else this.onDisable();
+		if (value) onEnable(); else onDisable();
 	}
 
 	public void toggle() {
-		this.setEnabled(!this.enabled);
+		setEnabled(!enabled);
 	}
 
 	public void onTick() {}

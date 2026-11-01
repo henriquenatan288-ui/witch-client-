@@ -6,6 +6,7 @@ import com.witch.module.Module;
 import com.witch.module.ModuleManager;
 import com.witch.setting.ColorSetting;
 import com.witch.setting.IntSetting;
+import com.witch.setting.KeybindSetting;
 import com.witch.setting.OreSetting;
 import com.witch.setting.Setting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -22,22 +23,23 @@ import java.util.List;
 import java.util.Locale;
 
 public class ClickGuiScreen extends Screen {
-	private static final int MAX_W = 400;
-	private static final int MAX_H = 280;
+	private static final int MAX_W = 420;
+	private static final int MAX_H = 300;
 	private static final int MARGIN = 8;
-	private static final int PAD = 7;
-	private static final int SIDEBAR_W = 92;
-	private static final int CAT_H = 21;
-	private static final int ROW_H = 18;
-	private static final int SEARCH_H = 18;
-	private static final int DOTS_W = 28;
-	private static final int INT_ROW_H = 28;
-	private static final int COLOR_ROW_H = 36;
-	private static final int ORE_ROW_H = 17;
-	private static final int CHIP_W = 26;
-	private static final int SWATCH = 13;
-	private static final int SWATCH_GAP = 4;
-	private static final int RADIUS = 4;
+	private static final int PAD = 10;
+	private static final int SIDEBAR_W = 100;
+	private static final int CAT_H = 30;
+	private static final int ROW_H = 25;
+	private static final int SEARCH_H = 24;
+	private static final int DOTS_W = 30;
+	private static final int INT_ROW_H = 30;
+	private static final int COLOR_ROW_H = 38;
+	private static final int ORE_ROW_H = 18;
+	private static final int CHIP_W = 28;
+	private static final int SWATCH = 14;
+	private static final int SWATCH_GAP = 5;
+
+	private final LeafParticles leaves = new LeafParticles();
 
 	private Category selected = Category.VISUALS;
 	private Module settingsOf = null;
@@ -62,6 +64,7 @@ public class ClickGuiScreen extends Screen {
 		this(null);
 	}
 
+	/** Se 'openSettings' nao for nulo, a tela ja abre nos ajustes desse modulo. */
 	public ClickGuiScreen(Module openSettings) {
 		super(Component.literal("Witch Client"));
 		if (openSettings != null && !openSettings.settings().isEmpty()) {
@@ -86,12 +89,13 @@ public class ClickGuiScreen extends Screen {
 	}
 
 	private int listX() { return px + PAD + SIDEBAR_W + PAD; }
-	private int listY() { return py + PAD + SEARCH_H + 5; }
-	private int listW() { return panelW - PAD * 3 - SIDEBAR_W; }
+	private int listY() { return py + PAD + SEARCH_H + 6; }
+	private static final int SB_GUTTER = 16;
+	private int listW() { return panelW - PAD * 3 - SIDEBAR_W - SB_GUTTER; }
 	private int listH() { return panelH - (listY() - py) - PAD; }
 
 	private static int rowH(Setting s) {
-		if (s instanceof OreSetting) return ORE_ROW_H;
+		if (s instanceof OreSetting || s instanceof KeybindSetting) return ORE_ROW_H;
 		return s instanceof ColorSetting ? COLOR_ROW_H : INT_ROW_H;
 	}
 
@@ -103,21 +107,25 @@ public class ClickGuiScreen extends Screen {
 
 		TimeTheme.update();
 
-		openAnim = Mth.lerp(Math.min(1f, speed * 0.18f), openAnim, 1f);
+		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
 		float a = openAnim;
 
 		panelW = Math.max(220, Math.min(MAX_W, this.width - MARGIN * 2));
 		panelH = Math.max(120, Math.min(MAX_H, this.height - MARGIN * 2));
 		px = (this.width - panelW) / 2;
-		py = (this.height - panelH) / 2 + (int) ((1f - a) * 10f);
+		py = (this.height - panelH) / 2 + (int) ((1f - a) * 8f);
 
-		// Overlay escuro
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x88000000, a));
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x44000000, a));
+		GlassShader.glow(g, px, py, panelW, panelH, a);
+		GlassShader.shadow(g, px, py, panelW, panelH, a);
+		RenderUtil.roundRect(g, px, py, panelW, panelH, 16, RenderUtil.alpha(TimeTheme.panel, a));
+		GlassShader.glass(g, px, py, panelW, panelH, a);
+		GlassShader.sidebar(g, px + PAD, py + PAD, SIDEBAR_W, panelH - PAD * 2, a);
 
-		// Painel principal limpo
-		RenderUtil.roundRect(g, px, py, panelW, panelH, RADIUS + 2, RenderUtil.alpha(TimeTheme.panel, a));
+		WitchVisuals.render(g, px, py, panelW, panelH, a);
 
-		// Sem partículas / folhas / constelação (visual limpo)
+		leaves.update(speed, panelW, panelH);
+		leaves.render(g, px, py, panelW, panelH, a);
 
 		renderSidebar(g, mouseX, mouseY, a);
 		renderSearch(g, a);
@@ -133,16 +141,17 @@ public class ClickGuiScreen extends Screen {
 		int y = py + PAD;
 		for (Category c : Category.values()) {
 			boolean active = c == selected && search.isEmpty();
-			boolean hover = RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 3);
+			boolean hover = RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 4);
 			if (active) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 3, RADIUS, RenderUtil.alpha(0xFF1A1A28, a));
-				// barra de accent à esquerda
-				RenderUtil.roundRect(g, x, y + 3, 2, CAT_H - 9, 1, RenderUtil.alpha(Theme.ACCENT, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 13, RenderUtil.alpha(Theme.SIDEBAR_ITEM_ACTIVE, a));
 			} else if (hover) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 3, RADIUS, RenderUtil.alpha(0x14FFFFFF, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 13, RenderUtil.alpha(TimeTheme.hover, a));
 			}
-			int ty = y + (CAT_H - 3 - FontUtil.height()) / 2;
-			FontUtil.draw(g, c.label, x + 10, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
+			int ty = y + (CAT_H - 4 - FontUtil.height()) / 2;
+			int dot = (CAT_H - 4) / 2;
+			RenderUtil.roundRect(g, x + 10, y + dot - 3, 6, 6, 3,
+					RenderUtil.alpha(active ? 0xFFFFFFFF : TimeTheme.dim, a * (active ? 1f : 0.55f)));
+			FontUtil.draw(g, c.label, x + 22, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
 			y += CAT_H;
 		}
 	}
@@ -151,7 +160,7 @@ public class ClickGuiScreen extends Screen {
 		int x = listX();
 		int y = py + PAD;
 		int w = listW();
-		RenderUtil.roundRect(g, x, y, w, SEARCH_H, RADIUS, RenderUtil.alpha(0xFF121212, a));
+		RenderUtil.roundRect(g, x, y, w, SEARCH_H, 12, RenderUtil.alpha(TimeTheme.search, a));
 
 		String shown;
 		int color;
@@ -163,7 +172,7 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			color = TimeTheme.input;
 		}
-		FontUtil.draw(g, shown, x + 7, y + (SEARCH_H - FontUtil.height()) / 2, RenderUtil.alpha(color, a));
+		FontUtil.draw(g, shown, x + 12, y + (SEARCH_H - FontUtil.height()) / 2, RenderUtil.alpha(color, a));
 	}
 
 	private void renderModules(GuiGraphicsExtractor g, int mx, int my, float speed, float a) {
@@ -179,7 +188,7 @@ public class ClickGuiScreen extends Screen {
 		scroll = Mth.lerp(Math.min(1f, speed * 0.25f), scroll, scrollTarget);
 
 		if (mods.isEmpty()) {
-			FontUtil.draw(g, "No modules", x + 7, y + 3, RenderUtil.alpha(TimeTheme.placeholder, a));
+			FontUtil.draw(g, "No modules", x + 8, y + 4, RenderUtil.alpha(TimeTheme.placeholder, a));
 			return;
 		}
 
@@ -193,31 +202,57 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.25f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 
 			if (m.hoverAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, RADIUS,
-						RenderUtil.alpha(0x14FFFFFF, a * m.hoverAnim));
+				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 12,
+						RenderUtil.alpha(TimeTheme.hover, a * m.hoverAnim));
 			}
 			if (m.toggleAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, RADIUS,
-						RenderUtil.alpha(0xFF161622, a * m.toggleAnim));
+				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 12,
+						RenderUtil.alpha(Theme.MODULE_ON, a * m.toggleAnim));
 			}
 
 			int textColor = RenderUtil.mix(TimeTheme.dim, Theme.TEXT, m.toggleAnim);
 			int ty = ry + (ROW_H - 2 - FontUtil.height()) / 2;
-			FontUtil.draw(g, m.name, x + 7, ty, RenderUtil.alpha(textColor, a));
+			FontUtil.draw(g, m.name, x + 8, ty, RenderUtil.alpha(textColor, a));
 			if (!m.settings().isEmpty()) {
 				String dots = "...";
-				FontUtil.draw(g, dots, x + w - 7 - FontUtil.width(dots), ty, RenderUtil.alpha(textColor, a));
+				FontUtil.draw(g, dots, x + w - 8 - FontUtil.width(dots), ty, RenderUtil.alpha(textColor, a));
 			}
 			ry += ROW_H;
 		}
 		g.disableScissor();
+		drawScrollbar(g, x, y, w, h, contentH, scroll, maxScroll, a);
+	}
 
-		if (maxScroll > 0) {
-			int thumbH = Math.max(12, Math.round(h * (h / (float) contentH)));
-			int thumbY = y + Math.round((h - thumbH) * (scroll / maxScroll));
-			RenderUtil.roundRect(g, x + w - 3, thumbY, 2, thumbH, 1,
-					RenderUtil.alpha(0xFF7A7A7A, a * 0.7f));
+	/** Barra de rolagem: trilho fraco + alca; so aparece quando a lista e maior que a area. */
+	private static final int SB_W = 8;   // largura visivel
+	private static final int SB_HIT = 22; // area de toque (mais larga que a barra)
+	private int sbX, sbY, sbH, sbThumbH;
+	private float sbMax = 0f;
+	private boolean sbDrag = false;
+
+	private void drawScrollbar(GuiGraphicsExtractor g, int x, int y, int w, int h, int contentH, float scr, float maxScroll, float a) {
+		if (maxScroll <= 0) {
+			sbMax = 0f;
+			return;
 		}
+		int bx = x + w + 5;
+		int thumbH = Math.max(24, Math.round(h * (h / (float) contentH)));
+		int thumbY = y + Math.round((h - thumbH) * (scr / maxScroll));
+		sbX = bx;
+		sbY = y;
+		sbH = h;
+		sbThumbH = thumbH;
+		sbMax = maxScroll;
+		RenderUtil.roundRect(g, bx, y, SB_W, h, 4, RenderUtil.alpha(TimeTheme.dim, a * 0.22f));
+		int c = sbDrag ? Theme.ACCENT : RenderUtil.mix(Theme.ACCENT, 0xFFFFFFFF, 0.15f);
+		RenderUtil.roundRect(g, bx + 1, thumbY, SB_W - 2, thumbH, 3, RenderUtil.alpha(c, a * 0.95f));
+	}
+
+	private void dragScrollbarTo(double my) {
+		float span = Math.max(1f, sbH - sbThumbH);
+		float f = Mth.clamp((float) ((my - sbY - sbThumbH / 2.0) / span), 0f, 1f);
+		scrollTarget = f * sbMax;
+		scroll = scrollTarget;
 	}
 
 	private void renderSettings(GuiGraphicsExtractor g, int mx, int my, float speed, float a) {
@@ -227,11 +262,12 @@ public class ClickGuiScreen extends Screen {
 		int h = listH();
 		int fh = FontUtil.height();
 
+		// linha "< Modulo" fica fixa no topo
 		boolean hoverBack = RenderUtil.inside(mx, my, x, y, w, ROW_H - 2);
 		if (hoverBack) {
-			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, RADIUS, RenderUtil.alpha(0x14FFFFFF, a));
+			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, 12, RenderUtil.alpha(TimeTheme.hover, a));
 		}
-		FontUtil.draw(g, "< " + settingsOf.name, x + 7, y + (ROW_H - 2 - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
+		FontUtil.draw(g, "< " + settingsOf.name, x + 8, y + (ROW_H - 2 - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
 
 		int ly = y + ROW_H;
 		int lh = h - ROW_H;
@@ -247,61 +283,72 @@ public class ClickGuiScreen extends Screen {
 		int ry = ly + 4 - Math.round(scroll);
 		for (Setting s : settingsOf.settings()) {
 			if (s instanceof IntSetting is) {
-				FontUtil.draw(g, is.name, x + 7, ry, RenderUtil.alpha(TimeTheme.dim, a));
+				FontUtil.draw(g, is.name, x + 8, ry, RenderUtil.alpha(TimeTheme.dim, a));
 				String val = is.get() + is.suffix;
-				FontUtil.draw(g, val, x + w - 7 - FontUtil.width(val), ry, RenderUtil.alpha(TimeTheme.input, a));
+				FontUtil.draw(g, val, x + w - 8 - FontUtil.width(val), ry, RenderUtil.alpha(TimeTheme.input, a));
 
-				int tx = x + 7;
-				int tw = w - 14;
-				int ty = ry + fh + 5;
-				RenderUtil.roundRect(g, tx, ty, tw, 5, 2, RenderUtil.alpha(0xFF121212, a));
+				int tx = x + 8;
+				int tw = w - 16;
+				int ty = ry + fh + 6;
+				RenderUtil.roundRect(g, tx, ty, tw, 6, 3, RenderUtil.alpha(TimeTheme.search, a));
 				int fw = Math.round(tw * is.fraction());
 				if (fw > 0) {
-					RenderUtil.roundRect(g, tx, ty, Math.max(fw, 4), 5, 2, RenderUtil.alpha(Theme.ACCENT, a));
+					RenderUtil.roundRect(g, tx, ty, Math.max(fw, 4), 6, 3, RenderUtil.alpha(Theme.ACCENT, a));
 				}
-				RenderUtil.roundRect(g, tx + fw - 3, ty - 2, 7, 9, 2, RenderUtil.alpha(Theme.ACCENT, a));
+				RenderUtil.roundRect(g, tx + fw - 4, ty - 2, 8, 10, 3, RenderUtil.alpha(Theme.ACCENT, a));
 			} else if (s instanceof ColorSetting cs) {
-				FontUtil.draw(g, cs.name, x + 7, ry, RenderUtil.alpha(TimeTheme.dim, a));
-				int sy = ry + fh + 5;
+				FontUtil.draw(g, cs.name, x + 8, ry, RenderUtil.alpha(TimeTheme.dim, a));
+				int sy = ry + fh + 6;
 				for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
-					int sx = x + 7 + i * (SWATCH + SWATCH_GAP);
+					int sx = x + 8 + i * (SWATCH + SWATCH_GAP);
 					if (i == cs.index()) {
-						RenderUtil.roundRect(g, sx - 2, sy - 2, SWATCH + 4, SWATCH + 4, 3,
+						RenderUtil.roundRect(g, sx - 2, sy - 2, SWATCH + 4, SWATCH + 4, 4,
 								RenderUtil.alpha(TimeTheme.dim, a));
 					}
-					RenderUtil.roundRect(g, sx, sy, SWATCH, SWATCH, 2,
+					RenderUtil.roundRect(g, sx, sy, SWATCH, SWATCH, 3,
 							RenderUtil.alpha(ColorSetting.PALETTE[i], a));
 				}
+			} else if (s instanceof KeybindSetting ks) {
+				int rh = ORE_ROW_H - 2;
+				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
+						&& RenderUtil.inside(mx, my, x, ly, w, lh);
+				if (hover || ks.listening) {
+					RenderUtil.roundRect(g, x, ry, w, rh, 9, RenderUtil.alpha(TimeTheme.hover, a));
+				}
+				FontUtil.draw(g, ks.name, x + 8, ry + (rh - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
+				String lab = ks.label();
+				int cw = Math.max(CHIP_W, FontUtil.width(lab) + 12);
+				int cx = x + w - 8 - cw;
+				RenderUtil.roundRect(g, cx, ry + 1, cw, rh - 2, 4,
+						RenderUtil.alpha(ks.listening ? Theme.ACCENT : TimeTheme.search, a));
+				FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (rh - fh) / 2,
+						RenderUtil.alpha(ks.listening ? 0xFFFFFFFF : TimeTheme.input, a));
 			} else if (s instanceof OreSetting os) {
 				int rh = ORE_ROW_H - 2;
 				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
 						&& RenderUtil.inside(mx, my, x, ly, w, lh);
 				if (hover) {
-					RenderUtil.roundRect(g, x, ry, w, rh, RADIUS, RenderUtil.alpha(0x14FFFFFF, a));
+					RenderUtil.roundRect(g, x, ry, w, rh, 9, RenderUtil.alpha(TimeTheme.hover, a));
 				}
-				int bx = x + 7;
-				int by = ry + (rh - 11) / 2;
-				RenderUtil.roundRect(g, bx, by, 11, 11, 2, RenderUtil.alpha(0xFF121212, a));
+				int bx = x + 8;
+				int by = ry + (rh - 12) / 2;
+				RenderUtil.roundRect(g, bx, by, 12, 12, 3, RenderUtil.alpha(TimeTheme.search, a));
 				if (os.enabled()) {
-					RenderUtil.roundRect(g, bx + 2, by + 2, 7, 7, 2, RenderUtil.alpha(Theme.ACCENT, a));
+					RenderUtil.roundRect(g, bx + 2, by + 2, 8, 8, 2, RenderUtil.alpha(Theme.ACCENT, a));
 				}
 				int textColor = os.enabled() ? TimeTheme.input : TimeTheme.placeholder;
-				FontUtil.draw(g, os.name, bx + 16, ry + (rh - fh) / 2, RenderUtil.alpha(textColor, a));
+				FontUtil.draw(g, os.name, bx + 18, ry + (rh - fh) / 2, RenderUtil.alpha(textColor, a));
 
-				int cx = x + w - 7 - CHIP_W;
-				RenderUtil.roundRect(g, cx - 1, by - 1, CHIP_W + 2, 14, 3, RenderUtil.alpha(TimeTheme.dim, a * 0.45f));
-				RenderUtil.roundRect(g, cx, by, CHIP_W, 12, 3, RenderUtil.alpha(os.color(), a));
+				int cx = x + w - 8 - CHIP_W;
+				RenderUtil.roundRect(g, cx - 1, by - 2, CHIP_W + 2, 16, 5, RenderUtil.alpha(TimeTheme.dim, a * 0.5f));
+				RenderUtil.roundRect(g, cx, by - 1, CHIP_W, 14, 4, RenderUtil.alpha(os.color(), a));
 			}
 			ry += rowH(s);
 		}
 		g.disableScissor();
 
-		if (maxScroll > 0) {
-			int thumbH = Math.max(12, Math.round(lh * (lh / (float) contentH)));
-			int thumbY = ly + Math.round((lh - thumbH) * (scroll / maxScroll));
-			RenderUtil.roundRect(g, x + w - 3, thumbY, 2, thumbH, 1,
-					RenderUtil.alpha(0xFF7A7A7A, a * 0.7f));
-		}
+		// barra de rolagem
+		drawScrollbar(g, x, ly, w, lh, contentH, scroll, maxScroll, a);
 	}
 
 	private boolean clickSettings(double mx, double my) {
@@ -326,10 +373,10 @@ public class ClickGuiScreen extends Screen {
 		int ry = ly + 4 - Math.round(scroll);
 		for (Setting s : settingsOf.settings()) {
 			if (s instanceof IntSetting is) {
-				int tx = x + 7;
-				int tw = w - 14;
-				int ty = ry + fh + 5;
-				if (RenderUtil.inside(mx, my, tx - 4, ty - 5, tw + 8, 16)) {
+				int tx = x + 8;
+				int tw = w - 16;
+				int ty = ry + fh + 6;
+				if (RenderUtil.inside(mx, my, tx - 4, ty - 6, tw + 8, 18)) {
 					dragging = is;
 					dragX = tx;
 					dragW = Math.max(1, tw);
@@ -337,18 +384,24 @@ public class ClickGuiScreen extends Screen {
 					return true;
 				}
 			} else if (s instanceof ColorSetting cs) {
-				int sy = ry + fh + 5;
+				int sy = ry + fh + 6;
 				for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
-					int sx = x + 7 + i * (SWATCH + SWATCH_GAP);
+					int sx = x + 8 + i * (SWATCH + SWATCH_GAP);
 					if (RenderUtil.inside(mx, my, sx - 2, sy - 2, SWATCH + 4, SWATCH + 4)) {
 						cs.setIndex(i);
 						Config.save();
 						return true;
 					}
 				}
+			} else if (s instanceof KeybindSetting ks) {
+				if (RenderUtil.inside(mx, my, x, ry, w, ORE_ROW_H - 2)) {
+					ks.listening = !ks.listening;
+					return true;
+				}
 			} else if (s instanceof OreSetting os) {
 				if (RenderUtil.inside(mx, my, x, ry, w, ORE_ROW_H - 2)) {
-					final boolean onChip = mx >= x + w - 7 - CHIP_W - 4;
+					final boolean onChip = mx >= x + w - 8 - CHIP_W - 4;
+					// so age ao soltar, e so se o dedo nao arrastou (arrastar = rolar a lista)
 					pendingClick = () -> {
 						if (onChip) os.cycleColor(); else os.toggle();
 						Config.save();
@@ -370,10 +423,16 @@ public class ClickGuiScreen extends Screen {
 		searchFocused = RenderUtil.inside(mx, my, listX(), py + PAD, listW(), SEARCH_H);
 		if (searchFocused) return true;
 
+		if (sbMax > 0f && button == 0 && RenderUtil.inside(mx, my, sbX - 6, sbY, SB_HIT, sbH)) {
+			sbDrag = true;
+			dragScrollbarTo(my);
+			return true;
+		}
+
 		int x = px + PAD;
 		int y = py + PAD;
 		for (Category c : Category.values()) {
-			if (RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 3)) {
+			if (RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 4)) {
 				selected = c;
 				settingsOf = null;
 				search = "";
@@ -422,6 +481,10 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+		if (sbDrag) {
+			dragScrollbarTo(click.y());
+			return true;
+		}
 		if (dragging != null) {
 			dragging.setFraction((float) ((click.x() - dragX) / dragW));
 			return true;
@@ -436,6 +499,10 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent click) {
+		if (sbDrag) {
+			sbDrag = false;
+			return true;
+		}
 		if (dragging != null) {
 			dragging = null;
 			Config.save();
@@ -472,6 +539,20 @@ public class ClickGuiScreen extends Screen {
 	@Override
 	public boolean keyPressed(KeyEvent input) {
 		int key = input.key();
+		if (settingsOf != null) {
+			for (Setting st : settingsOf.settings()) {
+				if (st instanceof KeybindSetting ks && ks.listening) {
+					ks.listening = false;
+					if (key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE) {
+						ks.setKey(0);
+					} else if (key != GLFW.GLFW_KEY_ESCAPE) {
+						ks.setKey(key);
+					}
+					Config.save();
+					return true;
+				}
+			}
+		}
 		if (searchFocused) {
 			if (key == GLFW.GLFW_KEY_BACKSPACE) {
 				if (!search.isEmpty()) search = search.substring(0, search.length() - 1);
