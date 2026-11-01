@@ -11,7 +11,7 @@ public class WitchGametest implements FabricClientGameTest {
 		context.waitTicks(120);
 		context.takeScreenshot("01-title");
 		try (var sp = context.worldBuilder().create()) {
-			sp.getClientWorld().waitForChunksRender();
+			sp.getClientLevel().waitForChunksRender();
 			context.waitTicks(20);
 			context.takeScreenshot("03-world");
 			context.runOnClient(mc -> {
