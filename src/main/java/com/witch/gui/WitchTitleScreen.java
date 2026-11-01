@@ -106,9 +106,9 @@ public class WitchTitleScreen extends Screen {
 			FontUtil.draw(g, SUBS[i], menuX + 14 + shift, y + 3 + FontUtil.height() + 1, RenderUtil.mix(0xFF666666, 0xFFB0B0B0, ha));
 		}
 
-		spaced(g, "WITCH CLIENT  -  MINECRAFT 26.2", 8, h - 12, 0xFF555555);
+		FontUtil.draw(g, "Witch Client  -  Minecraft 26.2", 8, h - 12, 0xFF666666);
 		String credit = "WITCH CLIENT MADE BY BISTECK";
-		spaced(g, credit, w - spacedWidth(credit) - 8, h - 12, 0xFF9A9A9A);
+		FontUtil.draw(g, "Made by Bisteck", w - FontUtil.width("Made by Bisteck") - 8, h - 12, 0xFF9A9A9A);
 	}
 
 	/** Tres linhas ondulando devagar no fundo (pontinhos), como o fundo do Real Client. */

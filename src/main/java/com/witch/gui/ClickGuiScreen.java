@@ -30,7 +30,7 @@ import java.util.Set;
 /** ClickGUI estilo Meteor: uma janela arrastavel por categoria, modulos em linhas, ajustes abrem dentro da janela. Monocromatico. */
 public class ClickGuiScreen extends Screen {
 	private static final int WIN_W = 100;
-	private static final int GAP = 6;
+	private static final int GAP = 8;
 	private static final int HEAD_H = 15;
 	private static final int ROW = 13;
 	private static final int INT_H = 22;
@@ -215,7 +215,7 @@ public class ClickGuiScreen extends Screen {
 		int[] p = POS.get(c);
 		if (p == null) {
 			int n = Category.values().length;
-			int ww = Math.min(WIN_W, (this.width - 8 - GAP * (n - 1)) / n);
+			int ww = winWCache;
 			int total = ww * n + GAP * (n - 1);
 			int x0 = Math.max(4, (this.width - total) / 2);
 			p = new int[] {x0 + c.ordinal() * (ww + GAP), 26};
@@ -224,7 +224,19 @@ public class ClickGuiScreen extends Screen {
 		return p;
 	}
 
+	private static int lastW = -1, lastH = -1;
 	private int winWCache = WIN_W;
+
+	@Override
+	protected void init() {
+		super.init();
+		if (lastW != this.width || lastH != this.height) {
+			POS.clear();
+			lastW = this.width;
+			lastH = this.height;
+		}
+		updateWinW();
+	}
 
 	private int winW() {
 		return winWCache;
@@ -234,7 +246,7 @@ public class ClickGuiScreen extends Screen {
 		int n = Category.values().length;
 		int mx = 0;
 		for (Module m : ModuleManager.all()) mx = Math.max(mx, FontUtil.width(m.name));
-		int want = Math.max(WIN_W, mx + 30);
+		int want = Math.max(WIN_W, mx + 28);
 		int cap = (this.width - 8 - GAP * (n - 1)) / n;
 		winWCache = Math.max(70, Math.min(want, cap));
 	}
@@ -335,6 +347,19 @@ public class ClickGuiScreen extends Screen {
 		}
 	}
 
+	private static String fit(String t, int maxW) {
+		if (FontUtil.width(t) <= maxW) return t;
+		String r = t;
+		while (r.length() > 1 && FontUtil.width(r + "..") > maxW) r = r.substring(0, r.length() - 1);
+		return r.trim() + "..";
+	}
+
+	/** So para o teste automatico: liga o modo 3D e fixa as janelas. */
+	public static void debug3d() {
+		MODE3D = true;
+		PINNED = true;
+	}
+
 	private static void vgrad(GuiGraphicsExtractor g, int x, int y, int w, int h, int top, int bot, float a) {
 		if (h <= 0) return;
 		int n = Math.max(1, Math.min(h, 24));
@@ -397,7 +422,7 @@ public class ClickGuiScreen extends Screen {
 				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f * m.hoverAnim));
 			}
 			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
-			FontUtil.draw(g, m.name, x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
+			FontUtil.draw(g, fit(m.name, w - 7 - 16), x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
 			boolean open = OPEN.contains(m);
 			if (!m.settings().isEmpty()) {
 				String ar = open ? "-" : "+";

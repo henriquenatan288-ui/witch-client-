@@ -10,6 +10,30 @@ public class WitchGametest implements FabricClientGameTest {
 	public void runTest(ClientGameTestContext context) {
 		context.waitTicks(120);
 		context.takeScreenshot("01-title");
+		try (var sp = context.worldBuilder().create()) {
+			sp.getClientWorld().waitForChunksRender();
+			context.waitTicks(20);
+			context.takeScreenshot("03-world");
+			context.runOnClient(mc -> {
+				for (var m : com.witch.module.ModuleManager.all()) {
+					if (m.name.equals("Fullbright") || m.name.equals("Tracers") || m.name.equals("Player ESP") || m.name.equals("Fly")) m.toggle();
+				}
+			});
+			context.waitTicks(40);
+			context.takeScreenshot("04-hud");
+			context.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
+			context.waitTicks(60);
+			context.takeScreenshot("05-clickgui-world");
+			context.runOnClient(mc -> {
+				ClickGuiScreen s = new ClickGuiScreen();
+				ClickGuiScreen.debug3d();
+				mc.gui.setScreen(s);
+			});
+			context.waitTicks(40);
+			context.runOnClient(mc -> mc.gui.setScreen(null));
+			context.waitTicks(20);
+			context.takeScreenshot("06-pinned-3d");
+		}
 		context.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
 		context.waitTicks(60);
 		context.takeScreenshot("02-clickgui");
