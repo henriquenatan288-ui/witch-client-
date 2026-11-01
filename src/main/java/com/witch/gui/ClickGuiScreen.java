@@ -56,6 +56,9 @@ public class ClickGuiScreen extends Screen {
 	private Category dragWin = null;
 	private int dragOffX, dragOffY;
 	private Category scrollWin = null;
+	private Category sbWin = null;
+	private static final int SB_VIS = 4;
+	private static final int SB_HIT = 12;
 	private double dragAccum = 0;
 	private Runnable pending = null;
 	private IntSetting slider = null;
@@ -248,11 +251,13 @@ public class ClickGuiScreen extends Screen {
 		}
 		g.disableScissor();
 
-		// indicador de rolagem fino
+		// barra de rolagem: trilho fraco + alca (arrastavel)
 		if (maxScroll > 0) {
-			int th = Math.max(14, Math.round(vh * (vh / (float) ch)));
+			int th = Math.max(16, Math.round(vh * (vh / (float) ch)));
 			int ty = by + Math.round((vh - th) * (sc[0] / maxScroll));
-			g.fill(x + w - 2, ty, x + w, ty + th, RenderUtil.alpha(0xFF9A9A9A, a * 0.8f));
+			int bx = x + w - SB_VIS - 1;
+			g.fill(bx, by + 1, bx + SB_VIS, by + vh - 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.06f));
+			g.fill(bx, ty, bx + SB_VIS, ty + th, RenderUtil.alpha(sbWin == c ? 0xFFFFFFFF : 0xFFA8A8A8, a * 0.9f));
 		}
 	}
 
@@ -336,6 +341,12 @@ public class ClickGuiScreen extends Screen {
 			dragOffY = (int) my - y;
 			return true;
 		}
+		float[] sc0 = SCR.computeIfAbsent(c, k -> new float[] {0f});
+		if (contentH(c, w) > viewH(c, w) && mx >= x + w - SB_HIT && button == 0) {
+			sbWin = c;
+			dragSb(c, my);
+			return true;
+		}
 		scrollWin = c;
 		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
 		int ry = y + HEAD_H - Math.round(sc[0]);
@@ -399,8 +410,22 @@ public class ClickGuiScreen extends Screen {
 		}
 	}
 
+	private void dragSb(Category c, double my) {
+		int w = winW();
+		int vh = viewH(c, w);
+		int th = Math.max(16, Math.round(vh * (vh / (float) contentH(c, w))));
+		float span = Math.max(1f, vh - th);
+		float f = Mth.clamp((float) ((my - (pos(c)[1] + HEAD_H) - th / 2.0) / span), 0f, 1f);
+		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
+		sc[0] = f * Math.max(0, contentH(c, w) - vh);
+	}
+
 	@Override
 	public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+		if (sbWin != null) {
+			dragSb(sbWin, click.y());
+			return true;
+		}
 		if (dragWin != null) {
 			int[] p = pos(dragWin);
 			p[0] = Mth.clamp((int) click.x() - dragOffX, -winW() + 20, this.width - 20);
@@ -423,10 +448,11 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent click) {
-		boolean was = dragWin != null || slider != null || scrollWin != null || pending != null;
+		boolean was = sbWin != null || dragWin != null || slider != null || scrollWin != null || pending != null;
 		if (slider != null) Config.save();
 		if (pending != null && dragAccum < 6) pending.run();
 		pending = null;
+		sbWin = null;
 		dragWin = null;
 		slider = null;
 		scrollWin = null;
