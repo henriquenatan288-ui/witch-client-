@@ -8,8 +8,8 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
 public final class FontUtil {
-	// Inter (TrueType) fica DESLIGADA por padrao: a versao OTF fez as letras sumirem. Aperte F9 no jogo pra ligar/desligar.
-	private static volatile boolean custom = false;
+	// Inter (TrueType) LIGADA por padrao; se falhar, o jogo cai na fonte normal (provider de referencia). F9 liga/desliga.
+	private static volatile boolean custom = true;
 
 	private static final Style CUSTOM_STYLE =
 			Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("witch", "inter")));
