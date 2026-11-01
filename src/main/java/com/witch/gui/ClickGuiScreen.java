@@ -69,6 +69,17 @@ public class ClickGuiScreen extends Screen {
 	private float openAnim = 0f;
 	private float openT = 0f;
 	private int curYOff = 0;
+	private int curXOff = 0;
+	private float parX = 0f, parY = 0f;
+	private static final int BOT = 4;
+	private final Map<Category, int[]> drawOff = new EnumMap<>(Category.class);
+
+	/** posicao onde a janela esta desenhada agora (com o efeito de profundidade e a animacao de entrada). */
+	private int[] at(Category c) {
+		int[] p = pos(c);
+		int[] o = drawOff.get(c);
+		return o == null ? new int[] {p[0], p[1]} : new int[] {p[0] + o[0], p[1] + o[1]};
+	}
 	private long lastNanos = 0L;
 
 	public ClickGuiScreen() {
@@ -170,11 +181,19 @@ public class ClickGuiScreen extends Screen {
 		}
 		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
 
+		float tx = (mx - this.width / 2f) / Math.max(1, this.width);
+		float ty = (my - this.height / 2f) / Math.max(1, this.height);
+		parX = Mth.lerp(Math.min(1f, speed * 0.12f), parX, tx);
+		parY = Mth.lerp(Math.min(1f, speed * 0.12f), parY, ty);
 		for (Category c : ORDER) {
-			float k = Mth.clamp((openT - c.ordinal() * 0.07f) / 0.28f, 0f, 1f);
-			float e = 1f - (1f - k) * (1f - k) * (1f - k);
-			curYOff = Math.round((1f - e) * 12f);
-			renderWindow(g, c, mx, my, speed, a * e);
+			float k = Mth.clamp((openT - c.ordinal() * 0.09f) / 0.45f, 0f, 1f);
+			float u = k - 1f;
+			float e = 1f + 2.4f * u * u * u + 1.4f * u * u; // easeOutBack: passa um pouco e volta
+			curYOff = Math.round((1f - e) * 22f);
+			float depth = 2f + c.ordinal();
+			curXOff = Math.round(parX * depth * 6f);
+			curYOff += Math.round(parY * depth * 4f);
+			renderWindow(g, c, mx, my, speed, a * Math.min(1f, k * 1.6f));
 		}
 	}
 
@@ -193,20 +212,25 @@ public class ClickGuiScreen extends Screen {
 		int w = winW();
 		int vh = viewH(c, w);
 		int ch = contentH(c, w);
-		int x = p[0];
+		int x = p[0] + curXOff;
 		int y = p[1] + curYOff;
+		drawOff.put(c, new int[] {curXOff, curYOff});
 		float maxScroll = Math.max(0, ch - vh);
 		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
 		sc[0] = Mth.clamp(sc[0], 0, maxScroll);
 
-		int totalH = HEAD_H + vh;
-		for (int k = 4; k >= 1; k--) {
-			g.fill(x - k, y - k + 2, x + w + k, y + totalH + k + 2, RenderUtil.alpha(0xFF000000, a * 0.07f));
+		int totalH = HEAD_H + vh + BOT;
+		boolean lifted = dragWin == c;
+		int lift = lifted ? 3 : 0;
+		for (int k = 5; k >= 1; k--) {
+			RenderUtil.roundRect(g, x - k - curXOff / 2, y - k + 2 + lift + k / 2, w + 2 * k, totalH + 2 * k, 6 + k,
+					RenderUtil.alpha(0xFF000000, a * (lifted ? 0.09f : 0.06f)));
 		}
-		g.fill(x - 1, y - 1, x + w + 1, y + totalH + 1, RenderUtil.alpha(LINE, a));
-		vgrad(g, x, y + HEAD_H, w, vh, 0xFF171717, 0xFF0A0A0A, a);
-		vgrad(g, x, y, w, HEAD_H, 0xFF2A2A2A, 0xFF161616, a);
-		g.fill(x, y, x + w, y + 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.14f));
+		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, totalH + 2, 7, RenderUtil.alpha(LINE, a));
+		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a));
+		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a));
+		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a));
+		g.fill(x + 5, y + 1, x + w - 5, y + 2, RenderUtil.alpha(0xFFFFFFFF, a * 0.16f));
 		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(0xFF000000, a * 0.6f));
 		String title = c.label;
 		FontUtil.draw(g, title, x + (w - FontUtil.width(title)) / 2, y + (HEAD_H - 1 - FontUtil.height()) / 2, RenderUtil.alpha(TXT, a));
@@ -306,7 +330,7 @@ public class ClickGuiScreen extends Screen {
 	private Category winAt(double mx, double my) {
 		for (int i = ORDER.size() - 1; i >= 0; i--) {
 			Category c = ORDER.get(i);
-			int[] p = pos(c);
+			int[] p = at(c);
 			int w = winW();
 			if (RenderUtil.inside(mx, my, p[0], p[1], w, HEAD_H + viewH(c, w))) return c;
 		}
@@ -331,7 +355,7 @@ public class ClickGuiScreen extends Screen {
 		ORDER.remove(c);
 		ORDER.add(c);
 
-		int[] p = pos(c);
+		int[] p = at(c);
 		int w = winW();
 		int x = p[0];
 		int y = p[1];
@@ -415,7 +439,7 @@ public class ClickGuiScreen extends Screen {
 		int vh = viewH(c, w);
 		int th = Math.max(16, Math.round(vh * (vh / (float) contentH(c, w))));
 		float span = Math.max(1f, vh - th);
-		float f = Mth.clamp((float) ((my - (pos(c)[1] + HEAD_H) - th / 2.0) / span), 0f, 1f);
+		float f = Mth.clamp((float) ((my - (at(c)[1] + HEAD_H) - th / 2.0) / span), 0f, 1f);
 		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
 		sc[0] = f * Math.max(0, contentH(c, w) - vh);
 	}
@@ -428,8 +452,9 @@ public class ClickGuiScreen extends Screen {
 		}
 		if (dragWin != null) {
 			int[] p = pos(dragWin);
-			p[0] = Mth.clamp((int) click.x() - dragOffX, -winW() + 20, this.width - 20);
-			p[1] = Mth.clamp((int) click.y() - dragOffY, 0, this.height - HEAD_H);
+			int[] o = drawOff.getOrDefault(dragWin, new int[] {0, 0});
+			p[0] = Mth.clamp((int) click.x() - dragOffX - o[0], -winW() + 20, this.width - 20);
+			p[1] = Mth.clamp((int) click.y() - dragOffY - o[1], 0, this.height - HEAD_H);
 			dragAccum += 100;
 			return true;
 		}
