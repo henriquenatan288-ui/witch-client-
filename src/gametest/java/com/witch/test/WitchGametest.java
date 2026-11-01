@@ -10,7 +10,7 @@ public class WitchGametest implements FabricClientGameTest {
 	public void runTest(ClientGameTestContext context) {
 		context.waitTicks(120);
 		context.takeScreenshot("01-title");
-		context.runOnClient(mc -> mc.setScreen(new ClickGuiScreen()));
+		context.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
 		context.waitTicks(60);
 		context.takeScreenshot("02-clickgui");
 	}
