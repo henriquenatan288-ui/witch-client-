@@ -13,9 +13,9 @@ public final class WitchVisuals {
 
 	private static final int BUBBLES = 11;
 	private static final int SPARKLES = 9;
-	private static final int GREEN = 0xFF7CFC5A;
-	private static final int PURPLE = 0xFFB57BEA;
-	private static final int MOON_DAY = 0xFF7B2FBF;
+	private static final int GREEN = 0xFFBBBBBB;
+	private static final int PURPLE = 0xFFD0D0D0;
+	private static final int MOON_DAY = 0xFF8A8A8A;
 	private static final int MOON_NIGHT = 0xFFFFF2B0;
 
 	private static final float[] BX = new float[BUBBLES];
