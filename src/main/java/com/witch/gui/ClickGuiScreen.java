@@ -19,57 +19,63 @@ import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
+/** ClickGUI estilo Meteor: uma janela arrastavel por categoria, modulos em linhas, ajustes abrem dentro da janela. Monocromatico. */
 public class ClickGuiScreen extends Screen {
-	private static final int MAX_W = 420;
-	private static final int MAX_H = 300;
-	private static final int MARGIN = 8;
-	private static final int PAD = 10;
-	private static final int SIDEBAR_W = 100;
-	private static final int CAT_H = 30;
-	private static final int ROW_H = 25;
-	private static final int SEARCH_H = 24;
-	private static final int DOTS_W = 30;
-	private static final int INT_ROW_H = 30;
-	private static final int COLOR_ROW_H = 38;
-	private static final int ORE_ROW_H = 18;
-	private static final int CHIP_W = 28;
-	private static final int SWATCH = 14;
-	private static final int SWATCH_GAP = 5;
+	private static final int WIN_W = 112;
+	private static final int GAP = 6;
+	private static final int HEAD_H = 18;
+	private static final int ROW = 16;
+	private static final int INT_H = 26;
+	private static final int ORE_H = 16;
+	private static final int SW = 9;
+	private static final int SW_GAP = 3;
+	private static final int ARROW_W = 20;
 
-	private final LeafParticles leaves = new LeafParticles();
+	private static final int BG = 0xF2101010;
+	private static final int HEAD = 0xFF1A1A1A;
+	private static final int LINE = 0xFF3A3A3A;
+	private static final int ROW_ON = 0xFF262626;
+	private static final int ROW_HOVER = 0xFF1B1B1B;
+	private static final int SUB_BG = 0xFF0B0B0B;
+	private static final int TXT = 0xFFFFFFFF;
+	private static final int TXT_DIM = 0xFF8E8E8E;
 
-	private Category selected = Category.VISUALS;
-	private Module settingsOf = null;
-	private IntSetting dragging = null;
-	private int dragX = 0;
-	private int dragW = 1;
-	private Runnable pendingClick = null;
+	// posicao e rolagem das janelas lembradas entre aberturas
+	private static final Map<Category, int[]> POS = new EnumMap<>(Category.class);
+	private static final Map<Category, float[]> SCR = new EnumMap<>(Category.class);
+	private static final List<Category> ORDER = new ArrayList<>();
+	private static final Set<Module> OPEN = new HashSet<>();
+
+	private Category dragWin = null;
+	private int dragOffX, dragOffY;
+	private Category scrollWin = null;
 	private double dragAccum = 0;
+	private Runnable pending = null;
+	private IntSetting slider = null;
+	private int sliderX = 0, sliderW = 1;
 
 	private String search = "";
 	private boolean searchFocused = false;
-	private float scroll = 0f;
-	private float scrollTarget = 0f;
 	private float openAnim = 0f;
 	private long lastNanos = 0L;
-
-	private int panelW = MAX_W;
-	private int panelH = MAX_H;
-	private int px, py;
 
 	public ClickGuiScreen() {
 		this(null);
 	}
 
-	/** Se 'openSettings' nao for nulo, a tela ja abre nos ajustes desse modulo. */
+	/** Se 'openSettings' nao for nulo, a janela ja abre com os ajustes desse modulo expandidos. */
 	public ClickGuiScreen(Module openSettings) {
 		super(Component.literal("Witch Client"));
-		if (openSettings != null && !openSettings.settings().isEmpty()) {
-			this.settingsOf = openSettings;
-			this.selected = openSettings.category;
+		if (openSettings != null && !openSettings.settings().isEmpty()) OPEN.add(openSettings);
+		if (ORDER.isEmpty()) {
+			for (Category c : Category.values()) ORDER.add(c);
 		}
 	}
 
@@ -78,333 +84,200 @@ public class ClickGuiScreen extends Screen {
 		return false;
 	}
 
-	private List<Module> visibleModules() {
-		if (search.isEmpty()) return ModuleManager.byCategory(selected);
-		String q = search.toLowerCase(Locale.ROOT);
+	private int[] pos(Category c) {
+		int[] p = POS.get(c);
+		if (p == null) {
+			int n = Category.values().length;
+			int ww = Math.min(WIN_W, (this.width - 8 - GAP * (n - 1)) / n);
+			int total = ww * n + GAP * (n - 1);
+			int x0 = Math.max(4, (this.width - total) / 2);
+			p = new int[] {x0 + c.ordinal() * (ww + GAP), 26};
+			POS.put(c, p);
+		}
+		return p;
+	}
+
+	private int winW() {
+		int n = Category.values().length;
+		return Math.max(70, Math.min(WIN_W, (this.width - 8 - GAP * (n - 1)) / n));
+	}
+
+	private List<Module> modules(Category c) {
 		List<Module> out = new ArrayList<>();
-		for (Module m : ModuleManager.all()) {
-			if (m.name.toLowerCase(Locale.ROOT).contains(q)) out.add(m);
+		String q = search.toLowerCase(Locale.ROOT);
+		for (Module m : ModuleManager.byCategory(c)) {
+			if (q.isEmpty() || m.name.toLowerCase(Locale.ROOT).contains(q)) out.add(m);
 		}
 		return out;
 	}
 
-	private int listX() { return px + PAD + SIDEBAR_W + PAD; }
-	private int listY() { return py + PAD + SEARCH_H + 6; }
-	private static final int SB_GUTTER = 16;
-	private int listW() { return panelW - PAD * 3 - SIDEBAR_W - SB_GUTTER; }
-	private int listH() { return panelH - (listY() - py) - PAD; }
+	private static int setH(Setting s, int w) {
+		if (s instanceof IntSetting) return INT_H;
+		if (s instanceof ColorSetting) {
+			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
+			int rows = (ColorSetting.PALETTE.length + per - 1) / per;
+			return 12 + rows * (SW + SW_GAP) + 3;
+		}
+		return ORE_H;
+	}
 
-	private static int rowH(Setting s) {
-		if (s instanceof OreSetting || s instanceof KeybindSetting) return ORE_ROW_H;
-		return s instanceof ColorSetting ? COLOR_ROW_H : INT_ROW_H;
+	private int contentH(Category c, int w) {
+		int h = 0;
+		for (Module m : modules(c)) {
+			h += ROW;
+			if (OPEN.contains(m)) {
+				for (Setting s : m.settings()) h += setH(s, w);
+			}
+		}
+		return h;
+	}
+
+	private int viewH(Category c, int w) {
+		int max = Math.max(40, this.height - pos(c)[1] - 6 - HEAD_H);
+		return Math.min(contentH(c, w), max);
 	}
 
 	@Override
-	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
 		long now = System.nanoTime();
 		float speed = lastNanos == 0 ? 1f : Math.min(3f, (now - lastNanos) / 16_666_667f);
 		lastNanos = now;
-
-		TimeTheme.update();
-
 		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
 		float a = openAnim;
 
-		panelW = Math.max(220, Math.min(MAX_W, this.width - MARGIN * 2));
-		panelH = Math.max(120, Math.min(MAX_H, this.height - MARGIN * 2));
-		px = (this.width - panelW) / 2;
-		py = (this.height - panelH) / 2 + (int) ((1f - a) * 8f);
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x66000000, a));
 
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x44000000, a));
-		GlassShader.glow(g, px, py, panelW, panelH, a);
-		GlassShader.shadow(g, px, py, panelW, panelH, a);
-		RenderUtil.roundRect(g, px, py, panelW, panelH, 16, RenderUtil.alpha(TimeTheme.panel, a));
-		GlassShader.sidebar(g, px + PAD, py + PAD, SIDEBAR_W, panelH - PAD * 2, a);
-
-
-		renderSidebar(g, mouseX, mouseY, a);
-		renderSearch(g, a);
-		if (settingsOf != null && search.isEmpty()) {
-			renderSettings(g, mouseX, mouseY, speed, a);
-		} else {
-			renderModules(g, mouseX, mouseY, speed, a);
-		}
-	}
-
-	private void renderSidebar(GuiGraphicsExtractor g, int mx, int my, float a) {
-		int x = px + PAD;
-		int y = py + PAD;
-		for (Category c : Category.values()) {
-			boolean active = c == selected && search.isEmpty();
-			boolean hover = RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 4);
-			if (active) {
-				BoxShader.box(g, x, y, SIDEBAR_W, CAT_H - 4, 13, Theme.SIDEBAR_ITEM_ACTIVE, 1f, a);
-			} else if (hover) {
-				BoxShader.box(g, x, y, SIDEBAR_W, CAT_H - 4, 13, 0xFF1E1E1E, 0.4f, a);
-			}
-			int ty = y + (CAT_H - 4 - FontUtil.height()) / 2;
-			int dot = (CAT_H - 4) / 2;
-			RenderUtil.roundRect(g, x + 10, y + dot - 3, 6, 6, 3,
-					RenderUtil.alpha(active ? 0xFFFFFFFF : TimeTheme.dim, a * (active ? 1f : 0.55f)));
-			FontUtil.draw(g, c.label, x + 22, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
-			y += CAT_H;
-		}
-	}
-
-	private void renderSearch(GuiGraphicsExtractor g, float a) {
-		int x = listX();
-		int y = py + PAD;
-		int w = listW();
-		BoxShader.box(g, x, y, w, SEARCH_H, 12, TimeTheme.search, searchFocused ? 0.8f : 0f, a);
-
+		// busca no topo
+		int sw = Math.min(150, this.width - 20);
+		int sx = (this.width - sw) / 2;
+		g.fill(sx - 1, 4, sx + sw + 1, 19, RenderUtil.alpha(LINE, a));
+		g.fill(sx, 5, sx + sw, 18, RenderUtil.alpha(0xFF0C0C0C, a));
 		String shown;
-		int color;
+		int col;
 		if (search.isEmpty() && !searchFocused) {
-			shown = "Search all modules...";
-			color = TimeTheme.placeholder;
+			shown = "Search modules...";
+			col = 0xFF666666;
 		} else {
 			boolean blink = searchFocused && (System.currentTimeMillis() / 500) % 2 == 0;
 			shown = search + (blink ? "|" : "");
-			color = TimeTheme.input;
+			col = TXT;
 		}
-		FontUtil.draw(g, shown, x + 12, y + (SEARCH_H - FontUtil.height()) / 2, RenderUtil.alpha(color, a));
+		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
+
+		for (Category c : ORDER) {
+			renderWindow(g, c, mx, my, speed, a);
+		}
 	}
 
-	private void renderModules(GuiGraphicsExtractor g, int mx, int my, float speed, float a) {
-		List<Module> mods = visibleModules();
-		int x = listX();
-		int y = listY();
-		int w = listW();
-		int h = listH();
+	private void renderWindow(GuiGraphicsExtractor g, Category c, int mx, int my, float speed, float a) {
+		int[] p = pos(c);
+		int w = winW();
+		int vh = viewH(c, w);
+		int ch = contentH(c, w);
+		int x = p[0];
+		int y = p[1];
+		float maxScroll = Math.max(0, ch - vh);
+		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
+		sc[0] = Mth.clamp(sc[0], 0, maxScroll);
 
-		int contentH = mods.size() * ROW_H;
-		float maxScroll = Math.max(0, contentH - h);
-		scrollTarget = Mth.clamp(scrollTarget, 0, maxScroll);
-		scroll = Mth.lerp(Math.min(1f, speed * 0.25f), scroll, scrollTarget);
+		g.fill(x - 1, y - 1, x + w + 1, y + HEAD_H + vh + 1, RenderUtil.alpha(LINE, a));
+		g.fill(x, y, x + w, y + HEAD_H, RenderUtil.alpha(HEAD, a));
+		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(LINE, a));
+		g.fill(x, y + HEAD_H, x + w, y + HEAD_H + vh, RenderUtil.alpha(BG, a));
+		String title = c.label;
+		FontUtil.draw(g, title, x + (w - FontUtil.width(title)) / 2, y + (HEAD_H - 1 - FontUtil.height()) / 2, RenderUtil.alpha(TXT, a));
 
-		if (mods.isEmpty()) {
-			FontUtil.draw(g, "No modules", x + 8, y + 4, RenderUtil.alpha(TimeTheme.placeholder, a));
-			return;
-		}
-
-		g.enableScissor(x, y, x + w, y + h);
-		int ry = y - Math.round(scroll);
-		for (Module m : mods) {
-			boolean hover = RenderUtil.inside(mx, my, x, ry, w, ROW_H - 2)
-					&& RenderUtil.inside(mx, my, x, y, w, h);
-
-			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.25f), m.hoverAnim, hover ? 1f : 0f);
-			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.25f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
-
-			if (m.hoverAnim > 0.01f) {
-				BoxShader.box(g, x, ry, w, ROW_H - 2, 12, 0xFF1E1E1E, m.hoverAnim * 0.5f, a * m.hoverAnim);
+		int by = y + HEAD_H;
+		g.enableScissor(x, by, x + w, by + vh);
+		int ry = by - Math.round(sc[0]);
+		int fh = FontUtil.height();
+		for (Module m : modules(c)) {
+			boolean hover = RenderUtil.inside(mx, my, x, ry, w, ROW) && RenderUtil.inside(mx, my, x, by, w, vh);
+			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
+			if (m.toggleAnim > 0.02f) {
+				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(ROW_ON, a * m.toggleAnim));
+				g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(TXT, a * m.toggleAnim));
+			} else if (hover) {
+				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(ROW_HOVER, a));
 			}
-			if (m.toggleAnim > 0.01f) {
-				BoxShader.box(g, x, ry, w, ROW_H - 2, 12, Theme.MODULE_ON, m.toggleAnim, a * m.toggleAnim);
-			}
-
-			int textColor = RenderUtil.mix(TimeTheme.dim, Theme.TEXT, m.toggleAnim);
-			int ty = ry + (ROW_H - 2 - FontUtil.height()) / 2;
-			FontUtil.draw(g, m.name, x + 8, ty, RenderUtil.alpha(textColor, a));
+			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
+			FontUtil.draw(g, m.name, x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
+			boolean open = OPEN.contains(m);
 			if (!m.settings().isEmpty()) {
-				String dots = "...";
-				FontUtil.draw(g, dots, x + w - 8 - FontUtil.width(dots), ty, RenderUtil.alpha(textColor, a));
+				String ar = open ? "-" : "+";
+				FontUtil.draw(g, ar, x + w - 11, ry + (ROW - fh) / 2, RenderUtil.alpha(open ? TXT : TXT_DIM, a));
 			}
-			ry += ROW_H;
-		}
-		g.disableScissor();
-		drawScrollbar(g, x, y, w, h, contentH, scroll, maxScroll, a);
-	}
-
-	/** Barra de rolagem: trilho fraco + alca; so aparece quando a lista e maior que a area. */
-	private static final int SB_W = 8;   // largura visivel
-	private static final int SB_HIT = 22; // area de toque (mais larga que a barra)
-	private int sbX, sbY, sbH, sbThumbH;
-	private float sbMax = 0f;
-	private boolean sbDrag = false;
-
-	private void drawScrollbar(GuiGraphicsExtractor g, int x, int y, int w, int h, int contentH, float scr, float maxScroll, float a) {
-		if (maxScroll <= 0) {
-			sbMax = 0f;
-			return;
-		}
-		int bx = x + w + 5;
-		int thumbH = Math.max(24, Math.round(h * (h / (float) contentH)));
-		int thumbY = y + Math.round((h - thumbH) * (scr / maxScroll));
-		sbX = bx;
-		sbY = y;
-		sbH = h;
-		sbThumbH = thumbH;
-		sbMax = maxScroll;
-		RenderUtil.roundRect(g, bx, y, SB_W, h, 4, RenderUtil.alpha(TimeTheme.dim, a * 0.22f));
-		int c = sbDrag ? Theme.GUI_ACCENT : RenderUtil.mix(Theme.GUI_ACCENT, 0xFFFFFFFF, 0.15f);
-		RenderUtil.roundRect(g, bx + 1, thumbY, SB_W - 2, thumbH, 3, RenderUtil.alpha(c, a * 0.95f));
-	}
-
-	private void dragScrollbarTo(double my) {
-		float span = Math.max(1f, sbH - sbThumbH);
-		float f = Mth.clamp((float) ((my - sbY - sbThumbH / 2.0) / span), 0f, 1f);
-		scrollTarget = f * sbMax;
-		scroll = scrollTarget;
-	}
-
-	private void renderSettings(GuiGraphicsExtractor g, int mx, int my, float speed, float a) {
-		int x = listX();
-		int y = listY();
-		int w = listW();
-		int h = listH();
-		int fh = FontUtil.height();
-
-		// linha "< Modulo" fica fixa no topo
-		boolean hoverBack = RenderUtil.inside(mx, my, x, y, w, ROW_H - 2);
-		if (hoverBack) {
-			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, 12, RenderUtil.alpha(TimeTheme.hover, a));
-		}
-		FontUtil.draw(g, "< " + settingsOf.name, x + 8, y + (ROW_H - 2 - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
-
-		int ly = y + ROW_H;
-		int lh = h - ROW_H;
-		int contentH = 4;
-		for (Setting s : settingsOf.settings()) {
-			contentH += rowH(s);
-		}
-		float maxScroll = Math.max(0, contentH - lh);
-		scrollTarget = Mth.clamp(scrollTarget, 0, maxScroll);
-		scroll = Mth.lerp(Math.min(1f, speed * 0.25f), scroll, scrollTarget);
-
-		g.enableScissor(x, ly, x + w, ly + lh);
-		int ry = ly + 4 - Math.round(scroll);
-		for (Setting s : settingsOf.settings()) {
-			if (s instanceof IntSetting is) {
-				FontUtil.draw(g, is.name, x + 8, ry, RenderUtil.alpha(TimeTheme.dim, a));
-				String val = is.get() + is.suffix;
-				FontUtil.draw(g, val, x + w - 8 - FontUtil.width(val), ry, RenderUtil.alpha(TimeTheme.input, a));
-
-				int tx = x + 8;
-				int tw = w - 16;
-				int ty = ry + fh + 6;
-				RenderUtil.roundRect(g, tx, ty, tw, 6, 3, RenderUtil.alpha(TimeTheme.search, a));
-				int fw = Math.round(tw * is.fraction());
-				if (fw > 0) {
-					RenderUtil.roundRect(g, tx, ty, Math.max(fw, 4), 6, 3, RenderUtil.alpha(Theme.GUI_ACCENT, a));
+			ry += ROW;
+			if (open) {
+				for (Setting s : m.settings()) {
+					int sh = setH(s, w);
+					g.fill(x, ry, x + w, ry + sh, RenderUtil.alpha(SUB_BG, a));
+					g.fill(x, ry, x + 1, ry + sh, RenderUtil.alpha(LINE, a));
+					drawSetting(g, s, x, ry, w, sh, mx, my, by, vh, a);
+					ry += sh;
 				}
-				RenderUtil.roundRect(g, tx + fw - 4, ty - 2, 8, 10, 3, RenderUtil.alpha(Theme.GUI_ACCENT, a));
-			} else if (s instanceof ColorSetting cs) {
-				FontUtil.draw(g, cs.name, x + 8, ry, RenderUtil.alpha(TimeTheme.dim, a));
-				int sy = ry + fh + 6;
-				for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
-					int sx = x + 8 + i * (SWATCH + SWATCH_GAP);
-					if (i == cs.index()) {
-						RenderUtil.roundRect(g, sx - 2, sy - 2, SWATCH + 4, SWATCH + 4, 4,
-								RenderUtil.alpha(TimeTheme.dim, a));
-					}
-					RenderUtil.roundRect(g, sx, sy, SWATCH, SWATCH, 3,
-							RenderUtil.alpha(ColorSetting.PALETTE[i], a));
-				}
-			} else if (s instanceof KeybindSetting ks) {
-				int rh = ORE_ROW_H - 2;
-				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
-						&& RenderUtil.inside(mx, my, x, ly, w, lh);
-				if (hover || ks.listening) {
-					RenderUtil.roundRect(g, x, ry, w, rh, 9, RenderUtil.alpha(TimeTheme.hover, a));
-				}
-				FontUtil.draw(g, ks.name, x + 8, ry + (rh - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
-				String lab = ks.label();
-				int cw = Math.max(CHIP_W, FontUtil.width(lab) + 12);
-				int cx = x + w - 8 - cw;
-				RenderUtil.roundRect(g, cx, ry + 1, cw, rh - 2, 4,
-						RenderUtil.alpha(ks.listening ? 0xFF5A5A5A : TimeTheme.search, a));
-				FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (rh - fh) / 2,
-						RenderUtil.alpha(ks.listening ? 0xFFFFFFFF : TimeTheme.input, a));
-			} else if (s instanceof OreSetting os) {
-				int rh = ORE_ROW_H - 2;
-				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
-						&& RenderUtil.inside(mx, my, x, ly, w, lh);
-				if (hover) {
-					RenderUtil.roundRect(g, x, ry, w, rh, 9, RenderUtil.alpha(TimeTheme.hover, a));
-				}
-				int bx = x + 8;
-				int by = ry + (rh - 12) / 2;
-				RenderUtil.roundRect(g, bx, by, 12, 12, 3, RenderUtil.alpha(TimeTheme.search, a));
-				if (os.enabled()) {
-					RenderUtil.roundRect(g, bx + 2, by + 2, 8, 8, 2, RenderUtil.alpha(Theme.GUI_ACCENT, a));
-				}
-				int textColor = os.enabled() ? TimeTheme.input : TimeTheme.placeholder;
-				FontUtil.draw(g, os.name, bx + 18, ry + (rh - fh) / 2, RenderUtil.alpha(textColor, a));
-
-				int cx = x + w - 8 - CHIP_W;
-				RenderUtil.roundRect(g, cx - 1, by - 2, CHIP_W + 2, 16, 5, RenderUtil.alpha(TimeTheme.dim, a * 0.5f));
-				RenderUtil.roundRect(g, cx, by - 1, CHIP_W, 14, 4, RenderUtil.alpha(os.color(), a));
 			}
-			ry += rowH(s);
 		}
 		g.disableScissor();
 
-		// barra de rolagem
-		drawScrollbar(g, x, ly, w, lh, contentH, scroll, maxScroll, a);
+		// indicador de rolagem fino
+		if (maxScroll > 0) {
+			int th = Math.max(14, Math.round(vh * (vh / (float) ch)));
+			int ty = by + Math.round((vh - th) * (sc[0] / maxScroll));
+			g.fill(x + w - 2, ty, x + w, ty + th, RenderUtil.alpha(0xFF9A9A9A, a * 0.8f));
+		}
 	}
 
-	private boolean clickSettings(double mx, double my) {
-		int x = listX();
-		int y = listY();
-		int w = listW();
-		int h = listH();
+	private void drawSetting(GuiGraphicsExtractor g, Setting s, int x, int ry, int w, int sh, int mx, int my, int by, int vh, float a) {
 		int fh = FontUtil.height();
-
-		if (RenderUtil.inside(mx, my, x, y, w, ROW_H - 2)) {
-			settingsOf = null;
-			scroll = 0f;
-			scrollTarget = 0f;
-			return true;
-		}
-
-		int ly = y + ROW_H;
-		int lh = h - ROW_H;
-		dragAccum = 0;
-		if (!RenderUtil.inside(mx, my, x, ly, w, lh)) return true;
-
-		int ry = ly + 4 - Math.round(scroll);
-		for (Setting s : settingsOf.settings()) {
-			if (s instanceof IntSetting is) {
-				int tx = x + 8;
-				int tw = w - 16;
-				int ty = ry + fh + 6;
-				if (RenderUtil.inside(mx, my, tx - 4, ty - 6, tw + 8, 18)) {
-					dragging = is;
-					dragX = tx;
-					dragW = Math.max(1, tw);
-					is.setFraction((float) ((mx - tx) / dragW));
-					return true;
-				}
-			} else if (s instanceof ColorSetting cs) {
-				int sy = ry + fh + 6;
-				for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
-					int sx = x + 8 + i * (SWATCH + SWATCH_GAP);
-					if (RenderUtil.inside(mx, my, sx - 2, sy - 2, SWATCH + 4, SWATCH + 4)) {
-						cs.setIndex(i);
-						Config.save();
-						return true;
-					}
-				}
-			} else if (s instanceof KeybindSetting ks) {
-				if (RenderUtil.inside(mx, my, x, ry, w, ORE_ROW_H - 2)) {
-					ks.listening = !ks.listening;
-					return true;
-				}
-			} else if (s instanceof OreSetting os) {
-				if (RenderUtil.inside(mx, my, x, ry, w, ORE_ROW_H - 2)) {
-					final boolean onChip = mx >= x + w - 8 - CHIP_W - 4;
-					// so age ao soltar, e so se o dedo nao arrastou (arrastar = rolar a lista)
-					pendingClick = () -> {
-						if (onChip) os.cycleColor(); else os.toggle();
-						Config.save();
-					};
-					return true;
-				}
+		if (s instanceof IntSetting is) {
+			FontUtil.draw(g, is.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
+			String val = is.get() + is.suffix;
+			FontUtil.draw(g, val, x + w - 6 - FontUtil.width(val), ry + 3, RenderUtil.alpha(TXT, a));
+			int tx = x + 7;
+			int tw = w - 14;
+			int ty = ry + fh + 8;
+			g.fill(tx, ty, tx + tw, ty + 3, RenderUtil.alpha(0xFF2A2A2A, a));
+			int fw = Math.round(tw * is.fraction());
+			if (fw > 0) g.fill(tx, ty, tx + fw, ty + 3, RenderUtil.alpha(TXT, a));
+			g.fill(tx + fw - 1, ty - 2, tx + fw + 1, ty + 5, RenderUtil.alpha(TXT, a));
+		} else if (s instanceof ColorSetting cs) {
+			FontUtil.draw(g, cs.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
+			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
+			for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
+				int sx = x + 7 + (i % per) * (SW + SW_GAP);
+				int sy = ry + 13 + (i / per) * (SW + SW_GAP);
+				if (i == cs.index()) g.fill(sx - 1, sy - 1, sx + SW + 1, sy + SW + 1, RenderUtil.alpha(TXT, a));
+				g.fill(sx, sy, sx + SW, sy + SW, RenderUtil.alpha(ColorSetting.PALETTE[i], a));
 			}
-			ry += rowH(s);
+		} else if (s instanceof KeybindSetting ks) {
+			FontUtil.draw(g, ks.name, x + 7, ry + (sh - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
+			String lab = ks.listening ? "..." : ks.label();
+			int cw = Math.max(26, FontUtil.width(lab) + 10);
+			int cx = x + w - 6 - cw;
+			g.fill(cx, ry + 2, cx + cw, ry + sh - 2, RenderUtil.alpha(ks.listening ? 0xFF4A4A4A : 0xFF222222, a));
+			FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (sh - fh) / 2, RenderUtil.alpha(TXT, a));
+		} else if (s instanceof OreSetting os) {
+			int bx = x + 7;
+			int bY = ry + (sh - 9) / 2;
+			g.fill(bx, bY, bx + 9, bY + 9, RenderUtil.alpha(0xFF3A3A3A, a));
+			g.fill(bx + 1, bY + 1, bx + 8, bY + 8, RenderUtil.alpha(0xFF0C0C0C, a));
+			if (os.enabled()) g.fill(bx + 2, bY + 2, bx + 7, bY + 7, RenderUtil.alpha(TXT, a));
+			FontUtil.draw(g, os.name, bx + 14, ry + (sh - fh) / 2, RenderUtil.alpha(os.enabled() ? TXT : TXT_DIM, a));
+			int cx = x + w - 6 - 12;
+			g.fill(cx - 1, bY - 1, cx + 13, bY + 10, RenderUtil.alpha(0xFF3A3A3A, a));
+			g.fill(cx, bY, cx + 12, bY + 9, RenderUtil.alpha(os.color(), a));
 		}
-		return true;
+	}
+
+	private Category winAt(double mx, double my) {
+		for (int i = ORDER.size() - 1; i >= 0; i--) {
+			Category c = ORDER.get(i);
+			int[] p = pos(c);
+			int w = winW();
+			if (RenderUtil.inside(mx, my, p[0], p[1], w, HEAD_H + viewH(c, w))) return c;
+		}
+		return null;
 	}
 
 	@Override
@@ -412,79 +285,109 @@ public class ClickGuiScreen extends Screen {
 		double mx = click.x();
 		double my = click.y();
 		int button = click.button();
+		dragAccum = 0;
+		pending = null;
 
-		searchFocused = RenderUtil.inside(mx, my, listX(), py + PAD, listW(), SEARCH_H);
+		int sw = Math.min(150, this.width - 20);
+		int sx = (this.width - sw) / 2;
+		searchFocused = RenderUtil.inside(mx, my, sx, 5, sw, 13);
 		if (searchFocused) return true;
 
-		if (sbMax > 0f && button == 0 && RenderUtil.inside(mx, my, sbX - 6, sbY, SB_HIT, sbH)) {
-			sbDrag = true;
-			dragScrollbarTo(my);
+		Category c = winAt(mx, my);
+		if (c == null) return super.mouseClicked(click, doubled);
+		ORDER.remove(c);
+		ORDER.add(c);
+
+		int[] p = pos(c);
+		int w = winW();
+		int x = p[0];
+		int y = p[1];
+		if (my < y + HEAD_H) {
+			dragWin = c;
+			dragOffX = (int) mx - x;
+			dragOffY = (int) my - y;
 			return true;
 		}
-
-		int x = px + PAD;
-		int y = py + PAD;
-		for (Category c : Category.values()) {
-			if (RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 4)) {
-				selected = c;
-				settingsOf = null;
-				search = "";
-				scroll = 0f;
-				scrollTarget = 0f;
+		scrollWin = c;
+		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
+		int ry = y + HEAD_H - Math.round(sc[0]);
+		int fh = FontUtil.height();
+		for (Module m : modules(c)) {
+			if (my >= ry && my < ry + ROW) {
+				boolean has = !m.settings().isEmpty();
+				boolean onArrow = has && mx >= x + w - ARROW_W;
+				if (has && (button == 1 || onArrow)) {
+					pending = () -> { if (!OPEN.remove(m)) OPEN.add(m); };
+				} else if (button == 0) {
+					pending = () -> { m.toggle(); Config.save(); };
+				}
 				return true;
 			}
-			y += CAT_H;
-		}
-
-		if (settingsOf != null && search.isEmpty()) {
-			if (RenderUtil.inside(mx, my, listX(), listY(), listW(), listH())) {
-				return clickSettings(mx, my);
-			}
-		} else {
-			int lx = listX();
-			int ly = listY();
-			int lw = listW();
-			int lh = listH();
-			if (RenderUtil.inside(mx, my, lx, ly, lw, lh)) {
-				int ry = ly - Math.round(scroll);
-				for (Module m : visibleModules()) {
-					if (RenderUtil.inside(mx, my, lx, ry, lw, ROW_H - 2)) {
-						boolean hasSettings = !m.settings().isEmpty();
-						boolean onDots = hasSettings && mx >= lx + lw - DOTS_W;
-						if (hasSettings && (button == 1 || (button == 0 && onDots))) {
-							settingsOf = m;
-							search = "";
-							scroll = 0f;
-							scrollTarget = 0f;
-							return true;
-						}
-						if (button == 0) {
-							m.toggle();
-							Config.save();
-						}
+			ry += ROW;
+			if (OPEN.contains(m)) {
+				for (Setting s : m.settings()) {
+					int sh = setH(s, w);
+					if (my >= ry && my < ry + sh) {
+						clickSetting(s, x, ry, w, sh, mx, my, fh);
 						return true;
 					}
-					ry += ROW_H;
+					ry += sh;
 				}
 			}
 		}
+		return true;
+	}
 
-		return super.mouseClicked(click, doubled);
+	private void clickSetting(Setting s, int x, int ry, int w, int sh, double mx, double my, int fh) {
+		if (s instanceof IntSetting is) {
+			int tx = x + 7;
+			int tw = w - 14;
+			int ty = ry + fh + 8;
+			if (RenderUtil.inside(mx, my, tx - 4, ty - 7, tw + 8, 17)) {
+				slider = is;
+				sliderX = tx;
+				sliderW = Math.max(1, tw);
+				is.setFraction((float) ((mx - tx) / sliderW));
+			}
+		} else if (s instanceof ColorSetting cs) {
+			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
+			for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
+				int sx = x + 7 + (i % per) * (SW + SW_GAP);
+				int sy = ry + 13 + (i / per) * (SW + SW_GAP);
+				if (RenderUtil.inside(mx, my, sx - 2, sy - 2, SW + 4, SW + 4)) {
+					final int idx = i;
+					pending = () -> { cs.setIndex(idx); Config.save(); };
+					return;
+				}
+			}
+		} else if (s instanceof KeybindSetting ks) {
+			pending = () -> ks.listening = !ks.listening;
+		} else if (s instanceof OreSetting os) {
+			final boolean onChip = mx >= x + w - 6 - 16;
+			pending = () -> {
+				if (onChip) os.cycleColor(); else os.toggle();
+				Config.save();
+			};
+		}
 	}
 
 	@Override
 	public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
-		if (sbDrag) {
-			dragScrollbarTo(click.y());
+		if (dragWin != null) {
+			int[] p = pos(dragWin);
+			p[0] = Mth.clamp((int) click.x() - dragOffX, -winW() + 20, this.width - 20);
+			p[1] = Mth.clamp((int) click.y() - dragOffY, 0, this.height - HEAD_H);
+			dragAccum += 100;
 			return true;
 		}
-		if (dragging != null) {
-			dragging.setFraction((float) ((click.x() - dragX) / dragW));
+		if (slider != null) {
+			slider.setFraction((float) ((click.x() - sliderX) / sliderW));
 			return true;
 		}
-		if (settingsOf != null && search.isEmpty()) {
+		if (scrollWin != null) {
 			dragAccum += Math.abs(offsetX) + Math.abs(offsetY);
-			scrollTarget -= (float) offsetY;
+			float[] sc = SCR.computeIfAbsent(scrollWin, k -> new float[] {0f});
+			sc[0] -= (float) offsetY;
 			return true;
 		}
 		return super.mouseDragged(click, offsetX, offsetY);
@@ -492,28 +395,24 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent click) {
-		if (sbDrag) {
-			sbDrag = false;
-			return true;
-		}
-		if (dragging != null) {
-			dragging = null;
-			Config.save();
-			return true;
-		}
-		if (pendingClick != null) {
-			Runnable r = pendingClick;
-			pendingClick = null;
-			if (dragAccum < 6) r.run();
-			dragAccum = 0;
-			return true;
-		}
-		return super.mouseReleased(click);
+		boolean was = dragWin != null || slider != null || scrollWin != null || pending != null;
+		if (slider != null) Config.save();
+		if (pending != null && dragAccum < 6) pending.run();
+		pending = null;
+		dragWin = null;
+		slider = null;
+		scrollWin = null;
+		dragAccum = 0;
+		return was || super.mouseReleased(click);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-		scrollTarget -= (float) (verticalAmount * 16.0);
+		Category c = winAt(mouseX, mouseY);
+		if (c != null) {
+			float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
+			sc[0] -= (float) (verticalAmount * 14.0);
+		}
 		return true;
 	}
 
@@ -522,8 +421,6 @@ public class ClickGuiScreen extends Screen {
 		int cp = input.codepoint();
 		if (searchFocused && cp >= 32 && cp != 127 && search.length() < 24) {
 			search += new String(Character.toChars(cp));
-			scroll = 0f;
-			scrollTarget = 0f;
 			return true;
 		}
 		return super.charTyped(input);
@@ -532,8 +429,8 @@ public class ClickGuiScreen extends Screen {
 	@Override
 	public boolean keyPressed(KeyEvent input) {
 		int key = input.key();
-		if (settingsOf != null) {
-			for (Setting st : settingsOf.settings()) {
+		for (Module m : OPEN) {
+			for (Setting st : m.settings()) {
 				if (st instanceof KeybindSetting ks && ks.listening) {
 					ks.listening = false;
 					if (key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE) {
