@@ -1,7 +1,7 @@
 package com.witch.gui;
 
 import com.mojang.authlib.GameProfile;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.Identifier;

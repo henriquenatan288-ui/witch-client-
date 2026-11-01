@@ -256,6 +256,48 @@ public class WitchTitleScreen extends Screen {
 		}
 	}
 
+	private void drawWord(GuiGraphicsExtractor g, String word, int cx, int y, int s, float glow, double sec) {
+		int total = word.length() * 6 * s - s;
+		int x = cx - total / 2;
+		double sweep = ((sec * 0.35) % 1.6) - 0.3; // 0..1 atravessa a palavra
+		for (int i = 0; i < word.length(); i++) {
+			String[] gl = glyph(word.charAt(i));
+			if (gl != null) {
+				for (int row = 0; row < 7; row++) {
+					for (int col = 0; col < 5; col++) {
+						if (gl[row + 1].charAt(col) != '1') continue;
+						int px = x + col * s;
+						int py = y + row * s;
+						// brilho suave em volta
+						g.fill(px - 2, py - 2, px + s + 2, py + s + 2, RenderUtil.alpha(Theme.ACCENT, 0.16f * glow));
+						// extrusao (profundidade)
+						g.fill(px + 2, py + 3, px + s + 2, py + s + 3, RenderUtil.alpha(0xFF2A0F55, 0.9f));
+						g.fill(px + 1, py + 2, px + s + 1, py + s + 2, RenderUtil.alpha(0xFF4B1A80, 0.9f));
+					}
+				}
+				for (int row = 0; row < 7; row++) {
+					for (int col = 0; col < 5; col++) {
+						if (gl[row + 1].charAt(col) != '1') continue;
+						int px = x + col * s;
+						int py = y + row * s;
+						double pos = ((x - (cx - total / 2.0)) + col * s) / (double) total;
+						float shine = (float) Math.max(0.0, 1.0 - Math.abs(pos + row * 0.02 - sweep) * 7.0);
+						int base = RenderUtil.mix(0xFFFFFFFF, 0xFFD2B0F5, row / 6f);
+						g.fill(px, py, px + s, py + s, RenderUtil.mix(base, 0xFFFFFFFF, shine));
+					}
+				}
+			}
+			x += 6 * s;
+		}
+	}
+
+	private static String[] glyph(char ch) {
+		for (String[] gl : GLYPHS) {
+			if (gl[0].charAt(0) == ch) return gl;
+		}
+		return null;
+	}
+
 	@Override
 	public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
 		if (click.button() == 0) {
