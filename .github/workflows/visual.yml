@@ -4,6 +4,9 @@ on:
     branches: [visual-test]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   shots:
     runs-on: ubuntu-latest
@@ -34,7 +37,15 @@ jobs:
           find . -path ./out -prune -o -type d -name screenshots -print | head
           find . -name "*.png" -path "*screenshots*" -exec cp {} out/ \; || true
           cp visual.log out/ || true
-          tail -60 visual.log | while IFS= read -r l; do echo "::notice::$l"; done
+          grep -n -E "What went wrong|FAILURE|Exception|Caused by|error:|Error|gametest|screenshot|Screenshot" visual.log | head -40 | while IFS= read -r l; do echo "::notice::$l"; done
+          tail -2000 visual.log > out/visual-tail.log; rm -f out/visual.log
+          git config user.name ci; git config user.email ci@example.com
+          git checkout -q --orphan shots-tmp
+          git rm -rf -q . || true
+          cp -r out/* . || true
+          git add -A .
+          git commit -q -m "screenshots" || true
+          git push -q -f origin shots-tmp:visual-shots || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
