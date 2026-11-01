@@ -72,12 +72,9 @@ public class WitchTitleScreen extends Screen {
 		}
 		for (int i = 0; i < STARS; i++) {
 			float tw = 0.30f + 0.55f * (float) (0.5 + 0.5 * Math.sin(sec * 1.5 + SP[i]));
-			g.fill(Math.round(SX[i] * w), Math.round(SY[i] * h), Math.round(SX[i] * w) + 1, Math.round(SY[i] * h) + 1, RenderUtil.alpha(0xFFFFFFFF, tw));
+			g.fill(Math.round(SX[i] * w), Math.round(SY[i] * h), Math.round(SX[i] * w) + 1, Math.round(SY[i] * h) + 1, RenderUtil.alpha(0xFFFFFFFF, tw * 0.6f));
 		}
 		waves(g, w, h, sec);
-		WitchVisuals.render(g, 0, 0, w, h, 0.8f);
-		hats.update(speed, w, h);
-		hats.render(g, 0, 0, w, h, 0.8f);
 
 		// marca no canto
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
@@ -104,7 +101,7 @@ public class WitchTitleScreen extends Screen {
 				RenderUtil.roundRect(g, menuX - 8, y + 4, 2, itemH - 12, 1, RenderUtil.alpha(Theme.ACCENT, ha));
 			}
 			int shift = Math.round(3 * ha);
-			diamond(g, menuX + 3 + shift, y + 8, 3, RenderUtil.mix(0xFF8A8A8A, 0xFFFFFFFF, ha));
+			g.fill(menuX + 3 + shift, y + 7, menuX + 6 + shift, y + 10, RenderUtil.mix(0xFF8A8A8A, 0xFFFFFFFF, ha));
 			FontUtil.draw(g, LABELS[i], menuX + 14 + shift, y + 3, RenderUtil.mix(0xFFD0D0D0, 0xFFFFFFFF, ha));
 			FontUtil.draw(g, SUBS[i], menuX + 14 + shift, y + 3 + FontUtil.height() + 1, RenderUtil.mix(0xFF666666, 0xFFB0B0B0, ha));
 		}
@@ -175,8 +172,8 @@ public class WitchTitleScreen extends Screen {
 			boolean on = arrived && wt >= 0 && wt < 2.6;
 			for (net.minecraft.client.model.geom.ModelPart part : armParts) {
 				if (on) {
-					part.xRot = -2.9f;
-					part.zRot = (float) (Math.sin(wt * 9.0) * 0.35 + 0.15);
+					part.xRot = 0f;
+					part.zRot = (float) (2.35 + Math.sin(wt * 9.0) * 0.22);
 				} else {
 					part.resetPose();
 				}
@@ -215,21 +212,6 @@ public class WitchTitleScreen extends Screen {
 			g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF1E1E1E, 0.7f));
 			int cx = x + mw / 2;
 			RenderUtil.roundRect(g, cx - mw / 2, groundY - 2, mw, 4, 2, RenderUtil.alpha(0xFF000000, 0.45f));
-			if (k >= 1.0) {
-				for (int r = 6; r >= 1; r--) {
-					RenderUtil.roundRect(g, cx - r * 12, y + mh / 8 - r * 3, r * 24, mh * 3 / 4 + r * 6, r * 12,
-							RenderUtil.alpha(0xFFFFFFFF, 0.018f));
-				}
-				for (int q = 0; q < 8; q++) {
-					double a = sec * 0.6 + q * 0.785;
-					int sx = (int) (cx + Math.cos(a) * (mw * 0.55 + (q % 3) * 6));
-					int sy = (int) (y + mh * 0.5 + Math.sin(a * 1.3) * (mh * 0.38 + (q % 2) * 6));
-					float tw = 0.4f + 0.6f * (float) (0.5 + 0.5 * Math.sin(sec * 2.0 + q));
-					int c = RenderUtil.alpha(0xFFFFFFFF, tw);
-					g.fill(sx - 2, sy, sx + 3, sy + 1, c);
-					g.fill(sx, sy - 2, sx + 1, sy + 3, c);
-				}
-			}
 			wave(t, k >= 1.0);
 			skinWidget.extractRenderState(g, mx, my, 0f);
 			if (k >= 1.0) {
@@ -402,7 +384,7 @@ public class WitchTitleScreen extends Screen {
 						if (gl[row + 1].charAt(col) != '1') continue;
 						int px = x + col * s;
 						int py = y + row * s;
-						g.fill(px + 1, py + 1, px + s + 1, py + s + 1, RenderUtil.alpha(0xFF3A3A3A, 0.95f));
+						g.fill(px, py + 1, px + s, py + s + 1, RenderUtil.alpha(0xFF2A2A2A, 0.9f));
 					}
 				}
 				for (int row = 0; row < 7; row++) {
