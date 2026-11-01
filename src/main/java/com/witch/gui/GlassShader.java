@@ -11,7 +11,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class GlassShader {
 	private GlassShader() {}
 
-	private static final int R = 8;               // raio do painel (igual ao do ClickGuiScreen)
+	private static final int R = 16;               // raio do painel (igual ao do ClickGuiScreen)
 	private static final int SHADOW_LAYERS = 6;
 	private static final long SHIMMER_MS = 7000L; // tempo de uma passada do reflexo
 	private static final int SHIMMER_HALF = 26;   // meia largura do reflexo (px)
@@ -88,6 +88,6 @@ public final class GlassShader {
 	/** Fundo fosco atras da barra lateral de categorias. */
 	public static void sidebar(GuiGraphicsExtractor g, int x, int y, int w, int h, float a) {
 		int c = RenderUtil.mix(0xFFFFFFFF, 0xFFB57BEA, TimeTheme.night);
-		RenderUtil.roundRect(g, x - 2, y - 2, w + 4, h + 4, 6, RenderUtil.alpha(c, a * 0.14f));
+		RenderUtil.roundRect(g, x - 2, y - 2, w + 4, h + 4, 14, RenderUtil.alpha(c, a * 0.14f));
 	}
 }

@@ -26,11 +26,11 @@ public class ClickGuiScreen extends Screen {
 	private static final int MAX_W = 420;
 	private static final int MAX_H = 300;
 	private static final int MARGIN = 8;
-	private static final int PAD = 8;
+	private static final int PAD = 10;
 	private static final int SIDEBAR_W = 100;
-	private static final int CAT_H = 24;
-	private static final int ROW_H = 20;
-	private static final int SEARCH_H = 20;
+	private static final int CAT_H = 30;
+	private static final int ROW_H = 25;
+	private static final int SEARCH_H = 24;
 	private static final int DOTS_W = 30;
 	private static final int INT_ROW_H = 30;
 	private static final int COLOR_ROW_H = 38;
@@ -118,7 +118,7 @@ public class ClickGuiScreen extends Screen {
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x44000000, a));
 		GlassShader.glow(g, px, py, panelW, panelH, a);
 		GlassShader.shadow(g, px, py, panelW, panelH, a);
-		RenderUtil.roundRect(g, px, py, panelW, panelH, 8, RenderUtil.alpha(TimeTheme.panel, a));
+		RenderUtil.roundRect(g, px, py, panelW, panelH, 16, RenderUtil.alpha(TimeTheme.panel, a));
 		GlassShader.glass(g, px, py, panelW, panelH, a);
 		GlassShader.sidebar(g, px + PAD, py + PAD, SIDEBAR_W, panelH - PAD * 2, a);
 
@@ -143,12 +143,15 @@ public class ClickGuiScreen extends Screen {
 			boolean active = c == selected && search.isEmpty();
 			boolean hover = RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 4);
 			if (active) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 5, RenderUtil.alpha(Theme.SIDEBAR_ITEM_ACTIVE, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 13, RenderUtil.alpha(Theme.SIDEBAR_ITEM_ACTIVE, a));
 			} else if (hover) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 5, RenderUtil.alpha(TimeTheme.hover, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 13, RenderUtil.alpha(TimeTheme.hover, a));
 			}
 			int ty = y + (CAT_H - 4 - FontUtil.height()) / 2;
-			FontUtil.draw(g, c.label, x + 10, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
+			int dot = (CAT_H - 4) / 2;
+			RenderUtil.roundRect(g, x + 10, y + dot - 3, 6, 6, 3,
+					RenderUtil.alpha(active ? 0xFFFFFFFF : TimeTheme.dim, a * (active ? 1f : 0.55f)));
+			FontUtil.draw(g, c.label, x + 22, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
 			y += CAT_H;
 		}
 	}
@@ -157,7 +160,7 @@ public class ClickGuiScreen extends Screen {
 		int x = listX();
 		int y = py + PAD;
 		int w = listW();
-		RenderUtil.roundRect(g, x, y, w, SEARCH_H, 5, RenderUtil.alpha(TimeTheme.search, a));
+		RenderUtil.roundRect(g, x, y, w, SEARCH_H, 12, RenderUtil.alpha(TimeTheme.search, a));
 
 		String shown;
 		int color;
@@ -169,7 +172,7 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			color = TimeTheme.input;
 		}
-		FontUtil.draw(g, shown, x + 8, y + (SEARCH_H - FontUtil.height()) / 2, RenderUtil.alpha(color, a));
+		FontUtil.draw(g, shown, x + 12, y + (SEARCH_H - FontUtil.height()) / 2, RenderUtil.alpha(color, a));
 	}
 
 	private void renderModules(GuiGraphicsExtractor g, int mx, int my, float speed, float a) {
@@ -199,11 +202,11 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.25f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 
 			if (m.hoverAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 5,
+				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 12,
 						RenderUtil.alpha(TimeTheme.hover, a * m.hoverAnim));
 			}
 			if (m.toggleAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 5,
+				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 12,
 						RenderUtil.alpha(Theme.MODULE_ON, a * m.toggleAnim));
 			}
 
@@ -262,7 +265,7 @@ public class ClickGuiScreen extends Screen {
 		// linha "< Modulo" fica fixa no topo
 		boolean hoverBack = RenderUtil.inside(mx, my, x, y, w, ROW_H - 2);
 		if (hoverBack) {
-			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, 5, RenderUtil.alpha(TimeTheme.hover, a));
+			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, 12, RenderUtil.alpha(TimeTheme.hover, a));
 		}
 		FontUtil.draw(g, "< " + settingsOf.name, x + 8, y + (ROW_H - 2 - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
 
@@ -310,7 +313,7 @@ public class ClickGuiScreen extends Screen {
 				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
 						&& RenderUtil.inside(mx, my, x, ly, w, lh);
 				if (hover || ks.listening) {
-					RenderUtil.roundRect(g, x, ry, w, rh, 5, RenderUtil.alpha(TimeTheme.hover, a));
+					RenderUtil.roundRect(g, x, ry, w, rh, 9, RenderUtil.alpha(TimeTheme.hover, a));
 				}
 				FontUtil.draw(g, ks.name, x + 8, ry + (rh - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
 				String lab = ks.label();
@@ -325,7 +328,7 @@ public class ClickGuiScreen extends Screen {
 				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
 						&& RenderUtil.inside(mx, my, x, ly, w, lh);
 				if (hover) {
-					RenderUtil.roundRect(g, x, ry, w, rh, 5, RenderUtil.alpha(TimeTheme.hover, a));
+					RenderUtil.roundRect(g, x, ry, w, rh, 9, RenderUtil.alpha(TimeTheme.hover, a));
 				}
 				int bx = x + 8;
 				int by = ry + (rh - 12) / 2;
