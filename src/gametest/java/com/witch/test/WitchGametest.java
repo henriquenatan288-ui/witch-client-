@@ -13,5 +13,8 @@ public class WitchGametest implements FabricClientGameTest {
 		context.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
 		context.waitTicks(60);
 		context.takeScreenshot("02-clickgui");
+		System.setProperty("witch.noTitleSwap", "true");
+		context.runOnClient(mc -> mc.gui.setScreen(new net.minecraft.client.gui.screens.TitleScreen()));
+		context.waitTicks(5);
 	}
 }

@@ -28,6 +28,7 @@ jobs:
         shell: bash
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MESA_GL_VERSION_OVERRIDE: "4.6"
           MESA_GLSL_VERSION_OVERRIDE: "460"
         run: |
@@ -39,13 +40,13 @@ jobs:
           cp visual.log out/ || true
           grep -n -E "What went wrong|FAILURE|Exception|Caused by|error:|Error|gametest|screenshot|Screenshot" visual.log | head -40 | while IFS= read -r l; do echo "::notice::$l"; done
           tail -2000 visual.log > out/visual-tail.log; rm -f out/visual.log
+          rm -rf /tmp/shots-repo; mkdir -p /tmp/shots-repo; cp -r out/* /tmp/shots-repo/ || true
+          cd /tmp/shots-repo
+          git init -q; git checkout -q -b visual-shots
           git config user.name ci; git config user.email ci@example.com
-          git checkout -q --orphan shots-tmp
-          git rm -rf -q . || true
-          cp -r out/* . || true
-          git add -A .
-          git commit -q -m "screenshots" || true
-          git push -q -f origin shots-tmp:visual-shots || true
+          git add -A; git commit -q -m screenshots || true
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -q -f origin visual-shots || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
