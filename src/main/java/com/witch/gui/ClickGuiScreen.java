@@ -133,6 +133,24 @@ public class ClickGuiScreen extends Screen {
 		return new int[] {x - p[0], y - p[1]};
 	}
 
+	/** Arrastar o titulo no modo 3D move a janela pelo mundo (muda onde ela esta ancorada). */
+	private void drag3d(Category c, double dxPx, double dyPx) {
+		var pl = Minecraft.getInstance().player;
+		if (pl == null || this.width <= 0) return;
+		double[] a = ANCH[c.ordinal()];
+		double vx = a[0] - pl.getX();
+		double vz = a[2] - pl.getZ();
+		double h = Math.max(0.5, Math.hypot(vx, vz));
+		double ang = Math.atan2(-vx, vz);
+		double tanY = Math.tan(Math.toRadians(Minecraft.getInstance().options.fov().get()) / 2.0);
+		double fovH = 2.0 * Math.atan(tanY * this.width / Math.max(1, this.height));
+		double perPx = fovH / this.width;
+		ang += dxPx * perPx;
+		a[0] = pl.getX() - Math.sin(ang) * h;
+		a[2] = pl.getZ() + Math.cos(ang) * h;
+		a[1] -= dyPx * perPx * h;
+	}
+
 	public static void renderPinned(GuiGraphicsExtractor g) {
 		ClickGuiScreen s = LAST;
 		if (!PINNED || !MODE3D || s == null || s.width <= 0) return;
@@ -206,9 +224,19 @@ public class ClickGuiScreen extends Screen {
 		return p;
 	}
 
+	private int winWCache = WIN_W;
+
 	private int winW() {
+		return winWCache;
+	}
+
+	private void updateWinW() {
 		int n = Category.values().length;
-		return Math.max(70, Math.min(WIN_W, (this.width - 8 - GAP * (n - 1)) / n));
+		int mx = 0;
+		for (Module m : ModuleManager.all()) mx = Math.max(mx, FontUtil.width(m.name));
+		int want = Math.max(WIN_W, mx + 30);
+		int cap = (this.width - 8 - GAP * (n - 1)) / n;
+		winWCache = Math.max(70, Math.min(want, cap));
 	}
 
 	private List<Module> modules(Category c) {
@@ -251,6 +279,7 @@ public class ClickGuiScreen extends Screen {
 		long now = System.nanoTime();
 		float speed = lastNanos == 0 ? 1f : Math.min(3f, (now - lastNanos) / 16_666_667f);
 		lastNanos = now;
+		updateWinW();
 		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
 		openT += speed / 60f;
 		float a = openAnim;
@@ -274,8 +303,12 @@ public class ClickGuiScreen extends Screen {
 		}
 		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
 
-		chip(g, sx + sw + 6, 5, 22, 13, "3D", MODE3D, a);
-		chip(g, sx + sw + 32, 5, 28, 13, "PIN", PINNED, a);
+		int c1w = FontUtil.width("3D") + 10;
+		int c2w = FontUtil.width("PIN") + 10;
+		int c1x = sx + sw + 6;
+		int c2x = c1x + c1w + 5;
+		chip(g, c1x, 5, c1w, 13, "3D", MODE3D, a);
+		chip(g, c2x, 5, c2w, 13, "PIN", PINNED, a);
 
 		float tx = (mx - this.width / 2f) / Math.max(1, this.width);
 		float ty = (my - this.height / 2f) / Math.max(1, this.height);
@@ -457,12 +490,16 @@ public class ClickGuiScreen extends Screen {
 		int sx = (this.width - sw) / 2;
 		searchFocused = RenderUtil.inside(mx, my, sx, 5, sw, 13);
 		if (searchFocused) return true;
-		if (RenderUtil.inside(mx, my, sx + sw + 6, 5, 22, 13)) {
+		int c1w = FontUtil.width("3D") + 10;
+		int c2w = FontUtil.width("PIN") + 10;
+		int c1x = sx + sw + 6;
+		int c2x = c1x + c1w + 5;
+		if (RenderUtil.inside(mx, my, c1x, 5, c1w, 13)) {
 			MODE3D = !MODE3D;
 			if (MODE3D) placeAnchors(); else PINNED = false;
 			return true;
 		}
-		if (RenderUtil.inside(mx, my, sx + sw + 32, 5, 28, 13)) {
+		if (RenderUtil.inside(mx, my, c2x, 5, c2w, 13)) {
 			if (MODE3D) PINNED = !PINNED;
 			return true;
 		}
@@ -578,7 +615,12 @@ public class ClickGuiScreen extends Screen {
 			if (pl != null) pl.turn(-offsetX * 1.2, -offsetY * 1.2);
 			return true;
 		}
-		if (dragWin != null && !MODE3D) {
+		if (dragWin != null && MODE3D) {
+			drag3d(dragWin, offsetX, offsetY);
+			dragAccum += 100;
+			return true;
+		}
+		if (dragWin != null) {
 			int[] p = pos(dragWin);
 			int[] o = drawOff.getOrDefault(dragWin, new int[] {0, 0});
 			p[0] = Mth.clamp((int) click.x() - dragOffX - o[0], -winW() + 20, this.width - 20);
