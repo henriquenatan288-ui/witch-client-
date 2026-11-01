@@ -64,6 +64,8 @@ public class ClickGuiScreen extends Screen {
 	private String search = "";
 	private boolean searchFocused = false;
 	private float openAnim = 0f;
+	private float openT = 0f;
+	private int curYOff = 0;
 	private long lastNanos = 0L;
 
 	public ClickGuiScreen() {
@@ -143,6 +145,7 @@ public class ClickGuiScreen extends Screen {
 		float speed = lastNanos == 0 ? 1f : Math.min(3f, (now - lastNanos) / 16_666_667f);
 		lastNanos = now;
 		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
+		openT += speed / 60f;
 		float a = openAnim;
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x99000000, a));
@@ -165,7 +168,10 @@ public class ClickGuiScreen extends Screen {
 		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
 
 		for (Category c : ORDER) {
-			renderWindow(g, c, mx, my, speed, a);
+			float k = Mth.clamp((openT - c.ordinal() * 0.07f) / 0.28f, 0f, 1f);
+			float e = 1f - (1f - k) * (1f - k) * (1f - k);
+			curYOff = Math.round((1f - e) * 12f);
+			renderWindow(g, c, mx, my, speed, a * e);
 		}
 	}
 
@@ -185,7 +191,7 @@ public class ClickGuiScreen extends Screen {
 		int vh = viewH(c, w);
 		int ch = contentH(c, w);
 		int x = p[0];
-		int y = p[1];
+		int y = p[1] + curYOff;
 		float maxScroll = Math.max(0, ch - vh);
 		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
 		sc[0] = Mth.clamp(sc[0], 0, maxScroll);
@@ -217,8 +223,10 @@ public class ClickGuiScreen extends Screen {
 					g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.20f - 0.17f * q / (sl - 1f))));
 				}
 				g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(TXT, a * m.toggleAnim));
-			} else if (hover) {
-				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.07f));
+			}
+			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
+			if (m.hoverAnim > 0.02f && m.toggleAnim < 0.5f) {
+				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f * m.hoverAnim));
 			}
 			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
 			FontUtil.draw(g, m.name, x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
