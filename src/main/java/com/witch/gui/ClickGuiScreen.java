@@ -355,9 +355,10 @@ public class ClickGuiScreen extends Screen {
 	}
 
 	/** So para o teste automatico: liga o modo 3D e fixa as janelas. */
-	public static void debug3d() {
+	public void debug3d() {
 		MODE3D = true;
 		PINNED = true;
+		placeAnchors();
 	}
 
 	private static void vgrad(GuiGraphicsExtractor g, int x, int y, int w, int h, int top, int bot, float a) {
@@ -409,11 +410,11 @@ public class ClickGuiScreen extends Screen {
 			boolean hover = RenderUtil.inside(mx, my, x, ry, w, ROW) && RenderUtil.inside(mx, my, x, by, w, vh);
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			if (m.toggleAnim > 0.02f) {
-				int sl = 8;
+				int sl = 20;
 				for (int q = 0; q < sl; q++) {
 					int x0 = x + w * q / sl;
 					int x1 = x + w * (q + 1) / sl;
-					g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.20f - 0.17f * q / (sl - 1f))));
+					g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.16f - 0.14f * q / (sl - 1f))));
 				}
 				g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(TXT, a * m.toggleAnim));
 			}

@@ -45,9 +45,9 @@ public final class HudRenderer {
 		int x = 5;
 		int y = 5;
 		FontUtil.draw(g, "WITCH", x + 1, y, 0xFFFFFFFF);
-		FontUtil.draw(g, "CLIENT", x + 2 + FontUtil.width("WITCH"), y, 0xFF7A7A7A);
+		FontUtil.draw(g, "CLIENT", x + 6 + FontUtil.width("WITCH"), y, 0xFF9A9A9A);
 		y += FontUtil.height() + 3;
-		g.fill(x, y - 2, x + FontUtil.width("WITCH CLIENT") + 6, y - 1, 0x55FFFFFF);
+		g.fill(x, y - 2, x + FontUtil.width("WITCH CLIENT") + 12, y - 1, 0x55FFFFFF);
 
 		int rh = FontUtil.height() + 3;
 		for (Module m : shown) {
@@ -55,7 +55,7 @@ public final class HudRenderer {
 			float e = 1f - (1f - a) * (1f - a);
 			int w = FontUtil.width(m.name) + 9;
 			int ox = Math.round(-(1f - e) * (w + 6));
-			g.fill(x + ox, y, x + ox + w, y + rh, RenderUtil.alpha(0xFF000000, 0.45f * a));
+			g.fill(x + ox, y, x + ox + w, y + rh, RenderUtil.alpha(0xFF000000, 0.62f * a));
 			g.fill(x + ox, y, x + ox + 1, y + rh, RenderUtil.alpha(0xFFFFFFFF, a));
 			FontUtil.draw(g, m.name, x + ox + 5, y + 2, RenderUtil.alpha(0xFFFFFFFF, a));
 			y += Math.round(rh * e);
