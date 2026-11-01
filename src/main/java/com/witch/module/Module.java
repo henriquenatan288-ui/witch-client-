@@ -1,5 +1,6 @@
 package com.witch.module;
 
+import com.witch.setting.KeybindSetting;
 import com.witch.setting.Setting;
 
 import java.util.ArrayList;
@@ -10,36 +11,38 @@ public abstract class Module {
 	public final Category category;
 	private boolean enabled;
 	private final List<Setting> settings = new ArrayList<>();
-
-	public float hoverAnim = 0f;
-	public float toggleAnim = 0f;
+	public final KeybindSetting keybind = new KeybindSetting();
+	public float hoverAnim = 0.0f;
+	public float toggleAnim = 0.0f;
 
 	protected Module(String name, Category category) {
 		this.name = name;
 		this.category = category;
+		this.settings.add(this.keybind);
 	}
 
 	protected <T extends Setting> T add(T setting) {
-		settings.add(setting);
+		this.settings.add(setting);
 		return setting;
 	}
 
 	public List<Setting> settings() {
-		return settings;
+		return this.settings;
 	}
 
 	public boolean isEnabled() {
-		return enabled;
+		return this.enabled;
 	}
 
 	public void setEnabled(boolean value) {
 		if (this.enabled == value) return;
 		this.enabled = value;
-		if (value) onEnable(); else onDisable();
+		if (value) this.onEnable();
+		else this.onDisable();
 	}
 
 	public void toggle() {
-		setEnabled(!enabled);
+		this.setEnabled(!this.enabled);
 	}
 
 	public void onTick() {}

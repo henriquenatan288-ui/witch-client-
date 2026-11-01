@@ -1,7 +1,12 @@
 package com.witch.module;
 
+import com.witch.config.Config;
 import com.witch.render.EspRenderer;
 import com.witch.render.EspSource;
+import com.witch.setting.KeybindSetting;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.Window;
+import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +20,6 @@ public final class ModuleManager {
 		MODULES.clear();
 		EspRenderer.clearSources();
 
-		// Visuals
 		MODULES.add(new XRayModule());
 		MODULES.add(new PlayerEspModule());
 		MODULES.add(new StorageEspModule());
@@ -24,17 +28,21 @@ public final class ModuleManager {
 		MODULES.add(new SusHoleFinderModule());
 		MODULES.add(new SusChunkFinderModule());
 		MODULES.add(new SlowHitModule());
+		MODULES.add(new NoGhostBlocksModule());
+		MODULES.add(new BreakDelayModule());
+		MODULES.add(new AncientFinderModule());
+		MODULES.add(new TriggerBotModule());
+		MODULES.add(new FullbrightModule());
+		MODULES.add(new FreecamModule());
+		MODULES.add(new WitchParticlesModule());
+		MODULES.add(new BreakWaveModule());
+		MODULES.add(new AntiVanishModule());
 		MODULES.add(new ParticlesModule());
-
-		// Movement
 		MODULES.add(new FlyModule());
 		MODULES.add(new SpeedModule());
 		MODULES.add(new JesusModule());
-
-		// Utility
 		MODULES.add(new AutoEatModule());
 		MODULES.add(new AutoToolModule());
-		MODULES.add(new TriggerBotModule());
 
 		for (Module m : MODULES) {
 			if (m instanceof EspSource s) {
@@ -61,6 +69,24 @@ public final class ModuleManager {
 			if (m.name.equals(name)) return m;
 		}
 		return null;
+	}
+
+	public static void pollKeys(Minecraft mc) {
+		Window window = mc.getWindow();
+		boolean free = mc.gui.screen() == null;
+		for (Module m : MODULES) {
+			KeybindSetting kb = m.keybind;
+			if (kb.key() == 0) {
+				kb.wasDown = false;
+				continue;
+			}
+			boolean down = InputConstants.isKeyDown(window, kb.key());
+			if (down && !kb.wasDown && free) {
+				m.toggle();
+				Config.save();
+			}
+			kb.wasDown = down;
+		}
 	}
 
 	public static void tick() {
