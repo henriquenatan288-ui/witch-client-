@@ -39,8 +39,6 @@ public class ClickGuiScreen extends Screen {
 	private static final int SWATCH_GAP = 4;
 	private static final int RADIUS = 4;
 
-	private final LeafParticles leaves = new LeafParticles();
-
 	private Category selected = Category.VISUALS;
 	private Module settingsOf = null;
 	private IntSetting dragging = null;
@@ -64,7 +62,6 @@ public class ClickGuiScreen extends Screen {
 		this(null);
 	}
 
-	/** Se 'openSettings' nao for nulo, a tela ja abre nos ajustes desse modulo. */
 	public ClickGuiScreen(Module openSettings) {
 		super(Component.literal("Witch Client"));
 		if (openSettings != null && !openSettings.settings().isEmpty()) {
@@ -106,26 +103,21 @@ public class ClickGuiScreen extends Screen {
 
 		TimeTheme.update();
 
-		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
+		openAnim = Mth.lerp(Math.min(1f, speed * 0.18f), openAnim, 1f);
 		float a = openAnim;
 
 		panelW = Math.max(220, Math.min(MAX_W, this.width - MARGIN * 2));
 		panelH = Math.max(120, Math.min(MAX_H, this.height - MARGIN * 2));
 		px = (this.width - panelW) / 2;
-		py = (this.height - panelH) / 2 + (int) ((1f - a) * 8f);
+		py = (this.height - panelH) / 2 + (int) ((1f - a) * 10f);
 
 		// Overlay escuro
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x66000000, a));
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x88000000, a));
 
-		// Painel principal
+		// Painel principal limpo
 		RenderUtil.roundRect(g, px, py, panelW, panelH, RADIUS + 2, RenderUtil.alpha(TimeTheme.panel, a));
 
-		// Constelação bem sutil
-		GuiVisuals.render(g, px, py, panelW, panelH, a * 0.35f);
-
-		// Folhas bem discretas
-		leaves.update(speed, panelW, panelH);
-		leaves.render(g, px, py, panelW, panelH, a * 0.18f);
+		// Sem partículas / folhas / constelação (visual limpo)
 
 		renderSidebar(g, mouseX, mouseY, a);
 		renderSearch(g, a);
@@ -143,12 +135,14 @@ public class ClickGuiScreen extends Screen {
 			boolean active = c == selected && search.isEmpty();
 			boolean hover = RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 3);
 			if (active) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 3, RADIUS, RenderUtil.alpha(Theme.SIDEBAR_ITEM_ACTIVE, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 3, RADIUS, RenderUtil.alpha(0xFF1A1A28, a));
+				// barra de accent à esquerda
+				RenderUtil.roundRect(g, x, y + 3, 2, CAT_H - 9, 1, RenderUtil.alpha(Theme.ACCENT, a));
 			} else if (hover) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 3, RADIUS, RenderUtil.alpha(TimeTheme.hover, a));
+				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 3, RADIUS, RenderUtil.alpha(0x14FFFFFF, a));
 			}
 			int ty = y + (CAT_H - 3 - FontUtil.height()) / 2;
-			FontUtil.draw(g, c.label, x + 9, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
+			FontUtil.draw(g, c.label, x + 10, ty, RenderUtil.alpha(active ? Theme.TEXT : TimeTheme.dim, a));
 			y += CAT_H;
 		}
 	}
@@ -157,7 +151,7 @@ public class ClickGuiScreen extends Screen {
 		int x = listX();
 		int y = py + PAD;
 		int w = listW();
-		RenderUtil.roundRect(g, x, y, w, SEARCH_H, RADIUS, RenderUtil.alpha(TimeTheme.search, a));
+		RenderUtil.roundRect(g, x, y, w, SEARCH_H, RADIUS, RenderUtil.alpha(0xFF121212, a));
 
 		String shown;
 		int color;
@@ -200,11 +194,11 @@ public class ClickGuiScreen extends Screen {
 
 			if (m.hoverAnim > 0.01f) {
 				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, RADIUS,
-						RenderUtil.alpha(TimeTheme.hover, a * m.hoverAnim));
+						RenderUtil.alpha(0x14FFFFFF, a * m.hoverAnim));
 			}
 			if (m.toggleAnim > 0.01f) {
 				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, RADIUS,
-						RenderUtil.alpha(Theme.MODULE_ON, a * m.toggleAnim));
+						RenderUtil.alpha(0xFF161622, a * m.toggleAnim));
 			}
 
 			int textColor = RenderUtil.mix(TimeTheme.dim, Theme.TEXT, m.toggleAnim);
@@ -218,7 +212,6 @@ public class ClickGuiScreen extends Screen {
 		}
 		g.disableScissor();
 
-		// Scrollbar dos módulos
 		if (maxScroll > 0) {
 			int thumbH = Math.max(12, Math.round(h * (h / (float) contentH)));
 			int thumbY = y + Math.round((h - thumbH) * (scroll / maxScroll));
@@ -236,7 +229,7 @@ public class ClickGuiScreen extends Screen {
 
 		boolean hoverBack = RenderUtil.inside(mx, my, x, y, w, ROW_H - 2);
 		if (hoverBack) {
-			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, RADIUS, RenderUtil.alpha(TimeTheme.hover, a));
+			RenderUtil.roundRect(g, x, y, w, ROW_H - 2, RADIUS, RenderUtil.alpha(0x14FFFFFF, a));
 		}
 		FontUtil.draw(g, "< " + settingsOf.name, x + 7, y + (ROW_H - 2 - fh) / 2, RenderUtil.alpha(TimeTheme.dim, a));
 
@@ -261,7 +254,7 @@ public class ClickGuiScreen extends Screen {
 				int tx = x + 7;
 				int tw = w - 14;
 				int ty = ry + fh + 5;
-				RenderUtil.roundRect(g, tx, ty, tw, 5, 2, RenderUtil.alpha(TimeTheme.search, a));
+				RenderUtil.roundRect(g, tx, ty, tw, 5, 2, RenderUtil.alpha(0xFF121212, a));
 				int fw = Math.round(tw * is.fraction());
 				if (fw > 0) {
 					RenderUtil.roundRect(g, tx, ty, Math.max(fw, 4), 5, 2, RenderUtil.alpha(Theme.ACCENT, a));
@@ -284,11 +277,11 @@ public class ClickGuiScreen extends Screen {
 				boolean hover = RenderUtil.inside(mx, my, x, ry, w, rh)
 						&& RenderUtil.inside(mx, my, x, ly, w, lh);
 				if (hover) {
-					RenderUtil.roundRect(g, x, ry, w, rh, RADIUS, RenderUtil.alpha(TimeTheme.hover, a));
+					RenderUtil.roundRect(g, x, ry, w, rh, RADIUS, RenderUtil.alpha(0x14FFFFFF, a));
 				}
 				int bx = x + 7;
 				int by = ry + (rh - 11) / 2;
-				RenderUtil.roundRect(g, bx, by, 11, 11, 2, RenderUtil.alpha(TimeTheme.search, a));
+				RenderUtil.roundRect(g, bx, by, 11, 11, 2, RenderUtil.alpha(0xFF121212, a));
 				if (os.enabled()) {
 					RenderUtil.roundRect(g, bx + 2, by + 2, 7, 7, 2, RenderUtil.alpha(Theme.ACCENT, a));
 				}
@@ -303,7 +296,6 @@ public class ClickGuiScreen extends Screen {
 		}
 		g.disableScissor();
 
-		// Scrollbar settings
 		if (maxScroll > 0) {
 			int thumbH = Math.max(12, Math.round(lh * (lh / (float) contentH)));
 			int thumbY = ly + Math.round((lh - thumbH) * (scroll / maxScroll));
