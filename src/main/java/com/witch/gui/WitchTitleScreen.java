@@ -144,12 +144,6 @@ public class WitchTitleScreen extends Screen {
 		}
 	}
 
-	private static int spacedWidth(String s) {
-		int w = 0;
-		for (int i = 0; i < s.length(); i++) w += FontUtil.width(String.valueOf(s.charAt(i))) + 1;
-		return w;
-	}
-
 	private static void diamond(GuiGraphicsExtractor g, int cx, int cy, int r, int color) {
 		for (int dy = -r; dy <= r; dy++) {
 			int half = r - Math.abs(dy);
