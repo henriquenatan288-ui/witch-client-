@@ -28,17 +28,17 @@ import java.util.Set;
 
 /** ClickGUI estilo Meteor: uma janela arrastavel por categoria, modulos em linhas, ajustes abrem dentro da janela. Monocromatico. */
 public class ClickGuiScreen extends Screen {
-	private static final int WIN_W = 112;
+	private static final int WIN_W = 100;
 	private static final int GAP = 6;
-	private static final int HEAD_H = 18;
-	private static final int ROW = 16;
-	private static final int INT_H = 26;
-	private static final int ORE_H = 16;
-	private static final int SW = 9;
+	private static final int HEAD_H = 15;
+	private static final int ROW = 13;
+	private static final int INT_H = 22;
+	private static final int ORE_H = 13;
+	private static final int SW = 8;
 	private static final int SW_GAP = 3;
-	private static final int ARROW_W = 20;
+	private static final int ARROW_W = 18;
 
-	private static final int BG = 0xF2101010;
+	private static final int BG = 0xFF111111;
 	private static final int HEAD = 0xFF1A1A1A;
 	private static final int LINE = 0xFF3A3A3A;
 	private static final int ROW_ON = 0xFF262626;
@@ -145,7 +145,7 @@ public class ClickGuiScreen extends Screen {
 		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
 		float a = openAnim;
 
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x66000000, a));
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x99000000, a));
 
 		// busca no topo
 		int sw = Math.min(150, this.width - 20);
@@ -169,6 +169,16 @@ public class ClickGuiScreen extends Screen {
 		}
 	}
 
+	private static void vgrad(GuiGraphicsExtractor g, int x, int y, int w, int h, int top, int bot, float a) {
+		if (h <= 0) return;
+		int n = Math.max(1, Math.min(h, 24));
+		for (int i = 0; i < n; i++) {
+			int y0 = y + h * i / n;
+			int y1 = y + h * (i + 1) / n;
+			g.fill(x, y0, x + w, y1, RenderUtil.alpha(RenderUtil.mix(top, bot, i / (float) Math.max(1, n - 1)), a));
+		}
+	}
+
 	private void renderWindow(GuiGraphicsExtractor g, Category c, int mx, int my, float speed, float a) {
 		int[] p = pos(c);
 		int w = winW();
@@ -180,10 +190,15 @@ public class ClickGuiScreen extends Screen {
 		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
 		sc[0] = Mth.clamp(sc[0], 0, maxScroll);
 
-		g.fill(x - 1, y - 1, x + w + 1, y + HEAD_H + vh + 1, RenderUtil.alpha(LINE, a));
-		g.fill(x, y, x + w, y + HEAD_H, RenderUtil.alpha(HEAD, a));
-		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(LINE, a));
-		g.fill(x, y + HEAD_H, x + w, y + HEAD_H + vh, RenderUtil.alpha(BG, a));
+		int totalH = HEAD_H + vh;
+		for (int k = 4; k >= 1; k--) {
+			g.fill(x - k, y - k + 2, x + w + k, y + totalH + k + 2, RenderUtil.alpha(0xFF000000, a * 0.07f));
+		}
+		g.fill(x - 1, y - 1, x + w + 1, y + totalH + 1, RenderUtil.alpha(LINE, a));
+		vgrad(g, x, y + HEAD_H, w, vh, 0xFF171717, 0xFF0A0A0A, a);
+		vgrad(g, x, y, w, HEAD_H, 0xFF2A2A2A, 0xFF161616, a);
+		g.fill(x, y, x + w, y + 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.14f));
+		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(0xFF000000, a * 0.6f));
 		String title = c.label;
 		FontUtil.draw(g, title, x + (w - FontUtil.width(title)) / 2, y + (HEAD_H - 1 - FontUtil.height()) / 2, RenderUtil.alpha(TXT, a));
 
@@ -195,10 +210,15 @@ public class ClickGuiScreen extends Screen {
 			boolean hover = RenderUtil.inside(mx, my, x, ry, w, ROW) && RenderUtil.inside(mx, my, x, by, w, vh);
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			if (m.toggleAnim > 0.02f) {
-				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(ROW_ON, a * m.toggleAnim));
+				int sl = 8;
+				for (int q = 0; q < sl; q++) {
+					int x0 = x + w * q / sl;
+					int x1 = x + w * (q + 1) / sl;
+					g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.20f - 0.17f * q / (sl - 1f))));
+				}
 				g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(TXT, a * m.toggleAnim));
 			} else if (hover) {
-				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(ROW_HOVER, a));
+				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.07f));
 			}
 			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
 			FontUtil.draw(g, m.name, x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
