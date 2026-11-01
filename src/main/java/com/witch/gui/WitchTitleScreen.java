@@ -152,108 +152,127 @@ public class WitchTitleScreen extends Screen {
 	}
 
 	private static long walkStart = 0L;
+	private float userYaw = 0f;
 
-	private void part(GuiGraphicsExtractor g, net.minecraft.resources.Identifier tex, int x, int y, int dw, int dh, int u, int v, int sw, int sh) {
+	/** Uma face do cubo da skin, desenhada com projecao ortografica (largura = projecao da aresta), com cisalhamento por linha pros membros. */
+	private void face(GuiGraphicsExtractor g, net.minecraft.resources.Identifier tex, double ox, int oy, int s,
+					  double e0, double e1, int u, int v, int fw, int fh, double shearPerRow) {
+		int xL = (int) Math.round(ox + Math.min(e0, e1) * s);
+		int xR = (int) Math.round(ox + Math.max(e0, e1) * s);
+		int dw = xR - xL;
 		if (dw <= 0) return;
-		g.blit(RenderPipelines.GUI_TEXTURED, tex, x, y, (float) u, (float) v, dw, dh, sw, sh, 64, 64);
+		if (Math.abs(shearPerRow) < 1.0E-4) {
+			g.blit(RenderPipelines.GUI_TEXTURED, tex, xL, oy, (float) u, (float) v, dw, fh * s, fw, fh, 64, 64);
+			return;
+		}
+		for (int r = 0; r < fh; r++) {
+			int off = (int) Math.round(shearPerRow * (r + 0.5) * s);
+			g.blit(RenderPipelines.GUI_TEXTURED, tex, xL + off, oy + r * s, (float) u, (float) (v + r), dw, s, fw, 1, 64, 64);
+		}
 	}
 
-	/** A skin real do jogador: entra pela esquerda de lado, chega na direita, vira de frente e fica parado com o nick. */
+	/** Caixa da skin (base + camada externa) girada em yaw: mostra frente/costas e a lateral que estiver virada pra camera. */
+	private void box(GuiGraphicsExtractor g, net.minecraft.resources.Identifier tex, double ox, int oy, int s,
+					 double partX, int w, int h, int d, int u0, int v0, int u1, int v1, double yaw, double shearPerRow) {
+		double c = Math.cos(yaw);
+		double sn = Math.sin(yaw);
+		double base = ox + partX * c * s;
+		double shear = shearPerRow * sn;
+		for (int layer = 0; layer < 2; layer++) {
+			int u = layer == 0 ? u0 : u1;
+			int v = layer == 0 ? v0 : v1;
+			if (c > 0.001) {
+				face(g, tex, base, oy, s, -(w / 2.0) * c + (d / 2.0) * sn, (w / 2.0) * c + (d / 2.0) * sn, u + d, v + d, w, h, shear);
+			} else if (c < -0.001) {
+				face(g, tex, base, oy, s, (w / 2.0) * c - (d / 2.0) * sn, -(w / 2.0) * c - (d / 2.0) * sn, u + 2 * d + w, v + d, w, h, shear);
+			}
+			if (sn > 0.001) {
+				face(g, tex, base, oy, s, -(w / 2.0) * c - (d / 2.0) * sn, -(w / 2.0) * c + (d / 2.0) * sn, u, v + d, d, h, shear);
+			} else if (sn < -0.001) {
+				face(g, tex, base, oy, s, (w / 2.0) * c + (d / 2.0) * sn, (w / 2.0) * c - (d / 2.0) * sn, u + d + w, v + d, d, h, shear);
+			}
+		}
+	}
+
+	/** Modelo 3D da skin: anda de lado ate a direita, gira pra frente e fica parado girando de leve (arraste pra girar). */
 	private void walker(GuiGraphicsExtractor g, int w, int h, double sec) {
 		var tex = TitleSkin.texture();
 		if (tex == null) return;
 		if (walkStart == 0L) walkStart = System.nanoTime();
 		double t = (System.nanoTime() - walkStart) / 1_000_000_000.0;
 
-		int s = Math.max(1, Math.min(4, h / 105));
+		int s = Math.max(1, Math.min(4, h / 100));
 		int groundY = h - 20;
 		int stopX = Math.min(w - 14 * s, Math.max(bx + bw + 40 + 8 * s, w - 26 * s));
 		double speed = 30.0 * s;
 		double dist = speed * t;
 		double startX = -8.0 * s;
 		boolean walking = startX + dist < stopX;
-		int cx = (int) Math.min(stopX, startX + dist);
-		double turnT = (stopX - startX) / speed; // instante em que parou
+		double cx = Math.min(stopX, startX + dist);
+		double turnT = (stopX - startX) / speed;
+		double since = t - turnT;
 
-		int top = groundY - 32 * s;
-		// sombra e chao
 		g.fill(0, groundY, w, groundY + 1, RenderUtil.alpha(0xFFB57BEA, 0.40f));
 		g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF2A1055, 0.7f));
-		RenderUtil.roundRect(g, cx - 6 * s, groundY - 1, 12 * s, 2, 1, RenderUtil.alpha(0xFF000000, 0.4f));
+		RenderUtil.roundRect(g, (int) cx - 7 * s, groundY - 1, 14 * s, 2, 1, RenderUtil.alpha(0xFF000000, 0.4f));
 
-		int armW = TitleSkin.slim() ? 3 : 4;
+		double yaw;
+		double armPhase = 0, legPhase = 0;
+		int bob = 0;
 		if (walking) {
+			yaw = Math.PI / 2;
 			double ph = dist / (7.0 * s) * Math.PI;
-			int sw = (int) Math.round(Math.sin(ph) * 3.0 * s);
-			int bob = (int) Math.round(Math.abs(Math.sin(ph)) * s * 0.7);
-			int ty = top - bob;
-			// membros do lado longe (esquerdos), corpo, cabeca, membros perto (direitos)
-			part(g, tex, cx - 2 * s - sw, ty + 8 * s, 4 * s, 12 * s, 32, 52, 4, 12);
-			part(g, tex, cx - 2 * s + sw, ty + 20 * s, 4 * s, 12 * s, 16, 52, 4, 12);
-			part(g, tex, cx - 2 * s, ty + 8 * s, 4 * s, 12 * s, 16, 20, 4, 12);
-			part(g, tex, cx - 2 * s, ty + 8 * s, 4 * s, 12 * s, 16, 36, 4, 12);
-			part(g, tex, cx - 4 * s, ty, 8 * s, 8 * s, 0, 8, 8, 8);
-			part(g, tex, cx - 4 * s, ty, 8 * s, 8 * s, 32, 8, 8, 8);
-			part(g, tex, cx - 2 * s - sw, ty + 20 * s, 4 * s, 12 * s, 0, 20, 4, 12);
-			part(g, tex, cx - 2 * s - sw, ty + 20 * s, 4 * s, 12 * s, 0, 36, 4, 12);
-			part(g, tex, cx - 2 * s + sw, ty + 8 * s, 4 * s, 12 * s, 40, 20, 4, 12);
-			part(g, tex, cx - 2 * s + sw, ty + 8 * s, 4 * s, 12 * s, 40, 36, 4, 12);
-			return;
+			armPhase = legPhase = Math.sin(ph) * 0.6;
+			bob = (int) Math.round(Math.abs(Math.sin(ph)) * s * 0.7);
+		} else {
+			double k = Math.min(1.0, since / 0.7);
+			double ease = k * k * (3 - 2 * k);
+			double wiggle = (k >= 1.0 ? 0.35 * Math.sin(since * 0.9) : 0.0);
+			yaw = (Math.PI / 2) * (1.0 - ease) + wiggle + userYaw;
+			bob = (int) Math.round(Math.sin(sec * 2.2) * 0.6 * s);
+		}
+		int top = groundY - 32 * s - bob;
+		int armW = TitleSkin.slim() ? 3 : 4;
+		double sn = Math.sin(yaw);
+
+		// partes: {x do centro (unidades), y do topo, w, h, d, u base, v base, u camada, v camada, fase do membro}
+		double[][] parts = {
+				{-(4 + armW / 2.0), 8, armW, 12, 4, 40, 16, 40, 32, -armPhase},   // braco direito
+				{(4 + armW / 2.0), 8, armW, 12, 4, 32, 48, 48, 48, armPhase},     // braco esquerdo
+				{-2, 20, 4, 12, 4, 0, 16, 0, 32, armPhase},                       // perna direita
+				{2, 20, 4, 12, 4, 16, 48, 0, 48, -armPhase},                      // perna esquerda
+				{0, 8, 8, 12, 4, 16, 16, 16, 32, 0},                              // corpo
+				{0, 0, 8, 8, 8, 0, 0, 32, 0, 0},                                  // cabeca
+		};
+		// mais longe primeiro (profundidade z' = -x * sen)
+		java.util.Arrays.sort(parts, java.util.Comparator.comparingDouble(a -> -a[0] * sn));
+		for (double[] pt : parts) {
+			double shear = Math.tan(pt[9]);
+			box(g, tex, cx, top + (int) pt[1] * s, s, pt[0], (int) pt[2], (int) pt[3], (int) pt[4],
+					(int) pt[5], (int) pt[6], (int) pt[7], (int) pt[8], yaw, shear);
 		}
 
-		// parado: gira de lado pra frente (largura passa por zero) e respira de leve
-		double since = t - turnT;
-		float turn = (float) Math.min(1.0, since / 0.45);
-		boolean showFront = turn >= 0.5f;
-		float k = showFront ? (turn - 0.5f) * 2f : 1f - turn * 2f; // 1 -> 0 -> 1
-		int idle = (int) Math.round(Math.sin(sec * 2.2) * 0.6 * s);
-		int ty = top + idle;
-		if (!showFront) {
-			int bw2 = Math.max(0, Math.round(8 * s * k));
-			int px = cx - bw2 / 2;
-			part(g, tex, px, ty, bw2, 8 * s, 0, 8, 8, 8);
-			part(g, tex, px, ty, bw2, 8 * s, 32, 8, 8, 8);
-			int bb = Math.max(0, Math.round(4 * s * k));
-			part(g, tex, cx - bb / 2, ty + 8 * s, bb, 12 * s, 16, 20, 4, 12);
-			part(g, tex, cx - bb / 2, ty + 20 * s, bb, 12 * s, 0, 20, 4, 12);
-			return;
+		if (!walking) {
+			float na = (float) Math.min(1.0, Math.max(0.0, (since - 0.5) / 0.4));
+			if (na > 0f) {
+				String nick = TitleSkin.nick();
+				int nw = FontUtil.width(nick) + 12;
+				int nx = (int) cx - nw / 2;
+				int ny = top - 20 + Math.round((1f - na) * 6f);
+				RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF150B2E, 0.85f * na));
+				RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFB57BEA, 0.9f * na));
+				FontUtil.draw(g, nick, nx + 6, ny + 3, RenderUtil.alpha(0xFFFFFFFF, na));
+			}
 		}
-		int fw = Math.max(1, Math.round(k * 100) / 100 == 0 ? 1 : 1);
-		float sc = k;
-		int hx = Math.round(8 * s * sc);
-		int fullW = 16 * s;
-		int cw = Math.round(fullW * sc);
-		int left = cx - cw / 2;
-		// cabeca
-		part(g, tex, cx - Math.round(4 * s * sc), ty, Math.round(8 * s * sc), 8 * s, 8, 8, 8, 8);
-		part(g, tex, cx - Math.round(4 * s * sc), ty, Math.round(8 * s * sc), 8 * s, 40, 8, 8, 8);
-		// corpo
-		part(g, tex, cx - Math.round(4 * s * sc), ty + 8 * s, Math.round(8 * s * sc), 12 * s, 20, 20, 8, 12);
-		part(g, tex, cx - Math.round(4 * s * sc), ty + 8 * s, Math.round(8 * s * sc), 12 * s, 20, 36, 8, 12);
-		// bracos
-		int aw = Math.round(armW * s * sc);
-		part(g, tex, cx - Math.round(4 * s * sc) - aw, ty + 8 * s, aw, 12 * s, 44, 20, armW, 12);
-		part(g, tex, cx - Math.round(4 * s * sc) - aw, ty + 8 * s, aw, 12 * s, 44, 36, armW, 12);
-		part(g, tex, cx + Math.round(4 * s * sc), ty + 8 * s, aw, 12 * s, 36, 52, armW, 12);
-		part(g, tex, cx + Math.round(4 * s * sc), ty + 8 * s, aw, 12 * s, 52, 52, armW, 12);
-		// pernas
-		int lw = Math.round(4 * s * sc);
-		part(g, tex, cx - lw, ty + 20 * s, lw, 12 * s, 4, 20, 4, 12);
-		part(g, tex, cx - lw, ty + 20 * s, lw, 12 * s, 4, 36, 4, 12);
-		part(g, tex, cx, ty + 20 * s, lw, 12 * s, 20, 52, 4, 12);
-		part(g, tex, cx, ty + 20 * s, lw, 12 * s, 4, 52, 4, 12);
+	}
 
-		// nick aparece depois que ele vira
-		float na = (float) Math.min(1.0, Math.max(0.0, (since - 0.45) / 0.4));
-		if (na > 0f) {
-			String nick = TitleSkin.nick();
-			int nw = FontUtil.width(nick) + 12;
-			int nx = cx - nw / 2;
-			int ny = ty - 20 + Math.round((1f - na) * 6f);
-			RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF150B2E, 0.85f * na));
-			RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFB57BEA, 0.9f * na));
-			FontUtil.draw(g, nick, nx + 6, ny + 3, RenderUtil.alpha(0xFFFFFFFF, na));
+	@Override
+	public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+		if (click.x() > this.width * 0.55) {
+			userYaw += (float) (offsetX * 0.03);
+			return true;
 		}
+		return super.mouseDragged(click, offsetX, offsetY);
 	}
 
 	private void drawWord(GuiGraphicsExtractor g, String word, int cx, int y, int s, float glow, double sec) {

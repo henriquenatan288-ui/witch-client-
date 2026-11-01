@@ -119,13 +119,8 @@ public class ClickGuiScreen extends Screen {
 		GlassShader.glow(g, px, py, panelW, panelH, a);
 		GlassShader.shadow(g, px, py, panelW, panelH, a);
 		RenderUtil.roundRect(g, px, py, panelW, panelH, 16, RenderUtil.alpha(TimeTheme.panel, a));
-		GlassShader.glass(g, px, py, panelW, panelH, a);
 		GlassShader.sidebar(g, px + PAD, py + PAD, SIDEBAR_W, panelH - PAD * 2, a);
 
-		WitchVisuals.render(g, px, py, panelW, panelH, a);
-
-		leaves.update(speed, panelW, panelH);
-		leaves.render(g, px, py, panelW, panelH, a);
 
 		renderSidebar(g, mouseX, mouseY, a);
 		renderSearch(g, a);
@@ -244,7 +239,7 @@ public class ClickGuiScreen extends Screen {
 		sbThumbH = thumbH;
 		sbMax = maxScroll;
 		RenderUtil.roundRect(g, bx, y, SB_W, h, 4, RenderUtil.alpha(TimeTheme.dim, a * 0.22f));
-		int c = sbDrag ? Theme.ACCENT : RenderUtil.mix(Theme.ACCENT, 0xFFFFFFFF, 0.15f);
+		int c = sbDrag ? Theme.GUI_ACCENT : RenderUtil.mix(Theme.GUI_ACCENT, 0xFFFFFFFF, 0.15f);
 		RenderUtil.roundRect(g, bx + 1, thumbY, SB_W - 2, thumbH, 3, RenderUtil.alpha(c, a * 0.95f));
 	}
 
@@ -293,9 +288,9 @@ public class ClickGuiScreen extends Screen {
 				RenderUtil.roundRect(g, tx, ty, tw, 6, 3, RenderUtil.alpha(TimeTheme.search, a));
 				int fw = Math.round(tw * is.fraction());
 				if (fw > 0) {
-					RenderUtil.roundRect(g, tx, ty, Math.max(fw, 4), 6, 3, RenderUtil.alpha(Theme.ACCENT, a));
+					RenderUtil.roundRect(g, tx, ty, Math.max(fw, 4), 6, 3, RenderUtil.alpha(Theme.GUI_ACCENT, a));
 				}
-				RenderUtil.roundRect(g, tx + fw - 4, ty - 2, 8, 10, 3, RenderUtil.alpha(Theme.ACCENT, a));
+				RenderUtil.roundRect(g, tx + fw - 4, ty - 2, 8, 10, 3, RenderUtil.alpha(Theme.GUI_ACCENT, a));
 			} else if (s instanceof ColorSetting cs) {
 				FontUtil.draw(g, cs.name, x + 8, ry, RenderUtil.alpha(TimeTheme.dim, a));
 				int sy = ry + fh + 6;
@@ -320,7 +315,7 @@ public class ClickGuiScreen extends Screen {
 				int cw = Math.max(CHIP_W, FontUtil.width(lab) + 12);
 				int cx = x + w - 8 - cw;
 				RenderUtil.roundRect(g, cx, ry + 1, cw, rh - 2, 4,
-						RenderUtil.alpha(ks.listening ? Theme.ACCENT : TimeTheme.search, a));
+						RenderUtil.alpha(ks.listening ? 0xFF5A5A5A : TimeTheme.search, a));
 				FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (rh - fh) / 2,
 						RenderUtil.alpha(ks.listening ? 0xFFFFFFFF : TimeTheme.input, a));
 			} else if (s instanceof OreSetting os) {
@@ -334,7 +329,7 @@ public class ClickGuiScreen extends Screen {
 				int by = ry + (rh - 12) / 2;
 				RenderUtil.roundRect(g, bx, by, 12, 12, 3, RenderUtil.alpha(TimeTheme.search, a));
 				if (os.enabled()) {
-					RenderUtil.roundRect(g, bx + 2, by + 2, 8, 8, 2, RenderUtil.alpha(Theme.ACCENT, a));
+					RenderUtil.roundRect(g, bx + 2, by + 2, 8, 8, 2, RenderUtil.alpha(Theme.GUI_ACCENT, a));
 				}
 				int textColor = os.enabled() ? TimeTheme.input : TimeTheme.placeholder;
 				FontUtil.draw(g, os.name, bx + 18, ry + (rh - fh) / 2, RenderUtil.alpha(textColor, a));

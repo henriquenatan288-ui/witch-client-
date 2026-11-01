@@ -9,13 +9,13 @@ public final class TimeTheme {
 	private TimeTheme() {}
 
 	// panel, search, dim, placeholder, input, hover
-	private static final int[] DAY = {0xB8FFFFFF, 0xFFF0E6FB, 0xFF7B2FBF, 0xFF8C6BB5, 0xFF4B1A80, 0x228A2BE2};
-	private static final int[] SUNSET = {0xB8FFE9DC, 0xFFFFD9C2, 0xFF9B2F9E, 0xFFB9708F, 0xFF5A1A55, 0x22D9488A};
-	private static final int[] NIGHT = {0xB0171126, 0xFF2A2142, 0xFFC4A8F0, 0xFF8F7BB8, 0xFFEDE3FF, 0x33B57BEA};
+	private static final int[] DAY = {0xE6101010, 0xFF1C1C1C, 0xFFB4B4B4, 0xFF6E6E6E, 0xFFFFFFFF, 0x33FFFFFF};
+	private static final int[] SUNSET = {0xE6101010, 0xFF1C1C1C, 0xFFB4B4B4, 0xFF6E6E6E, 0xFFFFFFFF, 0x33FFFFFF};
+	private static final int[] NIGHT = {0xE6101010, 0xFF1C1C1C, 0xFFB4B4B4, 0xFF6E6E6E, 0xFFFFFFFF, 0x33FFFFFF};
 
 	private static final float[] KEY_H = {0f, 5f, 6.25f, 8f, 16f, 17.75f, 19.5f, 24f};
 	private static final int[][] KEY_P = {NIGHT, NIGHT, SUNSET, DAY, DAY, SUNSET, NIGHT, NIGHT};
-	private static final float[] KEY_NIGHT = {1f, 1f, 0.3f, 0f, 0f, 0.3f, 1f, 1f};
+	private static final float[] KEY_NIGHT = {1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f};
 
 	private static final float[] OVERRIDE_HOURS = {12f, 17.9f, 23f};
 	private static int override = -1; // -1 auto, 0 dia, 1 por do sol, 2 noite
