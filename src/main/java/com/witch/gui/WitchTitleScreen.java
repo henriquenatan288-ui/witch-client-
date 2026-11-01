@@ -38,11 +38,12 @@ public class WitchTitleScreen extends Screen {
 		}
 	}
 
-	private static final String[] LABELS = {"Singleplayer", "Multiplayer", "Options", "Quit"};
+	private static final String[] LABELS = {"Singleplayer", "Multiplayer", "Options", "Client", "Quit"};
+	private static final String[] SUBS = {"Your worlds, offline and private", "Servers and LAN games", "Video, audio and controls", "Witch modules and HUD", "Close the game"};
 	private final LeafParticles hats = new LeafParticles();
 	private long last = 0L;
-	private int bx, by0, bw = 170, bh = 22, gap = 8;
-	private final float[] hoverAnim = new float[4];
+	private int menuX, menuY, itemW = 176, itemH = 28;
+	private final float[] hoverAnim = new float[5];
 
 	public WitchTitleScreen() {
 		super(Component.literal("Witch Client"));
@@ -62,48 +63,68 @@ public class WitchTitleScreen extends Screen {
 		int w = this.width;
 		int h = this.height;
 
-		// ceu: gradiente em faixas
+		// fundo: degrade quase preto com um toque de roxo
 		int bands = 32;
 		for (int i = 0; i < bands; i++) {
-			int c = RenderUtil.mix(0xFF0A0520, 0xFF3A1670, i / (float) (bands - 1));
+			int c = RenderUtil.mix(0xFF07060F, 0xFF1D1038, i / (float) (bands - 1));
 			g.fill(0, h * i / bands, w, h * (i + 1) / bands + 1, c);
 		}
 		for (int i = 0; i < STARS; i++) {
-			float tw = 0.35f + 0.65f * (float) (0.5 + 0.5 * Math.sin(sec * 1.5 + SP[i]));
-			int x = Math.round(SX[i] * w);
-			int y = Math.round(SY[i] * h);
-			g.fill(x, y, x + 1, y + 1, RenderUtil.alpha(0xFFFFFFFF, tw));
+			float tw = 0.30f + 0.55f * (float) (0.5 + 0.5 * Math.sin(sec * 1.5 + SP[i]));
+			g.fill(Math.round(SX[i] * w), Math.round(SY[i] * h), Math.round(SX[i] * w) + 1, Math.round(SY[i] * h) + 1, RenderUtil.alpha(0xFFFFFFFF, tw));
 		}
-		WitchVisuals.render(g, 0, 0, w, h, 1f);
+		waves(g, w, h, sec);
+		WitchVisuals.render(g, 0, 0, w, h, 0.8f);
 		hats.update(speed, w, h);
-		hats.render(g, 0, 0, w, h, 1f);
+		hats.render(g, 0, 0, w, h, 0.8f);
 
-		// titulo
+		// marca no canto
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
-		int s = Math.max(2, Math.min(6, (int) (w * 0.62f / 30f)));
-		int ty = Math.max(14, h / 8);
-		drawWord(g, "WITCH", w / 2, ty, s, pulse, sec);
-		subtitle(g, w / 2, ty + 8 * s + s + 2, Math.max(1, s / 2), pulse);
+		drawWord(g, "WITCH", 16 + 5 * 2 * 3 / 2 + 6, 12, 2, pulse, sec);
+		spaced(g, "CLIENT", 18, 12 + 16 + 4, 0xFFB57BEA);
 
-		// botoes
-		by0 = Math.max(ty + 8 * s + s + 8 * Math.max(1, s / 2) + 22, h / 2);
-		bx = (w - bw) / 2;
+		// area do menu
+		menuX = Math.max(18, w / 14);
+		menuY = Math.max(78, h / 2 - itemH * 5 / 2 + 8);
+		spaced(g, "WELCOME BACK", menuX, menuY - 46, 0xFF7F7894);
+		String nick = TitleSkin.nick();
+		FontUtil.draw(g, nick, menuX + 1, menuY - 33, RenderUtil.alpha(Theme.ACCENT, 0.55f));
+		FontUtil.draw(g, nick, menuX, menuY - 34, 0xFFFFFFFF);
+		FontUtil.draw(g, nick, menuX + 1, menuY - 34, 0xFFFFFFFF);
+
 		walker(g, w, h, sec);
+
 		for (int i = 0; i < LABELS.length; i++) {
-			int y = by0 + i * (bh + gap);
-			boolean hover = RenderUtil.inside(mx, my, bx, y, bw, bh);
+			int y = menuY + i * itemH;
+			boolean hover = RenderUtil.inside(mx, my, menuX - 8, y, itemW + 16, itemH - 4);
 			hoverAnim[i] += ((hover ? 1f : 0f) - hoverAnim[i]) * Math.min(1f, 0.25f * speed);
 			float ha = hoverAnim[i];
-			RenderUtil.roundRect(g, bx - 3, y - 3, bw + 6, bh + 6, 9, RenderUtil.alpha(Theme.ACCENT, (0.08f + 0.30f * ha) * (0.7f + 0.3f * pulse)));
-			RenderUtil.roundRect(g, bx - 1, y - 1, bw + 2, bh + 2, 7, RenderUtil.alpha(0xFFB57BEA, 0.25f + 0.55f * ha));
-			RenderUtil.roundRect(g, bx, y, bw, bh, 6, RenderUtil.mix(0xF0150B2E, 0xF03A1670, ha));
-			g.fill(bx + 5, y + 1, bx + bw - 5, y + 2, RenderUtil.alpha(0xFFFFFFFF, 0.10f + 0.12f * ha));
-			int bar = Math.round(4 + (bw / 2f - 8) * ha);
-			RenderUtil.roundRect(g, bx + bw / 2 - bar, y + bh - 3, bar * 2, 2, 1, RenderUtil.alpha(0xFFD2B0F5, 0.85f * ha));
-			String label = LABELS[i].toUpperCase();
-			int tw = spacedWidth(label);
-			int ty2 = y + (bh - FontUtil.height()) / 2;
-			spaced(g, label, bx + (bw - tw) / 2, ty2, RenderUtil.mix(0xFFD8C8F5, 0xFFFFFFFF, ha));
+			if (ha > 0.02f) {
+				RenderUtil.roundRect(g, menuX - 8, y, itemW + 16, itemH - 4, 8, RenderUtil.alpha(0xFFFFFFFF, 0.07f * ha));
+				RenderUtil.roundRect(g, menuX - 8, y + 4, 2, itemH - 12, 1, RenderUtil.alpha(Theme.ACCENT, ha));
+			}
+			int shift = Math.round(3 * ha);
+			diamond(g, menuX + 3 + shift, y + 8, 3, RenderUtil.mix(0xFF7F7894, 0xFFD2B0F5, ha));
+			FontUtil.draw(g, LABELS[i], menuX + 14 + shift, y + 3, RenderUtil.mix(0xFFD8D2E6, 0xFFFFFFFF, ha));
+			FontUtil.draw(g, SUBS[i], menuX + 14 + shift, y + 3 + FontUtil.height() + 1, RenderUtil.mix(0xFF6E6885, 0xFFA79BC7, ha));
+		}
+
+		spaced(g, "WITCH CLIENT  -  MINECRAFT 26.2", 8, h - 12, 0xFF4F4A63);
+	}
+
+	/** Tres linhas ondulando devagar no fundo (pontinhos), como o fundo do Real Client. */
+	private static void waves(GuiGraphicsExtractor g, int w, int h, double sec) {
+		for (int k = 0; k < 3; k++) {
+			double base = h * (0.55 + 0.10 * k);
+			double amp = h * (0.05 + 0.015 * k);
+			double freq = 0.012 + 0.004 * k;
+			int c = RenderUtil.alpha(0xFFB9A8E8, 0.10f + 0.05f * k);
+			for (int x = 0; x < w; x += 3) {
+				double y = base + Math.sin(x * freq + sec * (0.5 + 0.15 * k) + k * 2.0) * amp
+						+ Math.sin(x * freq * 2.3 - sec * 0.4) * amp * 0.35;
+				int yy = (int) y;
+				g.fill(x, yy, x + 2, yy + 1, c);
+			}
 		}
 	}
 
@@ -119,29 +140,6 @@ public class WitchTitleScreen extends Screen {
 			FontUtil.draw(g, c, x, y, color);
 			x += FontUtil.width(c) + 1;
 		}
-	}
-
-	/** "CLIENT" em letras pequenas e espacadas, entre dois losangos (como no logo). */
-	private void subtitle(GuiGraphicsExtractor g, int cx, int y, int s, float pulse) {
-		String word = "CLIENT";
-		int total = word.length() * 6 * s - s;
-		int x = cx - total / 2;
-		int color = RenderUtil.alpha(0xFFB57BEA, 0.85f);
-		for (int i = 0; i < word.length(); i++) {
-			String[] gl = glyph(word.charAt(i));
-			for (int row = 0; row < 7; row++) {
-				for (int col = 0; col < 5; col++) {
-					if (gl[row + 1].charAt(col) == '1') {
-						g.fill(x + col * s, y + row * s, x + col * s + s, y + row * s + s, color);
-					}
-				}
-			}
-			x += 6 * s;
-		}
-		int d = Math.max(2, s + 1);
-		int cy = y + 3 * s + s / 2;
-		diamond(g, cx - total / 2 - 14 - d, cy, d, RenderUtil.alpha(0xFFD2B0F5, 0.5f + 0.4f * pulse));
-		diamond(g, cx + total / 2 + 14 + d, cy, d, RenderUtil.alpha(0xFFD2B0F5, 0.5f + 0.4f * pulse));
 	}
 
 	private static void diamond(GuiGraphicsExtractor g, int cx, int cy, int r, int color) {
@@ -203,7 +201,7 @@ public class WitchTitleScreen extends Screen {
 
 		int s = Math.max(1, Math.min(4, h / 100));
 		int groundY = h - 20;
-		int stopX = Math.min(w - 14 * s, Math.max(bx + bw + 40 + 8 * s, w - 26 * s));
+		int stopX = (int) (w * 0.66);
 		double speed = 30.0 * s;
 		double dist = speed * t;
 		double startX = -8.0 * s;
@@ -216,6 +214,21 @@ public class WitchTitleScreen extends Screen {
 		g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF2A1055, 0.7f));
 		RenderUtil.roundRect(g, (int) cx - 7 * s, groundY - 1, 14 * s, 2, 1, RenderUtil.alpha(0xFF000000, 0.4f));
 
+		if (!walking) {
+			for (int r = 6; r >= 1; r--) {
+				RenderUtil.roundRect(g, (int) cx - r * 5 * s, groundY - 36 * s - r * 3, r * 10 * s, 36 * s + r * 6, r * 5 * s,
+						RenderUtil.alpha(0xFF7B4FD0, 0.025f));
+			}
+			for (int k = 0; k < 8; k++) {
+				double a = sec * 0.6 + k * 0.785;
+				int sx = (int) (cx + Math.cos(a) * (14 + (k % 3) * 5) * s);
+				int sy = (int) (groundY - 18 * s + Math.sin(a * 1.3) * (16 + (k % 2) * 6) * s);
+				float tw = 0.4f + 0.6f * (float) (0.5 + 0.5 * Math.sin(sec * 2.0 + k));
+				int c = RenderUtil.alpha(0xFFFFFFFF, tw);
+				g.fill(sx - 2, sy, sx + 3, sy + 1, c);
+				g.fill(sx, sy - 2, sx + 1, sy + 3, c);
+			}
+		}
 		double yaw;
 		double armPhase = 0, legPhase = 0;
 		int bob = 0;
@@ -321,13 +334,14 @@ public class WitchTitleScreen extends Screen {
 	public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
 		if (click.button() == 0) {
 			for (int i = 0; i < LABELS.length; i++) {
-				int y = by0 + i * (bh + gap);
-				if (RenderUtil.inside(click.x(), click.y(), bx, y, bw, bh)) {
+				int y = menuY + i * itemH;
+				if (RenderUtil.inside(click.x(), click.y(), menuX - 8, y, itemW + 16, itemH - 4)) {
 					Minecraft mc = Minecraft.getInstance();
 					switch (i) {
 						case 0 -> mc.gui.setScreen(new SelectWorldScreen(this));
 						case 1 -> mc.gui.setScreen(new JoinMultiplayerScreen(this));
 						case 2 -> mc.gui.setScreen(new OptionsScreen(this, mc.options, false));
+						case 3 -> mc.gui.setScreen(new ClickGuiScreen());
 						default -> mc.stop();
 					}
 					return true;

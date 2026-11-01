@@ -18,6 +18,7 @@ import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 public class WitchClient implements ClientModInitializer {
+	private static boolean f9Down = false;
 	private static KeyMapping openGui;
 	private static KeyMapping openXraySettings;
 
@@ -45,6 +46,12 @@ public class WitchClient implements ClientModInitializer {
 		));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			boolean f9 = com.mojang.blaze3d.platform.InputConstants.isKeyDown(client.getWindow(), org.lwjgl.glfw.GLFW.GLFW_KEY_F9);
+			if (f9 && !f9Down) {
+				com.witch.gui.FontUtil.setCustom(!com.witch.gui.FontUtil.isCustom());
+				com.witch.config.Config.save();
+			}
+			f9Down = f9;
 			if (client.gui.screen() != null && client.gui.screen().getClass() == net.minecraft.client.gui.screens.TitleScreen.class) {
 				client.gui.setScreen(new com.witch.gui.WitchTitleScreen());
 			}

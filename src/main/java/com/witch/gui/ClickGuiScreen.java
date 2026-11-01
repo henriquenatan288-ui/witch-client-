@@ -138,9 +138,9 @@ public class ClickGuiScreen extends Screen {
 			boolean active = c == selected && search.isEmpty();
 			boolean hover = RenderUtil.inside(mx, my, x, y, SIDEBAR_W, CAT_H - 4);
 			if (active) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 13, RenderUtil.alpha(Theme.SIDEBAR_ITEM_ACTIVE, a));
+				BoxShader.box(g, x, y, SIDEBAR_W, CAT_H - 4, 13, Theme.SIDEBAR_ITEM_ACTIVE, 1f, a);
 			} else if (hover) {
-				RenderUtil.roundRect(g, x, y, SIDEBAR_W, CAT_H - 4, 13, RenderUtil.alpha(TimeTheme.hover, a));
+				BoxShader.box(g, x, y, SIDEBAR_W, CAT_H - 4, 13, 0xFF1E1E1E, 0.4f, a);
 			}
 			int ty = y + (CAT_H - 4 - FontUtil.height()) / 2;
 			int dot = (CAT_H - 4) / 2;
@@ -155,7 +155,7 @@ public class ClickGuiScreen extends Screen {
 		int x = listX();
 		int y = py + PAD;
 		int w = listW();
-		RenderUtil.roundRect(g, x, y, w, SEARCH_H, 12, RenderUtil.alpha(TimeTheme.search, a));
+		BoxShader.box(g, x, y, w, SEARCH_H, 12, TimeTheme.search, searchFocused ? 0.8f : 0f, a);
 
 		String shown;
 		int color;
@@ -197,12 +197,10 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.25f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 
 			if (m.hoverAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 12,
-						RenderUtil.alpha(TimeTheme.hover, a * m.hoverAnim));
+				BoxShader.box(g, x, ry, w, ROW_H - 2, 12, 0xFF1E1E1E, m.hoverAnim * 0.5f, a * m.hoverAnim);
 			}
 			if (m.toggleAnim > 0.01f) {
-				RenderUtil.roundRect(g, x, ry, w, ROW_H - 2, 12,
-						RenderUtil.alpha(Theme.MODULE_ON, a * m.toggleAnim));
+				BoxShader.box(g, x, ry, w, ROW_H - 2, 12, Theme.MODULE_ON, m.toggleAnim, a * m.toggleAnim);
 			}
 
 			int textColor = RenderUtil.mix(TimeTheme.dim, Theme.TEXT, m.toggleAnim);
