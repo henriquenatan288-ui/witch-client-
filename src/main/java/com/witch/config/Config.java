@@ -28,7 +28,7 @@ public final class Config {
 
 	public static void save() {
 		JsonObject root = new JsonObject();
-		root.addProperty("_customFont", com.witch.gui.FontUtil.isCustom());
+		root.addProperty("_font", com.witch.gui.FontUtil.isCustom());
 		for (Module m : ModuleManager.all()) {
 			JsonObject o = new JsonObject();
 			o.addProperty("enabled", m.isEnabled());
@@ -52,8 +52,8 @@ public final class Config {
 		try (Reader r = Files.newBufferedReader(f)) {
 			JsonElement parsed = JsonParser.parseReader(r);
 			if (parsed == null || !parsed.isJsonObject()) return;
-			if (parsed.getAsJsonObject().has("_customFont")) {
-				com.witch.gui.FontUtil.setCustom(parsed.getAsJsonObject().get("_customFont").getAsBoolean());
+			if (parsed.getAsJsonObject().has("_font")) {
+				com.witch.gui.FontUtil.setCustom(parsed.getAsJsonObject().get("_font").getAsBoolean());
 			}
 			for (Map.Entry<String, JsonElement> e : parsed.getAsJsonObject().entrySet()) {
 				if (e.getKey().startsWith("_")) continue;
