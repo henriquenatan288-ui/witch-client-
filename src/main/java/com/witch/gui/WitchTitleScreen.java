@@ -80,8 +80,8 @@ public class WitchTitleScreen extends Screen {
 
 		// marca no canto
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
-		drawWord(g, "WITCH", 16 + 5 * 2 * 3 / 2 + 6, 12, 2, pulse, sec);
-		spaced(g, "CLIENT", 18, 12 + 16 + 4, 0xFFB57BEA);
+		drawWord(g, "WITCH", 38, 8, 2, pulse, sec);
+		spaced(g, "CLIENT", 74, 16, 0xFFB57BEA);
 
 		// area do menu
 		menuX = Math.max(18, w / 14);
