@@ -2,6 +2,7 @@ package com.witch.gui;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerSkinWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
@@ -92,7 +93,7 @@ public class WitchTitleScreen extends Screen {
 		FontUtil.draw(g, nick, menuX, menuY - 34, 0xFFFFFFFF);
 		FontUtil.draw(g, nick, menuX + 1, menuY - 34, 0xFFFFFFFF);
 
-		walker(g, w, h, sec);
+		if (!model3d(g, w, h, sec, mx, my)) walker(g, w, h, sec);
 
 		for (int i = 0; i < LABELS.length; i++) {
 			int y = menuY + i * itemH;
@@ -151,6 +152,70 @@ public class WitchTitleScreen extends Screen {
 
 	private static long walkStart = 0L;
 	private float userYaw = 0f;
+
+	private PlayerSkinWidget skinWidget;
+	private boolean skinWidgetFailed = false;
+	private int skinWidgetH = -1;
+
+	/** Modelo 3D de verdade (o mesmo do jogo): desliza da esquerda, para na direita e mostra o nick. */
+	private boolean model3d(GuiGraphicsExtractor g, int w, int h, double sec, int mx, int my) {
+		if (skinWidgetFailed) return false;
+		try {
+			int mh = Math.max(90, Math.min(h - 70, (int) (h * 0.62)));
+			int mw = (int) (mh * 0.62);
+			if (skinWidget == null || skinWidgetH != mh) {
+				skinWidget = new PlayerSkinWidget(mw, mh, Minecraft.getInstance().getEntityModels(), TitleSkin::skin);
+				skinWidgetH = mh;
+			}
+			if (walkStart == 0L) walkStart = System.nanoTime();
+			double t = (System.nanoTime() - walkStart) / 1_000_000_000.0;
+			double k = Math.min(1.0, t / 1.6);
+			double ease = 1.0 - Math.pow(1.0 - k, 3);
+			int stopX = (int) (w * 0.68) - mw / 2;
+			int x = (int) (-mw + (stopX + mw) * ease);
+			int y = h - 24 - mh;
+			skinWidget.setX(x);
+			skinWidget.setY(y);
+
+			int groundY = h - 20;
+			g.fill(0, groundY, w, groundY + 1, RenderUtil.alpha(0xFFB57BEA, 0.40f));
+			g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF2A1055, 0.7f));
+			int cx = x + mw / 2;
+			RenderUtil.roundRect(g, cx - mw / 2, groundY - 2, mw, 4, 2, RenderUtil.alpha(0xFF000000, 0.45f));
+			if (k >= 1.0) {
+				for (int r = 6; r >= 1; r--) {
+					RenderUtil.roundRect(g, cx - r * 12, y + mh / 8 - r * 3, r * 24, mh * 3 / 4 + r * 6, r * 12,
+							RenderUtil.alpha(0xFF7B4FD0, 0.025f));
+				}
+				for (int q = 0; q < 8; q++) {
+					double a = sec * 0.6 + q * 0.785;
+					int sx = (int) (cx + Math.cos(a) * (mw * 0.55 + (q % 3) * 6));
+					int sy = (int) (y + mh * 0.5 + Math.sin(a * 1.3) * (mh * 0.38 + (q % 2) * 6));
+					float tw = 0.4f + 0.6f * (float) (0.5 + 0.5 * Math.sin(sec * 2.0 + q));
+					int c = RenderUtil.alpha(0xFFFFFFFF, tw);
+					g.fill(sx - 2, sy, sx + 3, sy + 1, c);
+					g.fill(sx, sy - 2, sx + 1, sy + 3, c);
+				}
+			}
+			skinWidget.extractRenderState(g, mx, my, 0f);
+			if (k >= 1.0) {
+				float na = (float) Math.min(1.0, Math.max(0.0, (t - 1.8) / 0.4));
+				if (na > 0f) {
+					String nick = TitleSkin.nick();
+					int nw = FontUtil.width(nick) + 12;
+					int nx = cx - nw / 2;
+					int ny = y - 14 + Math.round((1f - na) * 6f);
+					RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF150B2E, 0.85f * na));
+					RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFB57BEA, 0.9f * na));
+					FontUtil.draw(g, nick, nx + 6, ny + 3, RenderUtil.alpha(0xFFFFFFFF, na));
+				}
+			}
+			return true;
+		} catch (Throwable e) {
+			skinWidgetFailed = true;
+			return false;
+		}
+	}
 
 	/** Uma face do cubo da skin, desenhada com projecao ortografica (largura = projecao da aresta), com cisalhamento por linha pros membros. */
 	private void face(GuiGraphicsExtractor g, net.minecraft.resources.Identifier tex, double ox, int oy, int s,
@@ -283,6 +348,9 @@ public class WitchTitleScreen extends Screen {
 	public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
 		if (click.x() > this.width * 0.55) {
 			userYaw += (float) (offsetX * 0.03);
+			if (skinWidget != null) {
+				try { skinWidget.mouseDragged(click, offsetX, offsetY); } catch (Throwable ignored) { }
+			}
 			return true;
 		}
 		return super.mouseDragged(click, offsetX, offsetY);

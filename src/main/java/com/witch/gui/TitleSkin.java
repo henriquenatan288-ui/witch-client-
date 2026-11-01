@@ -17,6 +17,7 @@ public final class TitleSkin {
 
 	private static volatile Identifier texture;
 	private static volatile boolean slim;
+	private static volatile PlayerSkin skin;
 	private static boolean started = false;
 
 	public static Identifier texture() {
@@ -28,7 +29,13 @@ public final class TitleSkin {
 		return slim;
 	}
 
+	public static PlayerSkin skin() {
+		ensure();
+		return skin;
+	}
+
 	private static void apply(PlayerSkin sk) {
+		skin = sk;
 		texture = sk.body().texturePath();
 		slim = sk.model() == PlayerModelType.SLIM;
 	}
