@@ -1,0 +1,54 @@
+name: visual
+on:
+  push:
+    branches: [visual-test]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 9.5.1
+      - name: Install software GL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 mesa-vulkan-drivers libxrandr2 libxinerama1 libxcursor1 libxi6
+      - name: Run client gametest
+        shell: bash
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MESA_GL_VERSION_OVERRIDE: "4.6"
+          MESA_GLSL_VERSION_OVERRIDE: "460"
+        run: |
+          set -o pipefail
+          xvfb-run -a -s "-screen 0 1280x720x24" gradle runClientGametest --stacktrace 2>&1 | tee visual.log || true
+          mkdir -p out
+          find . -path ./out -prune -o -type d -name screenshots -print | head
+          find . -name "*.png" -path "*screenshots*" -exec cp {} out/ \; || true
+          cp visual.log out/ || true
+          grep -n -E "What went wrong|FAILURE|Exception|Caused by|error:|Error|gametest|screenshot|Screenshot" visual.log | head -40 | while IFS= read -r l; do echo "::notice::$l"; done
+          tail -2000 visual.log > out/visual-tail.log; rm -f out/visual.log
+          rm -rf /tmp/shots-repo; mkdir -p /tmp/shots-repo; cp -r out/* /tmp/shots-repo/ || true
+          cd /tmp/shots-repo
+          git init -q; git checkout -q -b visual-shots
+          git config user.name ci; git config user.email ci@example.com
+          git add -A; git commit -q -m screenshots || true
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -q -f origin visual-shots || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: out/*

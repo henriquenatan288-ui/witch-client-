@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "witch-gametest",
+  "version": "1.0.0",
+  "name": "Witch Gametest",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["com.witch.test.WitchGametest"]
+  },
+  "depends": {
+    "witch": "*"
+  }
+}

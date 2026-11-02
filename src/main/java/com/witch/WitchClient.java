@@ -52,7 +52,7 @@ public class WitchClient implements ClientModInitializer {
 				com.witch.config.Config.save();
 			}
 			f9Down = f9;
-			if (client.gui.screen() != null && client.gui.screen().getClass() == net.minecraft.client.gui.screens.TitleScreen.class) {
+			if (System.getProperty("witch.noTitleSwap") == null && client.gui.screen() != null && client.gui.screen().getClass() == net.minecraft.client.gui.screens.TitleScreen.class) {
 				client.gui.setScreen(new com.witch.gui.WitchTitleScreen());
 			}
 			while (openGui.consumeClick()) {

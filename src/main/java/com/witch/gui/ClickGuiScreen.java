@@ -30,7 +30,7 @@ import java.util.Set;
 /** ClickGUI estilo Meteor: uma janela arrastavel por categoria, modulos em linhas, ajustes abrem dentro da janela. Monocromatico. */
 public class ClickGuiScreen extends Screen {
 	private static final int WIN_W = 100;
-	private static final int GAP = 6;
+	private static final int GAP = 5;
 	private static final int HEAD_H = 15;
 	private static final int ROW = 13;
 	private static final int INT_H = 22;
@@ -85,7 +85,7 @@ public class ClickGuiScreen extends Screen {
 		if (pl == null) return;
 		double yaw = Math.toRadians(pl.getViewYRot(1f));
 		for (Category c : Category.values()) {
-			double ang = yaw + (c.ordinal() - 1.5) * Math.toRadians(26);
+			double ang = yaw + (c.ordinal() - 1.5) * Math.toRadians(36);
 			ANCH[c.ordinal()] = new double[] {pl.getX() - Math.sin(ang) * 3.2, pl.getEyeY() - 0.1, pl.getZ() + Math.cos(ang) * 3.2};
 		}
 	}
@@ -117,6 +117,10 @@ public class ClickGuiScreen extends Screen {
 		int sx = (int) Math.round(this.width / 2.0 + (x / z) / (tanY * aspect) * this.width / 2.0);
 		int sy = (int) Math.round(this.height / 2.0 - (y / z) / tanY * this.height / 2.0);
 		return new int[] {sx, sy};
+	}
+
+	private static boolean active3d() {
+		return MODE3D && Minecraft.getInstance().player != null;
 	}
 
 	/** Deslocamento (em relacao a posicao normal) que coloca a janela sobre o ponto ancorado; x < -10000 = escondida. */
@@ -215,7 +219,7 @@ public class ClickGuiScreen extends Screen {
 		int[] p = POS.get(c);
 		if (p == null) {
 			int n = Category.values().length;
-			int ww = Math.min(WIN_W, (this.width - 8 - GAP * (n - 1)) / n);
+			int ww = winWCache;
 			int total = ww * n + GAP * (n - 1);
 			int x0 = Math.max(4, (this.width - total) / 2);
 			p = new int[] {x0 + c.ordinal() * (ww + GAP), 26};
@@ -224,7 +228,19 @@ public class ClickGuiScreen extends Screen {
 		return p;
 	}
 
+	private static int lastW = -1, lastH = -1;
 	private int winWCache = WIN_W;
+
+	@Override
+	protected void init() {
+		super.init();
+		if (lastW != this.width || lastH != this.height) {
+			POS.clear();
+			lastW = this.width;
+			lastH = this.height;
+		}
+		updateWinW();
+	}
 
 	private int winW() {
 		return winWCache;
@@ -234,8 +250,8 @@ public class ClickGuiScreen extends Screen {
 		int n = Category.values().length;
 		int mx = 0;
 		for (Module m : ModuleManager.all()) mx = Math.max(mx, FontUtil.width(m.name));
-		int want = Math.max(WIN_W, mx + 30);
-		int cap = (this.width - 8 - GAP * (n - 1)) / n;
+		int want = Math.max(WIN_W, mx + 26);
+		int cap = (this.width - 4 - GAP * (n - 1)) / n;
 		winWCache = Math.max(70, Math.min(want, cap));
 	}
 
@@ -322,7 +338,7 @@ public class ClickGuiScreen extends Screen {
 			float depth = 2f + c.ordinal();
 			curXOff = Math.round(parX * depth * 6f);
 			curYOff += Math.round(parY * depth * 4f);
-			if (MODE3D) {
+			if (active3d()) {
 				int[] o3 = offset3d(c);
 				if (o3[0] < -10000) {
 					drawOff.put(c, new int[] {-20000, 0});
@@ -333,6 +349,20 @@ public class ClickGuiScreen extends Screen {
 			}
 			renderWindow(g, c, mx, my, speed, a * Math.min(1f, k * 1.6f));
 		}
+	}
+
+	private static String fit(String t, int maxW) {
+		if (FontUtil.width(t) <= maxW) return t;
+		String r = t;
+		while (r.length() > 1 && FontUtil.width(r + "..") > maxW) r = r.substring(0, r.length() - 1);
+		return r.trim() + "..";
+	}
+
+	/** So para o teste automatico: liga o modo 3D e fixa as janelas. */
+	public void debug3d() {
+		MODE3D = true;
+		PINNED = true;
+		placeAnchors();
 	}
 
 	private static void vgrad(GuiGraphicsExtractor g, int x, int y, int w, int h, int top, int bot, float a) {
@@ -384,11 +414,11 @@ public class ClickGuiScreen extends Screen {
 			boolean hover = RenderUtil.inside(mx, my, x, ry, w, ROW) && RenderUtil.inside(mx, my, x, by, w, vh);
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			if (m.toggleAnim > 0.02f) {
-				int sl = 8;
+				int sl = 20;
 				for (int q = 0; q < sl; q++) {
 					int x0 = x + w * q / sl;
 					int x1 = x + w * (q + 1) / sl;
-					g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.20f - 0.17f * q / (sl - 1f))));
+					g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.16f - 0.14f * q / (sl - 1f))));
 				}
 				g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(TXT, a * m.toggleAnim));
 			}
@@ -397,7 +427,7 @@ public class ClickGuiScreen extends Screen {
 				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f * m.hoverAnim));
 			}
 			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
-			FontUtil.draw(g, m.name, x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
+			FontUtil.draw(g, fit(m.name, w - 7 - 11), x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
 			boolean open = OPEN.contains(m);
 			if (!m.settings().isEmpty()) {
 				String ar = open ? "-" : "+";
@@ -506,7 +536,7 @@ public class ClickGuiScreen extends Screen {
 
 		Category c = winAt(mx, my);
 		if (c == null) {
-			if (MODE3D) {
+			if (active3d()) {
 				camDrag = true;
 				return true;
 			}
@@ -615,7 +645,7 @@ public class ClickGuiScreen extends Screen {
 			if (pl != null) pl.turn(-offsetX * 1.2, -offsetY * 1.2);
 			return true;
 		}
-		if (dragWin != null && MODE3D) {
+		if (dragWin != null && active3d()) {
 			drag3d(dragWin, offsetX, offsetY);
 			dragAccum += 100;
 			return true;
