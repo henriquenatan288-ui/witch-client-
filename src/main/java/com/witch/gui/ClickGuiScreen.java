@@ -30,7 +30,7 @@ import java.util.Set;
 /** ClickGUI estilo Meteor: uma janela arrastavel por categoria, modulos em linhas, ajustes abrem dentro da janela. Monocromatico. */
 public class ClickGuiScreen extends Screen {
 	private static final int WIN_W = 100;
-	private static final int GAP = 8;
+	private static final int GAP = 5;
 	private static final int HEAD_H = 15;
 	private static final int ROW = 13;
 	private static final int INT_H = 22;
@@ -85,7 +85,7 @@ public class ClickGuiScreen extends Screen {
 		if (pl == null) return;
 		double yaw = Math.toRadians(pl.getViewYRot(1f));
 		for (Category c : Category.values()) {
-			double ang = yaw + (c.ordinal() - 1.5) * Math.toRadians(26);
+			double ang = yaw + (c.ordinal() - 1.5) * Math.toRadians(36);
 			ANCH[c.ordinal()] = new double[] {pl.getX() - Math.sin(ang) * 3.2, pl.getEyeY() - 0.1, pl.getZ() + Math.cos(ang) * 3.2};
 		}
 	}
@@ -117,6 +117,10 @@ public class ClickGuiScreen extends Screen {
 		int sx = (int) Math.round(this.width / 2.0 + (x / z) / (tanY * aspect) * this.width / 2.0);
 		int sy = (int) Math.round(this.height / 2.0 - (y / z) / tanY * this.height / 2.0);
 		return new int[] {sx, sy};
+	}
+
+	private static boolean active3d() {
+		return MODE3D && Minecraft.getInstance().player != null;
 	}
 
 	/** Deslocamento (em relacao a posicao normal) que coloca a janela sobre o ponto ancorado; x < -10000 = escondida. */
@@ -246,8 +250,8 @@ public class ClickGuiScreen extends Screen {
 		int n = Category.values().length;
 		int mx = 0;
 		for (Module m : ModuleManager.all()) mx = Math.max(mx, FontUtil.width(m.name));
-		int want = Math.max(WIN_W, mx + 28);
-		int cap = (this.width - 8 - GAP * (n - 1)) / n;
+		int want = Math.max(WIN_W, mx + 26);
+		int cap = (this.width - 4 - GAP * (n - 1)) / n;
 		winWCache = Math.max(70, Math.min(want, cap));
 	}
 
@@ -334,7 +338,7 @@ public class ClickGuiScreen extends Screen {
 			float depth = 2f + c.ordinal();
 			curXOff = Math.round(parX * depth * 6f);
 			curYOff += Math.round(parY * depth * 4f);
-			if (MODE3D) {
+			if (active3d()) {
 				int[] o3 = offset3d(c);
 				if (o3[0] < -10000) {
 					drawOff.put(c, new int[] {-20000, 0});
@@ -532,7 +536,7 @@ public class ClickGuiScreen extends Screen {
 
 		Category c = winAt(mx, my);
 		if (c == null) {
-			if (MODE3D) {
+			if (active3d()) {
 				camDrag = true;
 				return true;
 			}
@@ -641,7 +645,7 @@ public class ClickGuiScreen extends Screen {
 			if (pl != null) pl.turn(-offsetX * 1.2, -offsetY * 1.2);
 			return true;
 		}
-		if (dragWin != null && MODE3D) {
+		if (dragWin != null && active3d()) {
 			drag3d(dragWin, offsetX, offsetY);
 			dragAccum += 100;
 			return true;
