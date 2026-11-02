@@ -427,7 +427,7 @@ public class ClickGuiScreen extends Screen {
 				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f * m.hoverAnim));
 			}
 			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
-			FontUtil.draw(g, fit(m.name, w - 7 - 16), x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
+			FontUtil.draw(g, fit(m.name, w - 7 - 11), x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
 			boolean open = OPEN.contains(m);
 			if (!m.settings().isEmpty()) {
 				String ar = open ? "-" : "+";
