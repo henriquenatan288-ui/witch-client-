@@ -27,7 +27,7 @@ import java.util.Set;
  * Cada bloco tem um peso; blocos que nascem naturalmente (tabua, trilho, tocha...) nao contam.
  * Alerta com mensagem no centro + som de level-up quando encontra uma chunk nova.
  * Trial spawner: marca vermelho e nao apita.
- * Limite de avisos (1-36) e cada chunk so alerta uma vez (marcada como vista).
+ * Range de chunks 1-36. Limite de avisos 1-10. Cada chunk so alerta uma vez.
  * Keybind "Reload chunks" limpa e rescanneia.
  */
 public class SusChunkFinderModule extends Module implements EspSource {
@@ -39,9 +39,9 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 	private static SusChunkFinderModule instance;
 
-	private final IntSetting radius = add(new IntSetting("Chunk radius", 2, 6, 4, ""));
+	private final IntSetting radius = add(new IntSetting("Chunk radius", 1, 36, 4, ""));
 	private final IntSetting threshold = add(new IntSetting("Min score", 5, 200, 30, ""));
-	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 36, 3, ""));
+	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 10, 3, ""));
 	private final ColorSetting color = add(new ColorSetting("Color", 4));
 	private final KeybindSetting reloadKey = add(new KeybindSetting("Reload chunks"));
 
