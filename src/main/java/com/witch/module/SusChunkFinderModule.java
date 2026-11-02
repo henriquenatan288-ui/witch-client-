@@ -1,33 +1,45 @@
 package com.witch.module;
 
+import com.witch.gui.FontUtil;
+import com.witch.gui.RenderUtil;
 import com.witch.render.EspRenderer.Esp;
 import com.witch.render.EspSource;
 import com.witch.setting.ColorSetting;
 import com.witch.setting.IntSetting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.Block;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Marca chunks com sinais fortes de base de jogador (containers, redstone, decoracao).
  * Cada bloco tem um peso; blocos que nascem naturalmente (tabua, trilho, tocha...) nao contam.
+ * Alerta com mensagem no centro + som de level-up quando encontra uma chunk nova (com cooldown).
  */
 public class SusChunkFinderModule extends Module implements EspSource {
 	private static final int SCAN_EVERY_TICKS = 3;
 	private static final int HALF_HEIGHT = 48;
+	private static final long ALERT_DISPLAY_MS = 2800L;
+
+	private static SusChunkFinderModule instance;
 
 	private final IntSetting radius = add(new IntSetting("Chunk radius", 2, 6, 4, ""));
 	private final IntSetting threshold = add(new IntSetting("Min score", 5, 200, 30, ""));
+	private final IntSetting alertCooldown = add(new IntSetting("Alert cooldown", 1, 10, 3, "s"));
 	private final ColorSetting color = add(new ColorSetting("Color", 4));
 
 	private final Map<Block, Integer> weights = buildWeights();
 	private final Map<Long, int[]> found = new HashMap<>();
+	private final Set<Long> alerted = new HashSet<>();
 	private volatile List<int[]> view = List.of();
 
 	private int[][] offsets = null;
@@ -35,8 +47,13 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	private int cursor = 0;
 	private int cooldown = 0;
 
+	private volatile String alertText = null;
+	private volatile long alertUntil = 0L;
+	private long lastAlertAt = 0L;
+
 	public SusChunkFinderModule() {
 		super("Sus Chunk Finder", Category.VISUALS);
+		instance = this;
 	}
 
 	private static int weightOf(String n) {
@@ -100,7 +117,10 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	@Override
 	protected void onDisable() {
 		found.clear();
+		alerted.clear();
 		view = List.of();
+		alertText = null;
+		alertUntil = 0L;
 	}
 
 	private void buildOffsets(int r) {
@@ -126,6 +146,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		var player = mc.player;
 		if (player == null || level == null) {
 			found.clear();
+			alerted.clear();
 			view = List.of();
 			return;
 		}
@@ -142,14 +163,16 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		int cx = pcx + off[0];
 		int cz = pcz + off[1];
 		if (level.getChunkSource().hasChunk(cx, cz)) {
-			scanChunk(level, cx, cz, pp.getY());
+			scanChunk(level, cx, cz, pp.getY(), player);
 		}
 
 		found.values().removeIf(v -> Math.abs(v[0] - pcx) > r + 1 || Math.abs(v[1] - pcz) > r + 1);
+		alerted.removeIf(k -> !found.containsKey(k));
 		view = new ArrayList<>(found.values());
 	}
 
-	private void scanChunk(net.minecraft.client.multiplayer.ClientLevel level, int cx, int cz, int py) {
+	private void scanChunk(net.minecraft.client.multiplayer.ClientLevel level, int cx, int cz, int py,
+			net.minecraft.client.player.LocalPlayer player) {
 		int minY = Math.max(level.getMinY(), py - HALF_HEIGHT);
 		int maxY = py + HALF_HEIGHT;
 		int score = 0;
@@ -173,9 +196,56 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 		long key = ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
 		if (score >= threshold.get()) {
+			boolean isNew = !found.containsKey(key);
 			found.put(key, new int[]{cx, cz, lo, hi, score});
+			if (isNew) {
+				tryAlert(cx, cz, score, player);
+			}
 		} else {
 			found.remove(key);
 		}
+	}
+
+	private void tryAlert(int cx, int cz, int score, net.minecraft.client.player.LocalPlayer player) {
+		long key = ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
+		if (alerted.contains(key)) return;
+
+		long now = System.currentTimeMillis();
+		long need = alertCooldown.get() * 1000L;
+		if (now - lastAlertAt < need) return;
+
+		alerted.add(key);
+		lastAlertAt = now;
+		alertText = "Sus Chunk " + cx + ", " + cz + "  (" + score + ")";
+		alertUntil = now + ALERT_DISPLAY_MS;
+
+		player.playSound(SoundEvents.PLAYER_LEVELUP, 0.7f, 1.0f);
+	}
+
+	/** Mensagem pequena no centro da tela (chamado pelo HudRenderer). */
+	public static void drawHud(GuiGraphicsExtractor g) {
+		if (instance == null || !instance.isEnabled()) return;
+		String text = instance.alertText;
+		long until = instance.alertUntil;
+		if (text == null || System.currentTimeMillis() > until) return;
+
+		Minecraft mc = Minecraft.getInstance();
+		int sw = mc.getWindow().getGuiScaledWidth();
+		int sh = mc.getWindow().getGuiScaledHeight();
+		int tw = FontUtil.width(text);
+		int th = FontUtil.height();
+		int padX = 10;
+		int padY = 6;
+		int bw = tw + padX * 2;
+		int bh = th + padY * 2;
+		int x = (sw - bw) / 2;
+		int y = sh / 2 - 40;
+
+		long left = until - System.currentTimeMillis();
+		float a = left > 500 ? 1f : Math.max(0f, left / 500f);
+
+		RenderUtil.roundRect(g, x, y, bw, bh, 5, RenderUtil.alpha(0xFF1A1028, 0.82f * a));
+		RenderUtil.roundRect(g, x, y, 3, bh, 1, RenderUtil.alpha(0xFFE8C56A, a));
+		FontUtil.draw(g, text, x + padX, y + padY, RenderUtil.alpha(0xFFFFF0C8, a));
 	}
 }
