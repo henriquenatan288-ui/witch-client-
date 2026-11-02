@@ -22,6 +22,7 @@ public final class HudRenderer {
 	public static void extract(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.gui.screen() instanceof ClickGuiScreen) return;
+		com.witch.module.MoodFilterModule.drawHud(g);
 		com.witch.module.AntiVanishModule.drawHud(g);
 		com.witch.module.SusChunkFinderModule.drawHud(g);
 		com.witch.module.BatteryModule.drawHud(g);

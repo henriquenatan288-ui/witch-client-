@@ -40,6 +40,8 @@ public final class ModuleManager {
 		MODULES.add(new AutoEatModule());
 		MODULES.add(new AutoToolModule());
 		MODULES.add(new BatteryModule());
+		MODULES.add(new AmbientDustModule());
+		MODULES.add(new MoodFilterModule());
 
 		for (Module m : MODULES) {
 			if (m instanceof EspSource s) {
