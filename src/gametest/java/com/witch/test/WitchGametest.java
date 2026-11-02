@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 public class WitchGametest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
+		if (System.getenv("WITCH_VIDEO") != null) return;
 		context.waitTicks(120);
 		context.takeScreenshot("01-title");
 		try (var sp = context.worldBuilder().create()) {
