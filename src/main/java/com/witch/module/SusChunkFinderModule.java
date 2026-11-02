@@ -216,7 +216,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 		alerted.add(key);
 		lastAlertAt = now;
-		alertText = "Sus Chunk " + cx + ", " + cz + "  (" + score + ")";
+		alertText = "Chunk suspeita encontrada";
 		alertUntil = now + ALERT_DISPLAY_MS;
 
 		player.playSound(SoundEvents.PLAYER_LEVELUP, 0.7f, 1.0f);
