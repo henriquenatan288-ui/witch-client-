@@ -7,9 +7,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * FreeLook / Freecam estilo Meteor: personagem parado, camera voa com WASD.
- * Camera atravessa parede (sem clip de zoom e sem smart-culling de bloco).
- * A camera e aplicada no CameraMixin.
+ * Camera livre: seu personagem fica parado e voce voa com a camera (WASD, espaco sobe, shift desce).
+ * So enxerga os chunks que o servidor ja enviou ao seu personagem. A camera e feita no CameraMixin.
  */
 public class FreecamModule extends Module {
 	private static FreecamModule instance;
@@ -33,18 +32,6 @@ public class FreecamModule extends Module {
 
 	public static Vec3 pos(float partial) {
 		return instance.prev.lerp(instance.pos, partial);
-	}
-
-	public static double x(float partial) {
-		return pos(partial).x;
-	}
-
-	public static double y(float partial) {
-		return pos(partial).y;
-	}
-
-	public static double z(float partial) {
-		return pos(partial).z;
 	}
 
 	public static float yaw() {
@@ -93,28 +80,12 @@ public class FreecamModule extends Module {
 		double side = (o.keyLeft.isDown() ? 1 : 0) - (o.keyRight.isDown() ? 1 : 0);
 		double up = (o.keyJump.isDown() ? 1 : 0) - (o.keyShift.isDown() ? 1 : 0);
 
-		// movimento no plano do olhar (estilo Meteor): inclui pitch no forward
-		double yawRad = Math.toRadians(yaw);
-		double pitchRad = Math.toRadians(pitch);
-		double cosPitch = Math.cos(pitchRad);
-		double sinYaw = Math.sin(yawRad);
-		double cosYaw = Math.cos(yawRad);
-
-		double step = speed.get() * 0.15;
-
-		// forward: na direcao que a camera olha (atravessa bloco em qualquer eixo)
-		double fdx = -sinYaw * cosPitch * fwd;
-		double fdy = -Math.sin(pitchRad) * fwd;
-		double fdz = cosYaw * cosPitch * fwd;
-
-		// strafe horizontal
-		double sdx = cosYaw * side;
-		double sdz = sinYaw * side;
-
-		pos = pos.add(
-				(fdx + sdx) * step,
-				(fdy + up) * step,
-				(fdz + sdz) * step
-		);
+		double r = Math.toRadians(yaw);
+		double sin = Math.sin(r);
+		double cos = Math.cos(r);
+		double step = speed.get() * 0.1;
+		double dx = (-sin * fwd + cos * side) * step;
+		double dz = (cos * fwd + sin * side) * step;
+		pos = pos.add(dx, up * step, dz);
 	}
 }

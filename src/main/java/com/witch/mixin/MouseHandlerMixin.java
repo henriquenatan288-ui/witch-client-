@@ -1,5 +1,6 @@
 package com.witch.mixin;
 
+import com.witch.module.FreeLookModule;
 import com.witch.module.FreecamModule;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.player.LocalPlayer;
@@ -13,6 +14,8 @@ public abstract class MouseHandlerMixin {
 	private void witch$turn(LocalPlayer player, double dx, double dy) {
 		if (FreecamModule.active()) {
 			FreecamModule.turn(dx, dy);
+		} else if (FreeLookModule.active()) {
+			FreeLookModule.turn(dx, dy);
 		} else {
 			player.turn(dx, dy);
 		}

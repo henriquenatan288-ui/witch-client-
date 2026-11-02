@@ -1,5 +1,6 @@
 package com.witch.mixin;
 
+import com.witch.module.FreeLookModule;
 import com.witch.module.FreecamModule;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -14,13 +15,6 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Freecam estilo Meteor:
- * - forca posicao/rotacao da camera livre
- * - desativa clip de parede (getMaxZoom)
- * - detached = true
- * - isSpectator no extractRenderState pra desligar smart-culling dentro de bloco
- */
 @Mixin(Camera.class)
 public abstract class CameraMixin {
 	@Shadow
@@ -32,7 +26,7 @@ public abstract class CameraMixin {
 	@Shadow
 	protected abstract void setRotation(float yRot, float xRot);
 
-	/** Aplica camera livre no fim do update. */
+	/** Freecam: posicao livre no fim do update. */
 	@Inject(method = "update(Lnet/minecraft/client/DeltaTracker;)V", at = @At("TAIL"), require = 0)
 	private void witch$freecam(DeltaTracker deltaTracker, CallbackInfo ci) {
 		if (!FreecamModule.active()) return;
@@ -42,40 +36,39 @@ public abstract class CameraMixin {
 		detached = true;
 	}
 
+	/** FreeLook: so a rotacao da camera (corpo fica; camera gira e atravessa parede). */
+	@Inject(method = "update(Lnet/minecraft/client/DeltaTracker;)V", at = @At("TAIL"), require = 0)
+	private void witch$freelook(DeltaTracker deltaTracker, CallbackInfo ci) {
+		if (FreecamModule.active() || !FreeLookModule.active()) return;
+		setRotation(FreeLookModule.yaw(), FreeLookModule.pitch());
+		detached = true;
+	}
+
 	/**
-	 * Meteor: freecam zera o max zoom pra camera nao ser puxada pra fora do bloco.
+	 * FreeLook/Freecam: sem clip de parede no zoom da 3ª pessoa (estilo Meteor).
 	 */
 	@ModifyVariable(method = "getMaxZoom", at = @At("HEAD"), argsOnly = true, require = 0)
 	private float witch$noClipZoom(float cameraDist) {
+		if (FreeLookModule.active()) return FreeLookModule.distance();
 		if (FreecamModule.active()) return 0f;
 		return cameraDist;
 	}
 
-	/** Cancela o raycast de clip se getMaxZoom existir. */
 	@Inject(method = "getMaxZoom", at = @At("HEAD"), cancellable = true, require = 0)
 	private void witch$cancelClip(float cameraDist, CallbackInfoReturnable<Float> cir) {
-		if (FreecamModule.active()) {
-			cir.setReturnValue(cameraDist);
+		if (FreeLookModule.active()) {
+			// devolve a distancia pedida sem raycast de bloco → camera atravessa parede
+			cir.setReturnValue(FreeLookModule.distance());
 		}
 	}
 
-	@Inject(method = "extractRenderState", at = @At("HEAD"), require = 0)
-	private void witch$forceDetachedForCull(CallbackInfo ci) {
-		if (FreecamModule.active()) {
-			detached = true;
-		}
-	}
-
-	/**
-	 * Meteor: trata como spectator no extractRenderState → desliga smart culling
-	 * quando a camera esta dentro de bloco solido (evita tela preta).
-	 */
+	/** Smart-culling: trata como spectator pra nao ficar preto dentro de bloco. */
 	@Redirect(
 			method = "extractRenderState",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;isSpectator()Z"),
 			require = 0
 	)
 	private boolean witch$spectatorForCull(LocalPlayer player) {
-		return player.isSpectator() || FreecamModule.active();
+		return player.isSpectator() || FreecamModule.active() || FreeLookModule.active();
 	}
 }
