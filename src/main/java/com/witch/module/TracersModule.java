@@ -30,18 +30,23 @@ public class TracersModule extends Module implements EspSource {
 		var me = mc.player;
 		if (level == null || me == null) return;
 
+		float pt = esp.partial();
+		// posicao interpolada do player local (evita jitter no range check ao andar)
+		double mx = Mth.lerp(pt, me.xOld, me.getX());
+		double my = Mth.lerp(pt, me.yOld, me.getY());
+		double mz = Mth.lerp(pt, me.zOld, me.getZ());
+
 		if (players.enabled()) {
 			double r2 = (double) range.get() * range.get();
-			float pt = esp.partial();
 			int argb = players.color();
 			for (Player p : level.players()) {
 				if (p == me || p.isSpectator()) continue;
 				double x = Mth.lerp(pt, p.xOld, p.getX());
 				double y = Mth.lerp(pt, p.yOld, p.getY());
 				double z = Mth.lerp(pt, p.zOld, p.getZ());
-				double dx = x - me.getX();
-				double dy = y - me.getY();
-				double dz = z - me.getZ();
+				double dx = x - mx;
+				double dy = y - my;
+				double dz = z - mz;
 				if (dx * dx + dy * dy + dz * dz > r2) continue;
 				esp.tracer(x, y + p.getBbHeight() * 0.5, z, argb);
 			}
