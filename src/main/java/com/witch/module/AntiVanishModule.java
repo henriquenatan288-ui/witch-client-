@@ -4,25 +4,49 @@ import com.witch.gui.FontUtil;
 import com.witch.gui.RenderUtil;
 import com.witch.gui.Theme;
 import com.witch.setting.IntSetting;
+import com.witch.setting.OreSetting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerFaceExtractor;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Agrupa os jogadores da lista de jogadores (tab) por cargo e mostra na tela os cargos e, do cargo escolhido,
- * quem esta online. So enxerga quem o servidor mostra na tab: um staff em vanish bem feito NAO aparece aqui.
+ * Lista cargos da tab. Os cargos que voce marca com "Alert this rank" disparam alerta
+ * quando um player daquele cargo entra a < 20 blocos: overlay estilo guardian (fadiga),
+ * mas com a cabeca da skin do player + nick pequeno de quem esta te observando.
  */
 public class AntiVanishModule extends Module {
+	private static final double ALERT_RANGE = 20.0;
+	private static final long ALERT_HOLD_MS = 3200L;
+
 	private static AntiVanishModule instance;
 	private static volatile Map<String, List<String>> ranks = new LinkedHashMap<>();
+	/** nome do player -> cargo (atualizado junto com ranks). */
+	private static volatile Map<String, String> playerRank = new LinkedHashMap<>();
 
-	private final IntSetting rank = add(new IntSetting("Rank (0 = so cargos)", 0, 30, 0, ""));
+	private final IntSetting rankFocus = add(new IntSetting("Rank", 0, 30, 0, ""));
+	/** Liga = adiciona o Rank focado aos alertas; desliga = remove. */
+	private final OreSetting alertThis = add(new OreSetting("Alert this rank", false, 5));
+
+	private final Set<String> alertRanks = new HashSet<>();
+	private boolean lastAlertThis = false;
 	private int cooldown = 0;
+
+	/** Alerta ativo: quem esta perto. */
+	private volatile String alertName = null;
+	private volatile AbstractClientPlayer alertPlayer = null;
+	private volatile long alertUntil = 0L;
+	private long alertStarted = 0L;
 
 	public AntiVanishModule() {
 		super("Anti Vanish", Category.UTILITY);
@@ -32,16 +56,83 @@ public class AntiVanishModule extends Module {
 	@Override
 	protected void onDisable() {
 		ranks = new LinkedHashMap<>();
+		playerRank = new LinkedHashMap<>();
+		alertName = null;
+		alertPlayer = null;
+		alertUntil = 0L;
 	}
 
 	@Override
 	public void onTick() {
-		if (--cooldown > 0) return;
-		cooldown = 10;
 		Minecraft mc = Minecraft.getInstance();
+
+		// sincroniza selecao de cargo de alerta (edge do toggle)
+		boolean on = alertThis.enabled();
+		if (on != lastAlertThis) {
+			lastAlertThis = on;
+			List<String> keys = new ArrayList<>(ranks.keySet());
+			int f = rankFocus.get();
+			if (f >= 1 && f <= keys.size()) {
+				String r = keys.get(f - 1);
+				if (on) alertRanks.add(r);
+				else alertRanks.remove(r);
+			}
+		}
+
+		if (--cooldown <= 0) {
+			cooldown = 10;
+			refreshRanks(mc);
+		}
+
+		// players com cargo selecionado dentro de 20 blocos
+		var level = mc.level;
+		var me = mc.player;
+		if (level == null || me == null || alertRanks.isEmpty()) {
+			if (System.currentTimeMillis() > alertUntil) {
+				alertName = null;
+				alertPlayer = null;
+			}
+			return;
+		}
+
+		AbstractClientPlayer closest = null;
+		double best = ALERT_RANGE * ALERT_RANGE;
+		String closestName = null;
+		for (Player p : level.players()) {
+			if (p == me || p.isSpectator() || !(p instanceof AbstractClientPlayer acp)) continue;
+			String name = p.getGameProfile().name();
+			String rank = playerRank.get(name);
+			if (rank == null || !alertRanks.contains(rank)) continue;
+			double dx = p.getX() - me.getX();
+			double dy = p.getY() - me.getY();
+			double dz = p.getZ() - me.getZ();
+			double d2 = dx * dx + dy * dy + dz * dz;
+			if (d2 <= best) {
+				best = d2;
+				closest = acp;
+				closestName = name;
+			}
+		}
+
+		if (closest != null) {
+			long now = System.currentTimeMillis();
+			if (alertName == null || !alertName.equals(closestName)) {
+				alertStarted = now;
+			}
+			alertName = closestName;
+			alertPlayer = closest;
+			alertUntil = now + ALERT_HOLD_MS;
+		} else if (System.currentTimeMillis() > alertUntil) {
+			alertName = null;
+			alertPlayer = null;
+		}
+	}
+
+	private void refreshRanks(Minecraft mc) {
 		var conn = mc.getConnection();
 		if (conn == null) return;
 		Map<String, List<String>> tmp = new TreeMap<>();
+		Map<String, String> pr = new LinkedHashMap<>();
 		for (var info : conn.getOnlinePlayers()) {
 			String name = info.getProfile().name();
 			var disp = info.getTabListDisplayName();
@@ -50,6 +141,7 @@ public class AntiVanishModule extends Module {
 			String r = idx > 0 ? full.substring(0, idx).trim() : "Sem cargo";
 			if (r.isEmpty()) r = "Sem cargo";
 			tmp.computeIfAbsent(r, k -> new ArrayList<>()).add(name);
+			pr.put(name, r);
 		}
 		List<Map.Entry<String, List<String>>> sorted = new ArrayList<>(tmp.entrySet());
 		sorted.sort((a, b) -> b.getValue().size() - a.getValue().size());
@@ -59,24 +151,34 @@ public class AntiVanishModule extends Module {
 			out.put(e.getKey(), e.getValue());
 		}
 		ranks = out;
+		playerRank = pr;
 	}
 
 	private static String strip(String s) {
 		return s.replaceAll("§.", "");
 	}
 
-	/** Desenha o painel no canto direito da tela (chamado pelo HudRenderer). */
+	/** Painel de cargos + overlay estilo guardian. */
 	public static void drawHud(GuiGraphicsExtractor g) {
-		if (instance == null || !instance.isEnabled() || ranks.isEmpty()) return;
+		if (instance == null || !instance.isEnabled()) return;
+		drawRankPanel(g);
+		drawGuardianAlert(g);
+	}
+
+	private static void drawRankPanel(GuiGraphicsExtractor g) {
+		if (ranks.isEmpty()) return;
 		Minecraft mc = Minecraft.getInstance();
-		int sel = instance.rank.get();
+		int focus = instance.rankFocus.get();
 		List<String> keys = new ArrayList<>(ranks.keySet());
-		int lines = 1 + keys.size() + (sel >= 1 && sel <= keys.size() ? 1 + ranks.get(keys.get(sel - 1)).size() : 0);
 		int lh = FontUtil.height() + 2;
-		int w = 120;
-		for (String k : keys) w = Math.max(w, FontUtil.width(k) + 40);
-		if (sel >= 1 && sel <= keys.size()) {
-			for (String n : ranks.get(keys.get(sel - 1))) w = Math.max(w, FontUtil.width(n) + 20);
+		int lines = 1 + keys.size();
+		if (focus >= 1 && focus <= keys.size()) {
+			lines += 1 + ranks.get(keys.get(focus - 1)).size();
+		}
+		int w = 130;
+		for (String k : keys) w = Math.max(w, FontUtil.width(k) + 50);
+		if (focus >= 1 && focus <= keys.size()) {
+			for (String n : ranks.get(keys.get(focus - 1))) w = Math.max(w, FontUtil.width(n) + 24);
 		}
 		int h = lines * lh + 10;
 		int x = mc.getWindow().getGuiScaledWidth() - w - 6;
@@ -87,19 +189,85 @@ public class AntiVanishModule extends Module {
 		FontUtil.draw(g, "Cargos online", x + 8, ty, Theme.TEXT);
 		ty += lh;
 		for (int i = 0; i < keys.size(); i++) {
-			boolean on = (i + 1) == sel;
-			String line = (i + 1) + ". " + keys.get(i) + " (" + ranks.get(keys.get(i)).size() + ")";
-			FontUtil.draw(g, line, x + 8, ty, on ? 0xFFFFFFFF : 0xFFB9A8D8);
+			String key = keys.get(i);
+			boolean focused = (i + 1) == focus;
+			boolean alert = instance.alertRanks.contains(key);
+			String mark = alert ? "[!]	" : "    ";
+			String line = mark + (i + 1) + ". " + key + " (" + ranks.get(key).size() + ")";
+			int col = alert ? 0xFFFF6B6B : (focused ? 0xFFFFFFFF : 0xFFB9A8D8);
+			FontUtil.draw(g, line, x + 8, ty, col);
 			ty += lh;
 		}
-		if (sel >= 1 && sel <= keys.size()) {
-			ty += 0;
-			FontUtil.draw(g, "-- " + keys.get(sel - 1), x + 8, ty, 0xFF7CFC5A);
+		if (focus >= 1 && focus <= keys.size()) {
+			FontUtil.draw(g, "-- " + keys.get(focus - 1), x + 8, ty, 0xFF7CFC5A);
 			ty += lh;
-			for (String n : ranks.get(keys.get(sel - 1))) {
+			for (String n : ranks.get(keys.get(focus - 1))) {
 				FontUtil.draw(g, n, x + 14, ty, 0xFFFFFFFF);
 				ty += lh;
 			}
 		}
+	}
+
+	/**
+	 * Overlay estilo elder guardian / mining fatigue:
+	 * cabeca grande no centro com fade + nick pequeno de quem observa.
+	 */
+	private static void drawGuardianAlert(GuiGraphicsExtractor g) {
+		String name = instance.alertName;
+		AbstractClientPlayer player = instance.alertPlayer;
+		long until = instance.alertUntil;
+		long now = System.currentTimeMillis();
+		if (name == null || now > until) return;
+
+		Minecraft mc = Minecraft.getInstance();
+		int sw = mc.getWindow().getGuiScaledWidth();
+		int sh = mc.getWindow().getGuiScaledHeight();
+
+		// alpha: sobe rapido, segura, desce no final (parecido com o efeito do guardian)
+		long age = now - instance.alertStarted;
+		long left = until - now;
+		float a;
+		if (age < 400) a = age / 400f;
+		else if (left < 600) a = left / 600f;
+		else a = 1f;
+		a = Mth.clamp(a, 0f, 1f);
+		// pulso leve
+		float pulse = 0.85f + 0.15f * (float) Math.sin(now / 180.0);
+		float alpha = a * pulse;
+
+		// vinheta escura suave (estilo fadiga)
+		int dark = RenderUtil.alpha(0xFF000000, 0.35f * alpha);
+		g.fill(0, 0, sw, sh, dark);
+
+		// tamanho grande da cabeca (estilo guardian)
+		int size = Math.min(sw, sh) / 3;
+		int hx = (sw - size) / 2;
+		int hy = (sh - size) / 2 - 12;
+
+		int faceColor = RenderUtil.alpha(0xFFFFFFFF, alpha);
+		if (player != null) {
+			try {
+				var skin = player.getSkin();
+				PlayerFaceExtractor.extractRenderState(g, skin, hx, hy, size, faceColor);
+			} catch (Throwable t) {
+				// fallback: tenta pela textura do body
+				try {
+					var tex = player.getSkin().body().texturePath();
+					PlayerFaceExtractor.extractRenderState(g, tex, hx, hy, size, true, false, faceColor);
+				} catch (Throwable ignored) {
+					RenderUtil.roundRect(g, hx, hy, size, size, 8, RenderUtil.alpha(0xFF4A2060, alpha));
+				}
+			}
+		} else {
+			RenderUtil.roundRect(g, hx, hy, size, size, 8, RenderUtil.alpha(0xFF4A2060, alpha));
+		}
+
+		// nick pequeno embaixo da cabeca
+		String label = name;
+		int tw = FontUtil.width(label);
+		int tx = (sw - tw) / 2;
+		int ty = hy + size + 6;
+		FontUtil.draw(g, label, tx + 1, ty + 1, RenderUtil.alpha(0xFF000000, alpha * 0.7f));
+		FontUtil.draw(g, label, tx, ty, RenderUtil.alpha(0xFFFFE8A0, alpha));
 	}
 }
