@@ -50,7 +50,9 @@ public class VideoGametest implements FabricClientGameTest {
 
 			// 3) desce a rampa ate a caverna e minera pedra
 			walkTo(c, -6.0, 0.0, false);
-			walkTo(c, -18.0, 0.0, false);
+			walkTo(c, -12.0, 0.0, false);
+			srv.runCommand("tp @p -18.5 52 0.5 90 8");
+			tick(c, 30);
 			for (int i = 0; i < 3; i++) {
 				mine(c, new BlockPos(-21 + 0, 52 + (i % 2), (i / 2)));
 				tick(c, 5);
@@ -73,9 +75,11 @@ public class VideoGametest implements FabricClientGameTest {
 			}
 
 			// 5) volta pro solo
-			walkTo(c, -13.0, 0.0, false);
-			walkTo(c, -6.0, 0.0, true);
-			walkTo(c, 4.0, 8.0, true);
+			walkTo(c, -14.0, 0.0, false);
+			srv.runCommand("tp @p -6.5 60 0.5 -90 8");
+			tick(c, 20);
+			srv.runCommand("tp @p -3.5 61 0.5 -90 8");
+			walkTo(c, 4.0, 8.0, false);
 			c.getInput().pressKey(o -> o.keyHotbarSlots[4]);
 			tick(c, 15);
 
