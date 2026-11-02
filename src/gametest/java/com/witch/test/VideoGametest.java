@@ -25,6 +25,7 @@ public class VideoGametest implements FabricClientGameTest {
 			srv.runCommand("gamerule doDaylightCycle false");
 			srv.runCommand("time set 1000");
 			srv.runCommand("weather clear");
+			srv.runCommand("effect give @p minecraft:resistance 99999 4 true");
 			buildScene(srv);
 			srv.runCommand("tp @p 0 61 0 -90 10");
 			tick(c, 40);
