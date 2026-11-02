@@ -33,16 +33,14 @@ jobs:
           MESA_GLSL_VERSION_OVERRIDE: "460"
           WITCH_VIDEO: "1"
         run: |
-          mkdir -p out
-          Xvfb :99 -screen 0 1280x720x24 &
-          sleep 3
-          export DISPLAY=:99
-          ffmpeg -loglevel error -f x11grab -video_size 1280x720 -framerate 15 -i :99 -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p out/witch-video.mp4 &
-          FF=$!
+          mkdir -p out frames
           set -o pipefail
-          gradle runClientGametest --stacktrace 2>&1 | tee video.log || true
-          kill -INT $FF || true
-          wait $FF || true
+          xvfb-run -a -s "-screen 0 1280x720x24" gradle runClientGametest --stacktrace 2>&1 | tee video.log || true
+          find . -path ./frames -prune -o -name "*.png" -path "*screenshots*" -print | sort > list.txt
+          wc -l list.txt
+          n=0; while IFS= read -r f; do n=$((n+1)); cp "$f" "frames/$(printf '%05d' $n).png"; done < list.txt
+          ffmpeg -loglevel error -framerate 10 -i frames/%05d.png -c:v libx264 -preset veryfast -crf 28 -pix_fmt yuv420p out/witch-video.mp4 || true
+          cp frames/00001.png out/first.png || true
           tail -1500 video.log > out/video-tail.log
           grep -n -E "What went wrong|FAILURE|Exception|Caused by|error:|Error" video.log | head -30 | while IFS= read -r l; do echo "::notice::$l"; done
           ls -la out
