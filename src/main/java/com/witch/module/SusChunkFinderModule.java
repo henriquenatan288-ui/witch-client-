@@ -1,11 +1,13 @@
 package com.witch.module;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.witch.gui.FontUtil;
 import com.witch.gui.RenderUtil;
 import com.witch.render.EspRenderer.Esp;
 import com.witch.render.EspSource;
 import com.witch.setting.ColorSetting;
 import com.witch.setting.IntSetting;
+import com.witch.setting.KeybindSetting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
@@ -24,23 +26,28 @@ import java.util.Set;
  * Marca chunks com sinais fortes de base de jogador (containers, redstone, decoracao).
  * Cada bloco tem um peso; blocos que nascem naturalmente (tabua, trilho, tocha...) nao contam.
  * Alerta com mensagem no centro + som de level-up quando encontra uma chunk nova.
- * Limite de avisos (1-10) e cada chunk so alerta uma vez (marcada como vista).
+ * Trial spawner: marca vermelho e nao apita.
+ * Limite de avisos (1-36) e cada chunk so alerta uma vez (marcada como vista).
+ * Keybind "Reload chunks" limpa e rescanneia.
  */
 public class SusChunkFinderModule extends Module implements EspSource {
 	private static final int SCAN_EVERY_TICKS = 3;
 	private static final int HALF_HEIGHT = 48;
 	private static final long ALERT_DISPLAY_MS = 2800L;
+	/** Vermelho fixo pra trial (mesmo tom da palette). */
+	private static final int TRIAL_COLOR = 0xFFEF4444;
 
 	private static SusChunkFinderModule instance;
 
 	private final IntSetting radius = add(new IntSetting("Chunk radius", 2, 6, 4, ""));
 	private final IntSetting threshold = add(new IntSetting("Min score", 5, 200, 30, ""));
-	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 10, 3, ""));
+	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 36, 3, ""));
 	private final ColorSetting color = add(new ColorSetting("Color", 4));
+	private final KeybindSetting reloadKey = add(new KeybindSetting("Reload chunks"));
 
 	private final Map<Block, Integer> weights = buildWeights();
 	private final Map<Long, int[]> found = new HashMap<>();
-	/** Chunks que ja avisaram — nao alertam de novo ate desligar o modulo. */
+	/** Chunks que ja avisaram / trial — nao alertam de novo ate reload ou desligar. */
 	private final Set<Long> seen = new HashSet<>();
 	private volatile List<int[]> view = List.of();
 
@@ -95,6 +102,11 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		return m;
 	}
 
+	private static boolean isTrialSpawner(Block b) {
+		String n = BuiltInRegistries.BLOCK.getKey(b).getPath();
+		return n.equals("trial_spawner");
+	}
+
 	@Override
 	public boolean active() {
 		return isEnabled();
@@ -102,10 +114,11 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 	@Override
 	public void collect(Esp esp) {
-		int argb = color.get();
+		int normal = color.get();
 		for (int[] v : view) {
 			int x0 = v[0] * 16;
 			int z0 = v[1] * 16;
+			int argb = v.length > 5 && v[5] != 0 ? TRIAL_COLOR : normal;
 			esp.box(x0, v[2], z0, x0 + 16, v[3] + 1, z0 + 16, argb, 0f);
 		}
 	}
@@ -128,6 +141,18 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		alertCount = 0;
 	}
 
+	/** Limpa chunks expostas, seen e contador de alertas — força rescan. */
+	private void reloadExposed() {
+		found.clear();
+		seen.clear();
+		view = List.of();
+		alertCount = 0;
+		alertText = null;
+		alertUntil = 0L;
+		cursor = 0;
+		cooldown = 0;
+	}
+
 	private void buildOffsets(int r) {
 		List<int[]> list = new ArrayList<>();
 		for (int dx = -r; dx <= r; dx++) {
@@ -143,10 +168,23 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 	@Override
 	public void onTick() {
+		Minecraft mc = Minecraft.getInstance();
+
+		// keybind de reload (edge detect, so fora de tela)
+		int rk = reloadKey.key();
+		if (rk != 0) {
+			boolean down = InputConstants.isKeyDown(mc.getWindow(), rk);
+			if (down && !reloadKey.wasDown && mc.gui.screen() == null) {
+				reloadExposed();
+			}
+			reloadKey.wasDown = down;
+		} else {
+			reloadKey.wasDown = false;
+		}
+
 		if (--cooldown > 0) return;
 		cooldown = SCAN_EVERY_TICKS;
 
-		Minecraft mc = Minecraft.getInstance();
 		var level = mc.level;
 		var player = mc.player;
 		if (player == null || level == null) {
@@ -171,7 +209,6 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		}
 
 		found.values().removeIf(v -> Math.abs(v[0] - pcx) > r + 1 || Math.abs(v[1] - pcz) > r + 1);
-		// seen permanece: mesma chunk nunca alerta de novo ate desligar o modulo
 		view = new ArrayList<>(found.values());
 	}
 
@@ -182,13 +219,20 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		int score = 0;
 		int lo = Integer.MAX_VALUE;
 		int hi = Integer.MIN_VALUE;
+		boolean hasTrial = false;
 
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		for (int x = 0; x < 16; x++) {
 			for (int z = 0; z < 16; z++) {
 				for (int y = minY; y <= maxY; y++) {
 					pos.set(cx * 16 + x, y, cz * 16 + z);
-					Integer w = weights.get(level.getBlockState(pos).getBlock());
+					Block block = level.getBlockState(pos).getBlock();
+					if (isTrialSpawner(block)) {
+						hasTrial = true;
+						if (y < lo) lo = y;
+						if (y > hi) hi = y;
+					}
+					Integer w = weights.get(block);
 					if (w != null) {
 						score += w;
 						if (y < lo) lo = y;
@@ -199,9 +243,24 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		}
 
 		long key = ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
+
+		// trial spawner: sempre mostra em vermelho, sem alerta
+		if (hasTrial) {
+			if (lo == Integer.MAX_VALUE) {
+				lo = minY;
+				hi = maxY;
+			}
+			boolean isNew = !found.containsKey(key);
+			found.put(key, new int[]{cx, cz, lo, hi, score, 1});
+			if (isNew) {
+				seen.add(key); // marca vista, sem som/mensagem
+			}
+			return;
+		}
+
 		if (score >= threshold.get()) {
 			boolean isNew = !found.containsKey(key);
-			found.put(key, new int[]{cx, cz, lo, hi, score});
+			found.put(key, new int[]{cx, cz, lo, hi, score, 0});
 			if (isNew) {
 				tryAlert(key, player);
 			}
@@ -211,11 +270,9 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	}
 
 	private void tryAlert(long key, net.minecraft.client.player.LocalPlayer player) {
-		// ja vista = nunca alerta de novo
 		if (seen.contains(key)) return;
-		// limite de quantas vezes pode avisar (1-10)
 		if (alertCount >= maxAlerts.get()) {
-			seen.add(key); // marca mesmo assim pra nao tentar de novo
+			seen.add(key);
 			return;
 		}
 

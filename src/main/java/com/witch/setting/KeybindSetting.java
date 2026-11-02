@@ -2,14 +2,18 @@ package com.witch.setting;
 
 import org.lwjgl.glfw.GLFW;
 
-/** Tecla que liga/desliga o modulo. Guarda o codigo GLFW (0 = sem tecla). Salva como numero. */
+/** Tecla configuravel. Guarda o codigo GLFW (0 = sem tecla). Salva como numero. */
 public final class KeybindSetting extends Setting {
 	private int key = 0;
 	public boolean listening = false;
 	public boolean wasDown = false;
 
 	public KeybindSetting() {
-		super("Keybind");
+		this("Keybind");
+	}
+
+	public KeybindSetting(String name) {
+		super(name);
 	}
 
 	public int key() {
