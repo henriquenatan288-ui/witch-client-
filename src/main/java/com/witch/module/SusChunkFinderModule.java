@@ -39,7 +39,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 	private static SusChunkFinderModule instance;
 
-	private final IntSetting radius = add(new IntSetting("Chunk radius", 1, 36, 4, ""));
+	private final IntSetting radius = add(new IntSetting("Chunk radius", 1, 30, 4, ""));
 	private final IntSetting threshold = add(new IntSetting("Min score", 5, 200, 30, ""));
 	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 10, 3, ""));
 	private final ColorSetting color = add(new ColorSetting("Color", 4));
