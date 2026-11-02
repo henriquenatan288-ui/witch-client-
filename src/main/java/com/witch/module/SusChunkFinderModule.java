@@ -23,7 +23,8 @@ import java.util.Set;
 /**
  * Marca chunks com sinais fortes de base de jogador (containers, redstone, decoracao).
  * Cada bloco tem um peso; blocos que nascem naturalmente (tabua, trilho, tocha...) nao contam.
- * Alerta com mensagem no centro + som de level-up quando encontra uma chunk nova (com cooldown).
+ * Alerta com mensagem no centro + som de level-up quando encontra uma chunk nova.
+ * Limite de avisos (1-10) e cada chunk so alerta uma vez (marcada como vista).
  */
 public class SusChunkFinderModule extends Module implements EspSource {
 	private static final int SCAN_EVERY_TICKS = 3;
@@ -34,22 +35,23 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 	private final IntSetting radius = add(new IntSetting("Chunk radius", 2, 6, 4, ""));
 	private final IntSetting threshold = add(new IntSetting("Min score", 5, 200, 30, ""));
-	private final IntSetting alertCooldown = add(new IntSetting("Alert cooldown", 1, 10, 3, "s"));
+	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 10, 3, ""));
 	private final ColorSetting color = add(new ColorSetting("Color", 4));
 
 	private final Map<Block, Integer> weights = buildWeights();
 	private final Map<Long, int[]> found = new HashMap<>();
-	private final Set<Long> alerted = new HashSet<>();
+	/** Chunks que ja avisaram — nao alertam de novo ate desligar o modulo. */
+	private final Set<Long> seen = new HashSet<>();
 	private volatile List<int[]> view = List.of();
 
 	private int[][] offsets = null;
 	private int offsetsRadius = -1;
 	private int cursor = 0;
 	private int cooldown = 0;
+	private int alertCount = 0;
 
 	private volatile String alertText = null;
 	private volatile long alertUntil = 0L;
-	private long lastAlertAt = 0L;
 
 	public SusChunkFinderModule() {
 		super("Sus Chunk Finder", Category.VISUALS);
@@ -112,15 +114,18 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	protected void onEnable() {
 		cooldown = 0;
 		cursor = 0;
+		alertCount = 0;
+		seen.clear();
 	}
 
 	@Override
 	protected void onDisable() {
 		found.clear();
-		alerted.clear();
+		seen.clear();
 		view = List.of();
 		alertText = null;
 		alertUntil = 0L;
+		alertCount = 0;
 	}
 
 	private void buildOffsets(int r) {
@@ -146,7 +151,6 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		var player = mc.player;
 		if (player == null || level == null) {
 			found.clear();
-			alerted.clear();
 			view = List.of();
 			return;
 		}
@@ -167,7 +171,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		}
 
 		found.values().removeIf(v -> Math.abs(v[0] - pcx) > r + 1 || Math.abs(v[1] - pcz) > r + 1);
-		alerted.removeIf(k -> !found.containsKey(k));
+		// seen permanece: mesma chunk nunca alerta de novo ate desligar o modulo
 		view = new ArrayList<>(found.values());
 	}
 
@@ -199,25 +203,26 @@ public class SusChunkFinderModule extends Module implements EspSource {
 			boolean isNew = !found.containsKey(key);
 			found.put(key, new int[]{cx, cz, lo, hi, score});
 			if (isNew) {
-				tryAlert(cx, cz, score, player);
+				tryAlert(key, player);
 			}
 		} else {
 			found.remove(key);
 		}
 	}
 
-	private void tryAlert(int cx, int cz, int score, net.minecraft.client.player.LocalPlayer player) {
-		long key = ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
-		if (alerted.contains(key)) return;
+	private void tryAlert(long key, net.minecraft.client.player.LocalPlayer player) {
+		// ja vista = nunca alerta de novo
+		if (seen.contains(key)) return;
+		// limite de quantas vezes pode avisar (1-10)
+		if (alertCount >= maxAlerts.get()) {
+			seen.add(key); // marca mesmo assim pra nao tentar de novo
+			return;
+		}
 
-		long now = System.currentTimeMillis();
-		long need = alertCooldown.get() * 1000L;
-		if (now - lastAlertAt < need) return;
-
-		alerted.add(key);
-		lastAlertAt = now;
+		seen.add(key);
+		alertCount++;
 		alertText = "Chunk suspeita encontrada";
-		alertUntil = now + ALERT_DISPLAY_MS;
+		alertUntil = System.currentTimeMillis() + ALERT_DISPLAY_MS;
 
 		player.playSound(SoundEvents.PLAYER_LEVELUP, 0.7f, 1.0f);
 	}
