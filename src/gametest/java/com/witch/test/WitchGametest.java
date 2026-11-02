@@ -24,16 +24,6 @@ public class WitchGametest implements FabricClientGameTest {
 			context.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
 			context.waitTicks(60);
 			context.takeScreenshot("05-clickgui-world");
-			context.runOnClient(mc -> {
-				ClickGuiScreen s = new ClickGuiScreen();
-				mc.gui.setScreen(s);
-				s.debug3d();
-			});
-			context.waitTicks(40);
-			context.takeScreenshot("06a-3d-open");
-			context.runOnClient(mc -> mc.gui.setScreen(null));
-			context.waitTicks(20);
-			context.takeScreenshot("06-pinned-3d");
 		}
 		context.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
 		context.waitTicks(60);

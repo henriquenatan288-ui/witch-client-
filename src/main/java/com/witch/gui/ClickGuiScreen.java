@@ -73,105 +73,13 @@ public class ClickGuiScreen extends Screen {
 	private int curXOff = 0;
 	private float parX = 0f, parY = 0f;
 	private static final int BOT = 4;
-	private static boolean MODE3D = false;
-	private static boolean PINNED = false;
-	private static ClickGuiScreen LAST = null;
-	private static final double[][] ANCH = new double[4][3];
-	private boolean camDrag = false;
 
-	/** Janelas ancoradas no mundo: ao ligar o modo 3D elas aparecem a sua frente e ficam paradas no lugar. */
-	private void placeAnchors() {
-		var pl = Minecraft.getInstance().player;
-		if (pl == null) return;
-		double yaw = Math.toRadians(pl.getViewYRot(1f));
-		for (Category c : Category.values()) {
-			double ang = yaw + (c.ordinal() - 1.5) * Math.toRadians(36);
-			ANCH[c.ordinal()] = new double[] {pl.getX() - Math.sin(ang) * 3.2, pl.getEyeY() - 0.1, pl.getZ() + Math.cos(ang) * 3.2};
-		}
-	}
 
-	/** Projeta um ponto do mundo na tela (coordenadas da GUI). Retorna null se estiver atras da camera. */
-	private int[] project(double ax, double ay, double az) {
-		Minecraft mc = Minecraft.getInstance();
-		var pl = mc.player;
-		if (pl == null || this.width <= 0 || this.height <= 0) return null;
-		double yaw = Math.toRadians(pl.getViewYRot(1f));
-		double pit = Math.toRadians(pl.getViewXRot(1f));
-		double vx = ax - pl.getX();
-		double vy = ay - pl.getEyeY();
-		double vz = az - pl.getZ();
-		double fx = -Math.sin(yaw) * Math.cos(pit);
-		double fy = -Math.sin(pit);
-		double fz = Math.cos(yaw) * Math.cos(pit);
-		double rx = -Math.cos(yaw);
-		double rz = -Math.sin(yaw);
-		double ux = -rz * fy;
-		double uy = rz * fx - rx * fz;
-		double uz = rx * fy;
-		double z = vx * fx + vy * fy + vz * fz;
-		if (z < 0.4) return null;
-		double x = vx * rx + vz * rz;
-		double y = vx * ux + vy * uy + vz * uz;
-		double tanY = Math.tan(Math.toRadians(mc.options.fov().get()) / 2.0);
-		double aspect = (double) this.width / this.height;
-		int sx = (int) Math.round(this.width / 2.0 + (x / z) / (tanY * aspect) * this.width / 2.0);
-		int sy = (int) Math.round(this.height / 2.0 - (y / z) / tanY * this.height / 2.0);
-		return new int[] {sx, sy};
-	}
 
-	private static boolean active3d() {
-		return MODE3D && Minecraft.getInstance().player != null;
-	}
 
-	/** Deslocamento (em relacao a posicao normal) que coloca a janela sobre o ponto ancorado; x < -10000 = escondida. */
-	private int[] offset3d(Category c) {
-		double[] an = ANCH[c.ordinal()];
-		int[] pr = project(an[0], an[1], an[2]);
-		if (pr == null) return new int[] {-20000, 0};
-		int w = winW();
-		int[] p = pos(c);
-		int hh = HEAD_H + viewH(c, w) + BOT;
-		int x = pr[0] - w / 2;
-		int y = pr[1] - hh / 2;
-		if (x > this.width || x + w < 0 || y > this.height || y + hh < 0) return new int[] {-20000, 0};
-		return new int[] {x - p[0], y - p[1]};
-	}
 
-	/** Arrastar o titulo no modo 3D move a janela pelo mundo (muda onde ela esta ancorada). */
-	private void drag3d(Category c, double dxPx, double dyPx) {
-		var pl = Minecraft.getInstance().player;
-		if (pl == null || this.width <= 0) return;
-		double[] a = ANCH[c.ordinal()];
-		double vx = a[0] - pl.getX();
-		double vz = a[2] - pl.getZ();
-		double h = Math.max(0.5, Math.hypot(vx, vz));
-		double ang = Math.atan2(-vx, vz);
-		double tanY = Math.tan(Math.toRadians(Minecraft.getInstance().options.fov().get()) / 2.0);
-		double fovH = 2.0 * Math.atan(tanY * this.width / Math.max(1, this.height));
-		double perPx = fovH / this.width;
-		ang += dxPx * perPx;
-		a[0] = pl.getX() - Math.sin(ang) * h;
-		a[2] = pl.getZ() + Math.cos(ang) * h;
-		a[1] -= dyPx * perPx * h;
-	}
 
-	public static void renderPinned(GuiGraphicsExtractor g) {
-		ClickGuiScreen s = LAST;
-		if (!PINNED || !MODE3D || s == null || s.width <= 0) return;
-		for (Category c : ORDER) {
-			int[] o = s.offset3d(c);
-			if (o[0] < -10000) continue;
-			s.curXOff = o[0];
-			s.curYOff = o[1];
-			s.renderWindow(g, c, -1000, -1000, 1f, 0.92f);
-		}
-	}
 
-	private static void chip(GuiGraphicsExtractor g, int x, int y, int w, int h, String t, boolean on, float a) {
-		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, h + 2, 5, RenderUtil.alpha(LINE, a));
-		RenderUtil.roundRect(g, x, y, w, h, 4, RenderUtil.alpha(on ? 0xFFEDEDED : 0xFF0C0C0C, a));
-		FontUtil.draw(g, t, x + (w - FontUtil.width(t)) / 2, y + (h - FontUtil.height()) / 2, RenderUtil.alpha(on ? 0xFF000000 : TXT, a));
-	}
 
 	private static void sweep(GuiGraphicsExtractor g, int x0, int x1, int y, float a, int seed, boolean rev) {
 		float t = (System.nanoTime() / 1_000_000_000f) * 0.4f + seed * 0.23f;
@@ -203,7 +111,6 @@ public class ClickGuiScreen extends Screen {
 	/** Se 'openSettings' nao for nulo, a janela ja abre com os ajustes desse modulo expandidos. */
 	public ClickGuiScreen(Module openSettings) {
 		super(Component.literal("Witch Client"));
-		LAST = this;
 		if (openSettings != null && !openSettings.settings().isEmpty()) OPEN.add(openSettings);
 		if (ORDER.isEmpty()) {
 			for (Category c : Category.values()) ORDER.add(c);
@@ -300,7 +207,7 @@ public class ClickGuiScreen extends Screen {
 		openT += speed / 60f;
 		float a = openAnim;
 
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(MODE3D ? 0x33000000 : 0x99000000, a));
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x99000000, a));
 
 		// busca no topo
 		int sw = Math.min(150, this.width - 20);
@@ -319,13 +226,6 @@ public class ClickGuiScreen extends Screen {
 		}
 		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
 
-		int c1w = FontUtil.width("3D") + 10;
-		int c2w = FontUtil.width("PIN") + 10;
-		int c1x = sx + sw + 6;
-		int c2x = c1x + c1w + 5;
-		chip(g, c1x, 5, c1w, 13, "3D", MODE3D, a);
-		chip(g, c2x, 5, c2w, 13, "PIN", PINNED, a);
-
 		float tx = (mx - this.width / 2f) / Math.max(1, this.width);
 		float ty = (my - this.height / 2f) / Math.max(1, this.height);
 		parX = Mth.lerp(Math.min(1f, speed * 0.12f), parX, tx);
@@ -338,15 +238,6 @@ public class ClickGuiScreen extends Screen {
 			float depth = 2f + c.ordinal();
 			curXOff = Math.round(parX * depth * 6f);
 			curYOff += Math.round(parY * depth * 4f);
-			if (active3d()) {
-				int[] o3 = offset3d(c);
-				if (o3[0] < -10000) {
-					drawOff.put(c, new int[] {-20000, 0});
-					continue;
-				}
-				curXOff = o3[0];
-				curYOff = o3[1];
-			}
 			renderWindow(g, c, mx, my, speed, a * Math.min(1f, k * 1.6f));
 		}
 	}
@@ -358,12 +249,6 @@ public class ClickGuiScreen extends Screen {
 		return r.trim() + "..";
 	}
 
-	/** So para o teste automatico: liga o modo 3D e fixa as janelas. */
-	public void debug3d() {
-		MODE3D = true;
-		PINNED = true;
-		placeAnchors();
-	}
 
 	private static void vgrad(GuiGraphicsExtractor g, int x, int y, int w, int h, int top, int bot, float a) {
 		if (h <= 0) return;
@@ -520,28 +405,8 @@ public class ClickGuiScreen extends Screen {
 		int sx = (this.width - sw) / 2;
 		searchFocused = RenderUtil.inside(mx, my, sx, 5, sw, 13);
 		if (searchFocused) return true;
-		int c1w = FontUtil.width("3D") + 10;
-		int c2w = FontUtil.width("PIN") + 10;
-		int c1x = sx + sw + 6;
-		int c2x = c1x + c1w + 5;
-		if (RenderUtil.inside(mx, my, c1x, 5, c1w, 13)) {
-			MODE3D = !MODE3D;
-			if (MODE3D) placeAnchors(); else PINNED = false;
-			return true;
-		}
-		if (RenderUtil.inside(mx, my, c2x, 5, c2w, 13)) {
-			if (MODE3D) PINNED = !PINNED;
-			return true;
-		}
-
 		Category c = winAt(mx, my);
-		if (c == null) {
-			if (active3d()) {
-				camDrag = true;
-				return true;
-			}
-			return super.mouseClicked(click, doubled);
-		}
+		if (c == null) return super.mouseClicked(click, doubled);
 		ORDER.remove(c);
 		ORDER.add(c);
 
@@ -640,16 +505,6 @@ public class ClickGuiScreen extends Screen {
 			dragSb(sbWin, click.y());
 			return true;
 		}
-		if (camDrag) {
-			var pl = Minecraft.getInstance().player;
-			if (pl != null) pl.turn(-offsetX * 1.2, -offsetY * 1.2);
-			return true;
-		}
-		if (dragWin != null && active3d()) {
-			drag3d(dragWin, offsetX, offsetY);
-			dragAccum += 100;
-			return true;
-		}
 		if (dragWin != null) {
 			int[] p = pos(dragWin);
 			int[] o = drawOff.getOrDefault(dragWin, new int[] {0, 0});
@@ -673,11 +528,10 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent click) {
-		boolean was = camDrag || sbWin != null || dragWin != null || slider != null || scrollWin != null || pending != null;
+		boolean was = sbWin != null || dragWin != null || slider != null || scrollWin != null || pending != null;
 		if (slider != null) Config.save();
 		if (pending != null && dragAccum < 6) pending.run();
 		pending = null;
-		camDrag = false;
 		sbWin = null;
 		dragWin = null;
 		slider = null;

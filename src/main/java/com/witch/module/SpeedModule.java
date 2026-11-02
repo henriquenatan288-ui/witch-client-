@@ -6,8 +6,9 @@ import net.minecraft.world.phys.Vec3;
 
 /** Corrida mais rapida no chao/ar (nao mexe na agua nem no voo). */
 public class SpeedModule extends Module {
-	private static final double BASE = 0.2806; // velocidade de sprint, blocos/tick
-	private final IntSetting boost = add(new IntSetting("Boost", 0, 100, 30, "%"));
+	private static final double WALK = 0.2158; // andar normal, blocos/tick
+	private static final double SPRINT = 0.2806; // correr normal, blocos/tick
+	private final IntSetting boost = add(new IntSetting("Boost", 0, 100, 15, "%"));
 
 	public SpeedModule() {
 		super("Speed", Category.MOVEMENT);
@@ -31,7 +32,8 @@ public class SpeedModule extends Module {
 		dx /= len;
 		dz /= len;
 
-		double sp = BASE * (1.0 + boost.get() / 100.0);
+		if (boost.get() <= 0) return; // 0% = velocidade normal do jogo
+		double sp = (p.isSprinting() ? SPRINT : WALK) * (1.0 + boost.get() / 100.0);
 		Vec3 v = p.getDeltaMovement();
 		p.setDeltaMovement(dx * sp, v.y, dz * sp);
 	}
