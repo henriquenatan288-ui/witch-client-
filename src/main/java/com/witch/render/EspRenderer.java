@@ -168,7 +168,6 @@ public final class EspRenderer {
 
 		// 1) bob matrix (igual GameRenderer 26.2)
 		Matrix4f bobMatrix = buildBobMatrix(crs, mc);
-		Matrix4f inverseBob = new Matrix4f(bobMatrix).invert();
 
 		// 2) origem = centro da tela com projection*bob (Meteor updateScreenCenter adaptado)
 		Vec3 origin = screenCenter(crs, bobMatrix);
@@ -176,7 +175,8 @@ public final class EspRenderer {
 		// 3) camera translate + inverseBob nos vertices (Meteor mul inverseBob no modelview)
 		pose.pushPose();
 		pose.translate(-cam.x, -cam.y, -cam.z);
-		pose.last().pose().mul(inverseBob);
+		// sem inverseBob: o frame do mundo ja leva o bob na projection; cancelar aqui fazia ESP/tracers
+		// balancarem em relacao ao mundo ao andar. A origem dos tracers (screenCenter) ja considera o bob.
 		Esp esp = new Esp(pose.last().pose(), cam, pt, origin);
 		for (EspSource s : SOURCES) {
 			if (s.active()) s.collect(esp);
