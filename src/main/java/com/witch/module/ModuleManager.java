@@ -40,6 +40,9 @@ public final class ModuleManager {
 		MODULES.add(new AutoEatModule());
 		MODULES.add(new AutoToolModule());
 		MODULES.add(new AmbientDustModule());
+		MODULES.add(new ZoomModule());
+		MODULES.add(new NoHurtCamModule());
+		MODULES.add(new AutoTotemModule());
 		MODULES.add(new MoodFilterModule());
 
 		for (Module m : MODULES) {
