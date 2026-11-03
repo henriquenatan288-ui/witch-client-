@@ -15,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -29,10 +30,10 @@ import java.util.OptionalDouble;
 
 /**
  * Renderizador generico de caixas (quads) e tracers (DEBUG_LINES, estilo Meteor).
- * Tracers usam PrimitiveTopology.DEBUG_LINES = linha de 1px na tela, nao fita/retangulo.
+ * Origem do tracer = unproject do centro da tela (igual Meteor RenderUtils.updateScreenCenter),
+ * assim a linha nao balanca com view-bobbing / walk.
  */
 public final class EspRenderer {
-	/** Caixas / preenchimento (quads). */
 	private static final RenderPipeline PIPELINE_FILLED = RenderPipelines.register(
 			RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
 					.withLocation(Identifier.fromNamespaceAndPath("witch", "pipeline/esp_filled"))
@@ -40,10 +41,6 @@ public final class EspRenderer {
 					.build()
 	);
 
-	/**
-	 * Tracers / linhas finas — mesmo padrao do Meteor:
-	 * LINES_SNIPPET + DEBUG_LINES + depth desligado = linha de 1px atraves das paredes.
-	 */
 	private static final RenderPipeline PIPELINE_LINES = RenderPipelines.register(
 			RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
 					.withLocation(Identifier.fromNamespaceAndPath("witch", "pipeline/esp_lines"))
@@ -61,7 +58,6 @@ public final class EspRenderer {
 	private static final List<EspSource> SOURCES = new ArrayList<>();
 	private static boolean inited = false;
 
-	/** Espessura das arestas de caixa (nao dos tracers). */
 	private static final float K = 0.0012f;
 
 	private EspRenderer() {}
@@ -78,6 +74,25 @@ public final class EspRenderer {
 		if (inited) return;
 		inited = true;
 		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(EspRenderer::onRender);
+	}
+
+	/**
+	 * Igual Meteor RenderUtils.updateScreenCenter(projection, view):
+	 * unproject de NDC (0,0,0) pelas inversas de projection e viewRotation,
+	 * depois soma a posicao da camera. Resultado = ponto no mundo colado no centro da tela,
+	 * sem balancar com bob de andar.
+	 */
+	private static Vec3 screenCenter(CameraRenderState crs) {
+		Matrix4f invProjection = new Matrix4f(crs.projectionMatrix).invert();
+		Matrix4f invView = new Matrix4f(crs.viewRotationMatrix).invert();
+
+		Vector4f center4 = new Vector4f(0f, 0f, 0f, 1f).mul(invProjection).mul(invView);
+		if (Math.abs(center4.w) > 1.0E-6f) {
+			center4.div(center4.w);
+		}
+
+		Vec3 cam = crs.pos;
+		return new Vec3(cam.x + center4.x, cam.y + center4.y, cam.z + center4.z);
 	}
 
 	private static void onRender(LevelRenderContext context) {
@@ -97,16 +112,11 @@ public final class EspRenderer {
 		float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
 
 		PoseStack pose = context.poseStack();
-		Vec3 cam = context.levelState().cameraRenderState.pos;
+		CameraRenderState crs = context.levelState().cameraRenderState;
+		Vec3 cam = crs.pos;
 
-		// Origem dos tracers = ponto ~0.1 a frente da camera (centro da tela), igual Meteor
-		var crs = context.levelState().cameraRenderState;
-		double yr = Math.toRadians(crs.yRot);
-		double pr = Math.toRadians(crs.xRot);
-		Vec3 origin = new Vec3(
-				cam.x - Math.sin(yr) * Math.cos(pr) * 0.1,
-				cam.y - Math.sin(pr) * 0.1,
-				cam.z + Math.cos(yr) * Math.cos(pr) * 0.1);
+		// Origem estavel no centro da tela (Meteor-style unproject)
+		Vec3 origin = screenCenter(crs);
 
 		pose.pushPose();
 		pose.translate(-cam.x, -cam.y, -cam.z);
@@ -153,7 +163,6 @@ public final class EspRenderer {
 		}
 	}
 
-	/** Entregue aos modulos: box() = quads, tracer()/thinLine() = DEBUG_LINES. */
 	public static final class Esp {
 		private final Matrix4fc m;
 		private final Vec3 cam;
@@ -207,7 +216,6 @@ public final class EspRenderer {
 			return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
 		}
 
-		/** Caixa com contorno e preenchimento opcional (fillA 0 = so contorno). */
 		public void box(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float fillA) {
 			VertexConsumer vb = filled();
 			float h = Math.max(0.015f, K * dist((x0 + x1) * 0.5, (y0 + y1) * 0.5, (z0 + z1) * 0.5));
@@ -219,30 +227,25 @@ public final class EspRenderer {
 			outline(vb, m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, line, h);
 		}
 
-		/** Linha do centro da tela ate o ponto (DEBUG_LINES, 1px). */
 		public void tracer(double tx, double ty, double tz, int argb) {
 			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, 1f);
 		}
 
-		/** Igual ao tracer, com transparencia propria. */
 		public void tracer(double tx, double ty, double tz, int argb, float alpha) {
 			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, alpha);
 		}
 
-		/** Caixa so de preenchimento (sem contorno). */
 		public void solid(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float alpha) {
 			fillBox(filled(), m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, rgba(argb, alpha));
 		}
 
-		/** Linha grossa (ainda fita) — usado por outros ESP se precisar. */
 		public void line(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
 			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.003f, false);
 		}
 
 		/**
-		 * Tracer real estilo Meteor: 2 vertices, PrimitiveTopology.DEBUG_LINES.
-		 * Resultado = linha de 1 pixel na tela, sem virar retangulo.
-		 * MC 26.2 exige Normal + LineWidth no vertex format de linhas.
+		 * DEBUG_LINES + Normal + LineWidth (formato de linhas da 26.2).
+		 * Origem ja vem do unproject do centro da tela.
 		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
 			float[] c = rgba(argb, alpha);
