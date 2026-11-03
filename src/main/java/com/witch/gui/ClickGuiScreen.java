@@ -4,12 +4,9 @@ import com.witch.config.Config;
 import com.witch.module.Category;
 import com.witch.module.Module;
 import com.witch.module.ModuleManager;
-import com.witch.setting.ColorSetting;
 import com.witch.setting.IntSetting;
 import com.witch.setting.KeybindSetting;
-import com.witch.setting.OreSetting;
 import com.witch.setting.Setting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -27,19 +24,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/** ClickGUI estilo Meteor: uma janela arrastavel por categoria, modulos em linhas, ajustes abrem dentro da janela. Monocromatico. */
-public class ClickGuiScreen extends Screen {
-	private static final int WIN_W = 100;
-	private static final int GAP = 5;
-	private static final int HEAD_H = 15;
-	private static final int ROW = 13;
-	private static final int INT_H = 22;
-	private static final int ORE_H = 13;
-	private static final int SW = 8;
-	private static final int SW_GAP = 3;
-	private static final int ARROW_W = 18;
+import static com.witch.gui.ClickGuiMetrics.*;
 
-	/** Opacidade do fundo das janelas (ajustavel em "GUI Settings"); soma e limitada a 1. */
+/**
+ * ClickGUI estilo Meteor: uma janela arrastável por categoria, módulos em linhas,
+ * ajustes abrem dentro da janela. Monocromático.
+ * <p>
+ * Render e settings delegados a {@link GuiWindow}, {@link ModuleRow}, {@link SettingRenderer}.
+ * Comportamento idêntico à versão monolítica anterior.
+ */
+public class ClickGuiScreen extends Screen {
+
+	/** Opacidade do fundo das janelas (ajustável em "GUI Settings"); soma e limitada a 1. */
 	private static float gl(float add) {
 		return Math.min(1f, com.witch.module.GuiSettingsModule.opacity() + add);
 	}
@@ -48,51 +44,7 @@ public class ClickGuiScreen extends Screen {
 	private Module tipLast = null;
 	private long tipSince = 0L;
 
-	private static String desc(String n) {
-		return switch (n) {
-			case "Ambient Dust" -> "Particulas brancas flutuando no ar em volta de voce.";
-			case "Ancient Finder" -> "Procura blocos/estruturas antigas nas chunks carregadas.";
-			case "Anti Vanish" -> "Mostra jogadores que ficaram invisiveis por vanish.";
-			case "Auto Eat" -> "Come sozinho quando a fome baixa.";
-			case "Auto Tool" -> "Troca para a melhor ferramenta ao quebrar um bloco.";
-			case "Auto Totem" -> "Mantem um totem na mao secundaria.";
-			case "Break Delay" -> "Ajusta o atraso entre quebrar blocos.";
-			case "Break Wave" -> "Efeito visual ao quebrar blocos.";
-			case "Farm ESP" -> "Destaca plantacoes proximas.";
-			case "Fly" -> "Voo livre.";
-			case "FreeLook" -> "Gira a camera em volta do personagem sem mudar para onde ele olha.";
-			case "Freecam" -> "Camera livre fora do corpo, sem limite de distancia.";
-			case "Fullbright" -> "Clareia o mundo (visao noturna no seu cliente).";
-			case "Jesus" -> "Andar sobre a agua.";
-			case "Mood Filter" -> "Escurece a tela, tom frio e vinheta.";
-			case "No Ghost Blocks" -> "Evita blocos fantasma ao quebrar/colocar.";
-			case "No Hurt Cam" -> "Tira o tranco da camera ao tomar dano.";
-			case "Particles" -> "Particulas extras.";
-			case "Player ESP" -> "Destaca jogadores atraves das paredes.";
-			case "Slow Hit Visual" -> "Visual de golpe lento.";
-			case "Speed" -> "Aumenta a velocidade de movimento (0 = normal).";
-			case "Storage ESP" -> "Destaca baus e containers proximos.";
-			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 30).";
-			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
-			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor).";
-			case "Trigger Bot" -> "Ataca sozinho quando a mira esta num alvo.";
-			case "Witch Particles" -> "Chapeus de bruxa girando em volta de voce.";
-			case "X-Ray Hologram" -> "Mostra minerios atraves dos blocos.";
-			case "Zoom" -> "Aproxima a visao com transicao suave.";
-			case "GUI Settings" -> "Opacidade do ClickGUI e tooltips.";
-			default -> "";
-		};
-	}
-	private static final int BG = 0xFF111111;
-	private static final int HEAD = 0xFF1A1A1A;
-	private static final int LINE = 0xFF3A3A3A;
-	private static final int ROW_ON = 0xFF262626;
-	private static final int ROW_HOVER = 0xFF1B1B1B;
-	private static final int SUB_BG = 0xFF0B0B0B;
-	private static final int TXT = 0xFFFFFFFF;
-	private static final int TXT_DIM = 0xFF8E8E8E;
-
-	// posicao e rolagem das janelas lembradas entre aberturas
+	// posição e rolagem das janelas lembradas entre aberturas
 	private static final Map<Category, int[]> POS = new EnumMap<>(Category.class);
 	private static final Map<Category, float[]> SCR = new EnumMap<>(Category.class);
 	private static final List<Category> ORDER = new ArrayList<>();
@@ -102,8 +54,6 @@ public class ClickGuiScreen extends Screen {
 	private int dragOffX, dragOffY;
 	private Category scrollWin = null;
 	private Category sbWin = null;
-	private static final int SB_VIS = 4;
-	private static final int SB_HIT = 12;
 	private double dragAccum = 0;
 	private Runnable pending = null;
 	private IntSetting slider = null;
@@ -116,43 +66,17 @@ public class ClickGuiScreen extends Screen {
 	private int curYOff = 0;
 	private int curXOff = 0;
 	private float parX = 0f, parY = 0f;
-	private static final int BOT = 4;
 
-
-
-
-
-
-
-
-	private static void sweep(GuiGraphicsExtractor g, int x0, int x1, int y, float a, int seed, boolean rev) {
-		float t = (System.nanoTime() / 1_000_000_000f) * 0.4f + seed * 0.23f;
-		float f = t - (float) Math.floor(t);
-		if (rev) f = 1f - f;
-		int segW = 34;
-		int cx = x0 + Math.round(f * ((x1 - x0) + segW)) - segW / 2;
-		for (int i = 0; i < segW; i++) {
-			int px = cx - segW / 2 + i;
-			if (px < x0 || px >= x1) continue;
-			float al = 1f - Math.abs(i - segW / 2f) / (segW / 2f);
-			g.fill(px, y, px + 1, y + 1, RenderUtil.alpha(0xFFFFFFFF, a * al * 0.8f));
-		}
-	}
 	private final Map<Category, int[]> drawOff = new EnumMap<>(Category.class);
-
-	/** posicao onde a janela esta desenhada agora (com o efeito de profundidade e a animacao de entrada). */
-	private int[] at(Category c) {
-		int[] p = pos(c);
-		int[] o = drawOff.get(c);
-		return o == null ? new int[] {p[0], p[1]} : new int[] {p[0] + o[0], p[1] + o[1]};
-	}
 	private long lastNanos = 0L;
+	private int winWCache = WIN_W;
+	private static int lastW = -1, lastH = -1;
 
 	public ClickGuiScreen() {
 		this(null);
 	}
 
-	/** Se 'openSettings' nao for nulo, a janela ja abre com os ajustes desse modulo expandidos. */
+	/** Se 'openSettings' não for nulo, a janela já abre com os ajustes desse módulo expandidos. */
 	public ClickGuiScreen(Module openSettings) {
 		super(Component.literal("Witch Client"));
 		if (openSettings != null && !openSettings.settings().isEmpty()) OPEN.add(openSettings);
@@ -164,6 +88,12 @@ public class ClickGuiScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
+	}
+
+	private int[] at(Category c) {
+		int[] p = pos(c);
+		int[] o = drawOff.get(c);
+		return o == null ? new int[] {p[0], p[1]} : new int[] {p[0] + o[0], p[1] + o[1]};
 	}
 
 	private int[] pos(Category c) {
@@ -178,9 +108,6 @@ public class ClickGuiScreen extends Screen {
 		}
 		return p;
 	}
-
-	private static int lastW = -1, lastH = -1;
-	private int winWCache = WIN_W;
 
 	@Override
 	protected void init() {
@@ -215,22 +142,12 @@ public class ClickGuiScreen extends Screen {
 		return out;
 	}
 
-	private static int setH(Setting s, int w) {
-		if (s instanceof IntSetting) return INT_H;
-		if (s instanceof ColorSetting) {
-			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
-			int rows = (ColorSetting.PALETTE.length + per - 1) / per;
-			return 12 + rows * (SW + SW_GAP) + 3;
-		}
-		return ORE_H;
-	}
-
 	private int contentH(Category c, int w) {
 		int h = 0;
 		for (Module m : modules(c)) {
 			h += ROW;
 			if (OPEN.contains(m)) {
-				for (Setting s : m.settings()) h += setH(s, w);
+				for (Setting s : m.settings()) h += SettingRenderer.height(s, w);
 			}
 		}
 		return h;
@@ -276,20 +193,37 @@ public class ClickGuiScreen extends Screen {
 		float ty = (my - this.height / 2f) / Math.max(1, this.height);
 		parX = Mth.lerp(Math.min(1f, speed * 0.12f), parX, tx);
 		parY = Mth.lerp(Math.min(1f, speed * 0.12f), parY, ty);
+
+		Module[] tipSlot = new Module[1];
 		for (Category c : ORDER) {
 			float k = Mth.clamp((openT - c.ordinal() * 0.09f) / 0.45f, 0f, 1f);
 			float u = k - 1f;
-			float e = 1f + 2.4f * u * u * u + 1.4f * u * u; // easeOutBack: passa um pouco e volta
+			float e = 1f + 2.4f * u * u * u + 1.4f * u * u; // easeOutBack
 			curYOff = Math.round((1f - e) * 22f);
 			curXOff = 0;
-			renderWindow(g, c, mx, my, speed, a * Math.min(1f, k * 1.6f));
+
+			int[] p = pos(c);
+			int w = winW();
+			int vh = viewH(c, w);
+			int ch = contentH(c, w);
+			int x = p[0] + curXOff;
+			int y = p[1] + curYOff;
+			drawOff.put(c, new int[] {curXOff, curYOff});
+			float[] sc = SCR.computeIfAbsent(c, key -> new float[] {0f});
+			sc[0] = Mth.clamp(sc[0], 0, Math.max(0, ch - vh));
+
+			tipSlot[0] = null;
+			GuiWindow.render(g, c, x, y, w, vh, ch, sc[0], modules(c), OPEN,
+					dragWin, sbWin, mx, my, speed, a * Math.min(1f, k * 1.6f), tipSlot);
+			if (tipSlot[0] != null) tipNow = tipSlot[0];
 		}
+
 		if (tipNow != tipLast) {
 			tipLast = tipNow;
 			tipSince = System.currentTimeMillis();
 		}
 		if (tipNow != null && com.witch.module.GuiSettingsModule.tooltips() && System.currentTimeMillis() - tipSince > 350) {
-			String d = desc(tipNow.name);
+			String d = ModuleDescriptions.of(tipNow.name);
 			if (!d.isEmpty()) {
 				int tw = FontUtil.width(d) + 8;
 				int th = FontUtil.height() + 6;
@@ -302,7 +236,7 @@ public class ClickGuiScreen extends Screen {
 		}
 	}
 
-	/** Linhas brilhantes brancas que sobem balancando dos cantos de baixo (esquerda e direita). */
+	/** Linhas brilhantes brancas que sobem balançando dos cantos de baixo. */
 	private void glowLines(GuiGraphicsExtractor g, float a) {
 		double t = System.nanoTime() / 1_000_000_000.0;
 		int rise = (int) (this.height * 0.55f);
@@ -321,140 +255,6 @@ public class ClickGuiScreen extends Screen {
 				g.fill(x - 3, y - 2, x + 4, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.07f));
 				g.fill(x - 1, y - 2, x + 2, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.85f));
 			}
-		}
-	}
-
-	private static String fit(String t, int maxW) {
-		if (FontUtil.width(t) <= maxW) return t;
-		String r = t;
-		while (r.length() > 1 && FontUtil.width(r + "..") > maxW) r = r.substring(0, r.length() - 1);
-		return r.trim() + "..";
-	}
-
-
-	private static void vgrad(GuiGraphicsExtractor g, int x, int y, int w, int h, int top, int bot, float a) {
-		if (h <= 0) return;
-		int n = Math.max(1, Math.min(h, 24));
-		for (int i = 0; i < n; i++) {
-			int y0 = y + h * i / n;
-			int y1 = y + h * (i + 1) / n;
-			g.fill(x, y0, x + w, y1, RenderUtil.alpha(RenderUtil.mix(top, bot, i / (float) Math.max(1, n - 1)), a));
-		}
-	}
-
-	private void renderWindow(GuiGraphicsExtractor g, Category c, int mx, int my, float speed, float a) {
-		int[] p = pos(c);
-		int w = winW();
-		int vh = viewH(c, w);
-		int ch = contentH(c, w);
-		int x = p[0] + curXOff;
-		int y = p[1] + curYOff;
-		drawOff.put(c, new int[] {curXOff, curYOff});
-		float maxScroll = Math.max(0, ch - vh);
-		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
-		sc[0] = Mth.clamp(sc[0], 0, maxScroll);
-
-		int totalH = HEAD_H + vh + BOT;
-		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, totalH + 2, 7, RenderUtil.alpha(LINE, a));
-		sweep(g, x + 6, x + w - 6, y - 1, a, c.ordinal(), false);
-		sweep(g, x + 6, x + w - 6, y + totalH, a, c.ordinal(), true);
-		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a * gl(0f)));
-		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
-		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
-		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(LINE, a * 0.8f));
-		String title = c.label;
-		FontUtil.draw(g, title, x + (w - FontUtil.width(title)) / 2, y + (HEAD_H - 1 - FontUtil.height()) / 2, RenderUtil.alpha(TXT, a));
-
-		int by = y + HEAD_H;
-		g.enableScissor(x, by, x + w, by + vh);
-		int ry = by - Math.round(sc[0]);
-		int fh = FontUtil.height();
-		for (Module m : modules(c)) {
-			boolean hover = RenderUtil.inside(mx, my, x, ry, w, ROW) && RenderUtil.inside(mx, my, x, by, w, vh);
-			if (hover && dragWin == null) tipNow = m;
-			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
-			if (m.toggleAnim > 0.02f) {
-				int sl = 20;
-				for (int q = 0; q < sl; q++) {
-					int x0 = x + w * q / sl;
-					int x1 = x + w * (q + 1) / sl;
-					g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.16f - 0.14f * q / (sl - 1f))));
-				}
-				g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(TXT, a * m.toggleAnim));
-			}
-			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
-			if (m.hoverAnim > 0.02f && m.toggleAnim < 0.5f) {
-				g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f * m.hoverAnim));
-			}
-			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
-			FontUtil.draw(g, fit(m.name, w - 7 - 11), x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));
-			boolean open = OPEN.contains(m);
-			if (!m.settings().isEmpty()) {
-				String ar = open ? "-" : "+";
-				FontUtil.draw(g, ar, x + w - 11, ry + (ROW - fh) / 2, RenderUtil.alpha(open ? TXT : TXT_DIM, a));
-			}
-			ry += ROW;
-			if (open) {
-				for (Setting s : m.settings()) {
-					int sh = setH(s, w);
-					g.fill(x, ry, x + w, ry + sh, RenderUtil.alpha(SUB_BG, a * gl(0.05f)));
-					g.fill(x, ry, x + 1, ry + sh, RenderUtil.alpha(LINE, a));
-					drawSetting(g, s, x, ry, w, sh, mx, my, by, vh, a);
-					ry += sh;
-				}
-			}
-		}
-		g.disableScissor();
-
-		// barra de rolagem: trilho fraco + alca (arrastavel)
-		if (maxScroll > 0) {
-			int th = Math.max(16, Math.round(vh * (vh / (float) ch)));
-			int ty = by + Math.round((vh - th) * (sc[0] / maxScroll));
-			int bx = x + w - SB_VIS - 1;
-			g.fill(bx, by + 1, bx + SB_VIS, by + vh - 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.06f));
-			g.fill(bx, ty, bx + SB_VIS, ty + th, RenderUtil.alpha(sbWin == c ? 0xFFFFFFFF : 0xFFA8A8A8, a * 0.9f));
-		}
-	}
-
-	private void drawSetting(GuiGraphicsExtractor g, Setting s, int x, int ry, int w, int sh, int mx, int my, int by, int vh, float a) {
-		int fh = FontUtil.height();
-		if (s instanceof IntSetting is) {
-			FontUtil.draw(g, is.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
-			String val = is.get() + is.suffix;
-			FontUtil.draw(g, val, x + w - 6 - FontUtil.width(val), ry + 3, RenderUtil.alpha(TXT, a));
-			int tx = x + 7;
-			int tw = w - 14;
-			int ty = ry + fh + 8;
-			g.fill(tx, ty, tx + tw, ty + 3, RenderUtil.alpha(0xFF2A2A2A, a));
-			int fw = Math.round(tw * is.fraction());
-			if (fw > 0) g.fill(tx, ty, tx + fw, ty + 3, RenderUtil.alpha(TXT, a));
-			g.fill(tx + fw - 1, ty - 2, tx + fw + 1, ty + 5, RenderUtil.alpha(TXT, a));
-		} else if (s instanceof ColorSetting cs) {
-			FontUtil.draw(g, cs.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
-			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
-			for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
-				int sx = x + 7 + (i % per) * (SW + SW_GAP);
-				int sy = ry + 13 + (i / per) * (SW + SW_GAP);
-				if (i == cs.index()) g.fill(sx - 1, sy - 1, sx + SW + 1, sy + SW + 1, RenderUtil.alpha(TXT, a));
-				g.fill(sx, sy, sx + SW, sy + SW, RenderUtil.alpha(ColorSetting.PALETTE[i], a));
-			}
-		} else if (s instanceof KeybindSetting ks) {
-			FontUtil.draw(g, ks.name, x + 7, ry + (sh - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
-			String lab = ks.listening ? "..." : ks.label();
-			int cw = Math.max(26, FontUtil.width(lab) + 10);
-			int cx = x + w - 6 - cw;
-			g.fill(cx, ry + 2, cx + cw, ry + sh - 2, RenderUtil.alpha(ks.listening ? 0xFF4A4A4A : 0xFF222222, a));
-			FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (sh - fh) / 2, RenderUtil.alpha(TXT, a));
-		} else if (s instanceof OreSetting os) {
-			int bx = x + 7;
-			int bY = ry + (sh - 9) / 2;
-			g.fill(bx, bY, bx + 9, bY + 9, RenderUtil.alpha(0xFF3A3A3A, a));
-			g.fill(bx + 1, bY + 1, bx + 8, bY + 8, RenderUtil.alpha(0xFF0C0C0C, a));
-			if (os.enabled()) g.fill(bx + 2, bY + 2, bx + 7, bY + 7, RenderUtil.alpha(TXT, a));
-			FontUtil.draw(g, os.name, bx + 14, ry + (sh - fh) / 2, RenderUtil.alpha(os.enabled() ? TXT : TXT_DIM, a));
-			int cx = x + w - 6 - 12;
-			g.fill(cx - 1, bY - 1, cx + 13, bY + 10, RenderUtil.alpha(0xFF3A3A3A, a));
-			g.fill(cx, bY, cx + 12, bY + 9, RenderUtil.alpha(os.color(), a));
 		}
 	}
 
@@ -499,7 +299,6 @@ public class ClickGuiScreen extends Screen {
 			dragOffY = (int) my - y;
 			return true;
 		}
-		float[] sc0 = SCR.computeIfAbsent(c, k -> new float[] {0f});
 		if (contentH(c, w) > viewH(c, w) && mx >= x + w - SB_HIT && button == 0) {
 			sbWin = c;
 			dragSb(c, my);
@@ -523,9 +322,16 @@ public class ClickGuiScreen extends Screen {
 			ry += ROW;
 			if (OPEN.contains(m)) {
 				for (Setting s : m.settings()) {
-					int sh = setH(s, w);
+					int sh = SettingRenderer.height(s, w);
 					if (my >= ry && my < ry + sh) {
-						clickSetting(s, x, ry, w, sh, mx, my, fh);
+						Runnable[] out = new Runnable[1];
+						IntSetting slid = SettingRenderer.click(s, x, ry, w, sh, mx, my, fh, out);
+						if (slid != null) {
+							slider = slid;
+							sliderX = x + 7;
+							sliderW = Math.max(1, w - 14);
+						}
+						if (out[0] != null) pending = out[0];
 						return true;
 					}
 					ry += sh;
@@ -533,39 +339,6 @@ public class ClickGuiScreen extends Screen {
 			}
 		}
 		return true;
-	}
-
-	private void clickSetting(Setting s, int x, int ry, int w, int sh, double mx, double my, int fh) {
-		if (s instanceof IntSetting is) {
-			int tx = x + 7;
-			int tw = w - 14;
-			int ty = ry + fh + 8;
-			if (RenderUtil.inside(mx, my, tx - 4, ty - 7, tw + 8, 17)) {
-				slider = is;
-				sliderX = tx;
-				sliderW = Math.max(1, tw);
-				is.setFraction((float) ((mx - tx) / sliderW));
-			}
-		} else if (s instanceof ColorSetting cs) {
-			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
-			for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
-				int sx = x + 7 + (i % per) * (SW + SW_GAP);
-				int sy = ry + 13 + (i / per) * (SW + SW_GAP);
-				if (RenderUtil.inside(mx, my, sx - 2, sy - 2, SW + 4, SW + 4)) {
-					final int idx = i;
-					pending = () -> { cs.setIndex(idx); Config.save(); };
-					return;
-				}
-			}
-		} else if (s instanceof KeybindSetting ks) {
-			pending = () -> ks.listening = !ks.listening;
-		} else if (s instanceof OreSetting os) {
-			final boolean onChip = mx >= x + w - 6 - 16;
-			pending = () -> {
-				if (onChip) os.cycleColor(); else os.toggle();
-				Config.save();
-			};
-		}
 	}
 
 	private void dragSb(Category c, double my) {
