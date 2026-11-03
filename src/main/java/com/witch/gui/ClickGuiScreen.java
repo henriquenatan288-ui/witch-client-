@@ -292,11 +292,11 @@ public class ClickGuiScreen extends Screen {
 			if (!d.isEmpty()) {
 				int tw = FontUtil.width(d) + 8;
 				int th = FontUtil.height() + 6;
-				int tx = Math.min(this.width - tw - 2, mx + 10);
-				int ty = Math.min(this.height - th - 2, my + 12);
-				g.fill(tx - 1, ty - 1, tx + tw + 1, ty + th + 1, RenderUtil.alpha(LINE, a));
-				g.fill(tx, ty, tx + tw, ty + th, RenderUtil.alpha(0xFF0C0C0C, a * 0.95f));
-				FontUtil.draw(g, d, tx + 4, ty + 3, RenderUtil.alpha(TXT, a));
+				int tipX = Math.min(this.width - tw - 2, mx + 10);
+				int tipY = Math.min(this.height - th - 2, my + 12);
+				g.fill(tipX - 1, tipY - 1, tipX + tw + 1, tipY + th + 1, RenderUtil.alpha(LINE, a));
+				g.fill(tipX, tipY, tipX + tw, tipY + th, RenderUtil.alpha(0xFF0C0C0C, a * 0.95f));
+				FontUtil.draw(g, d, tipX + 4, tipY + 3, RenderUtil.alpha(TXT, a));
 			}
 		}
 	}
