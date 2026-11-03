@@ -85,10 +85,8 @@ public final class EspRenderer {
 		/*
 		 * Origem dos tracers = posicao da camera do frame.
 		 * Usa a MESMA `cam` do translate abaixo: linha fica colada no centro da tela
-		 * e nao balanca com view-bobbing / walk (antes misturava eyePosition sem bob + cam com bob).
+		 * e nao balanca com view-bobbing / walk.
 		 */
-		// Linha que nasce EXATAMENTE na camera vira um ponto (vista de frente). O Meteor usa um ponto ~0.1 a frente
-		// da camera (centro da tela); fazemos igual, pela direcao da camera.
 		var crs = context.levelState().cameraRenderState;
 		double yr = Math.toRadians(crs.yRot);
 		double pr = Math.toRadians(crs.xRot);
@@ -211,10 +209,10 @@ public final class EspRenderer {
 
 		/**
 		 * Linha de tracer SLIM + SMOOTH (estilo Meteor / Wurst).
-		 * kw baixo = linha fina; equalWidth = mesma espessura nos dois extremos (reta na tela).
+		 * 0.00027 = ~2x mais fino que a versao anterior (0.00055).
 		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
-			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.00055f, 0.00004f, true);
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.00027f, 0.00002f, true);
 		}
 
 		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
@@ -246,7 +244,6 @@ public final class EspRenderer {
 			float w0 = Math.max(minW, kw * dist(ax, ay, az));
 			float w1 = Math.max(minW, kw * dist(bx, by, bz));
 			if (equalWidth) {
-				// mesma espessura nos dois lados = linha reta, sem afinar
 				float w = Math.max(w0, w1);
 				w0 = w;
 				w1 = w;
@@ -327,7 +324,6 @@ public final class EspRenderer {
 				px + vx * h, py + vy * h, pz + vz * h);
 	}
 
-	/** Escreve a face nos dois sentidos, assim nao importa se o pipeline descarta faces de tras. */
 	private static void quad(VertexConsumer buf, Matrix4fc m, float[] c,
 							 float ax, float ay, float az, float bx, float by, float bz,
 							 float cx, float cy, float cz, float dx, float dy, float dz) {

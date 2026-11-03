@@ -19,7 +19,7 @@ public final class ModuleDescriptions {
 			case "FreeLook" -> "Gira a camera em volta do personagem sem mudar para onde ele olha.";
 			case "Freecam" -> "Camera livre fora do corpo, sem limite de distancia.";
 			case "Fullbright" -> "Clareia o mundo (visao noturna no seu cliente).";
-			case "Hide Name" -> "Remove seu nome da scoreboard da direita (bom pra print/video).";
+			case "Hide Name" -> "Esconde a scoreboard da direita inteira (limpo pra print/video).";
 			case "Jesus" -> "Andar sobre a agua.";
 			case "Mood Filter" -> "Escurece a tela, tom frio e vinheta.";
 			case "No Ghost Blocks" -> "Evita blocos fantasma ao quebrar/colocar.";
@@ -31,7 +31,7 @@ public final class ModuleDescriptions {
 			case "Storage ESP" -> "Destaca baus e containers proximos.";
 			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 30).";
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
-			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor, slim).";
+			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor, bem slim).";
 			case "Trigger Bot" -> "Ataca sozinho quando a mira esta num alvo.";
 			case "Witch Particles" -> "Chapeus de bruxa girando em volta de voce.";
 			case "X-Ray Hologram" -> "Mostra minerios atraves dos blocos.";

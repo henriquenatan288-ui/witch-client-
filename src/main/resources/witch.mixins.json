@@ -6,7 +6,8 @@
     "CameraMixin",
     "GameRendererMixin",
     "MouseHandlerMixin",
-    "MultiPlayerGameModeMixin"
+    "MultiPlayerGameModeMixin",
+    "GuiMixin"
   ],
   "injectors": {
     "defaultRequire": 0
