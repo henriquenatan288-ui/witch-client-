@@ -186,6 +186,11 @@ public final class EspRenderer {
 			line(start.x, start.y, start.z, tx, ty, tz, argb, 1f);
 		}
 
+		/** Igual ao tracer, com transparencia propria (fade por distancia). */
+		public void tracer(double tx, double ty, double tz, int argb, float alpha) {
+			line(start.x, start.y, start.z, tx, ty, tz, argb, alpha);
+		}
+
 		/** Caixa so de preenchimento (sem contorno), com transparencia propria. */
 		public void solid(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float alpha) {
 			fillBox(b(), m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, rgba(argb, alpha));
