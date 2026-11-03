@@ -1,7 +1,6 @@
 package com.witch.module;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.scores.PlayerScoreEntry;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.Objective;
@@ -38,9 +37,10 @@ public class HideNameModule extends Module {
 			}
 		}
 
-		// Remove scores do jogador em todos os objectives da sidebar
+		// Remove scores do jogador em todos os objectives (sidebar)
+		// Player implementa ScoreHolder
 		for (Objective objective : scoreboard.getObjectives()) {
-			scoreboard.resetSinglePlayerScore(name, objective);
+			scoreboard.resetSinglePlayerScore(mc.player, objective);
 		}
 	}
 }
