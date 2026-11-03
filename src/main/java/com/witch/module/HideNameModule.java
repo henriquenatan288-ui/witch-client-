@@ -28,7 +28,7 @@ public class HideNameModule extends Module {
 		hooked = true;
 		HudElementRegistry.replaceElement(VanillaHudElements.SCOREBOARD, original -> (graphics, delta) -> {
 			if (!active()) {
-				original.render(graphics, delta);
+				original.extractRenderState(graphics, delta);
 			}
 		});
 	}
