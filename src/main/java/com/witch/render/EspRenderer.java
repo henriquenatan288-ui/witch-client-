@@ -206,16 +206,19 @@ public final class EspRenderer {
 
 		/** Fita de A ate B (largura cresce com a distancia pra ficar visivel). */
 		public void line(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
-			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.004f);
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.004f, false);
 		}
 
-		/** Linha fina (cerca de 1px na tela, largura constante da mira ate o alvo). */
+		/**
+		 * Linha de tracer: mais grossa e com a MESMA espessura nos dois extremos
+		 * (sem taper), pra ficar reta na tela.
+		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
-			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.0005f, 0.00002f);
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.0022f, 0.00015f, true);
 		}
 
 		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
-							float kw, float minW) {
+							float kw, float minW, boolean equalWidth) {
 			float ax = (float) sx, ay = (float) sy, az = (float) sz;
 			float bx = (float) tx, by = (float) ty, bz = (float) tz;
 			float dx = bx - ax, dy = by - ay, dz = bz - az;
@@ -242,6 +245,12 @@ public final class EspRenderer {
 
 			float w0 = Math.max(minW, kw * dist(ax, ay, az));
 			float w1 = Math.max(minW, kw * dist(bx, by, bz));
+			if (equalWidth) {
+				// mesma espessura nos dois lados = linha reta, sem afinar
+				float w = Math.max(w0, w1);
+				w0 = w;
+				w1 = w;
+			}
 			float[] c = rgba(argb, alpha);
 			VertexConsumer vb = b();
 			quad(vb, m, c,
