@@ -289,7 +289,11 @@ public final class EspRenderer {
 		}
 
 		public void tracer(double tx, double ty, double tz, int argb, float alpha) {
-			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, alpha);
+			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, alpha, 1.0f);
+		}
+
+		public void tracer(double tx, double ty, double tz, int argb, float alpha, float width) {
+			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, alpha, width);
 		}
 
 		public void solid(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float alpha) {
@@ -301,6 +305,11 @@ public final class EspRenderer {
 		}
 
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
+			thinLine(sx, sy, sz, tx, ty, tz, argb, alpha, 1.0f);
+		}
+
+		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
+							 float width) {
 			float[] c = rgba(argb, alpha);
 			VertexConsumer vb = lines();
 
@@ -316,11 +325,11 @@ public final class EspRenderer {
 			vb.addVertex(m, (float) sx, (float) sy, (float) sz)
 					.setColor(c[0], c[1], c[2], c[3])
 					.setNormal(dx, dy, dz)
-					.setLineWidth(1.0f);
+					.setLineWidth(width);
 			vb.addVertex(m, (float) tx, (float) ty, (float) tz)
 					.setColor(c[0], c[1], c[2], c[3])
 					.setNormal(dx, dy, dz)
-					.setLineWidth(1.0f);
+					.setLineWidth(width);
 		}
 
 		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,

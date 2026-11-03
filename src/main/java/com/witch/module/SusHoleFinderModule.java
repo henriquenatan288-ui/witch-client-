@@ -39,6 +39,7 @@ public class SusHoleFinderModule extends Module implements EspSource {
 	public void collect(Esp esp) {
 		float fillA = fill.get() / 100f;
 		for (int[] b : results) {
+			if (b == null || b.length < 7) continue;
 			esp.box(b[0], b[1], b[2], b[3], b[4], b[5], b[6], fillA);
 		}
 	}
@@ -132,6 +133,16 @@ public class SusHoleFinderModule extends Module implements EspSource {
 
 	@Override
 	public void onTick() {
+		try {
+			scanTick();
+		} catch (Throwable t) {
+			results = List.of();
+			System.err.println("[Witch] Sus Hole Finder: " + t);
+			t.printStackTrace();
+		}
+	}
+
+	private void scanTick() {
 		if (--cooldown > 0) return;
 		cooldown = SCAN_INTERVAL_TICKS;
 

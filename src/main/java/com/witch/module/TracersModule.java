@@ -18,7 +18,9 @@ public class TracersModule extends Module implements EspSource {
 	private static final float ALPHA = 127f / 255f;
 
 	private final IntSetting range = add(new IntSetting("Max distance", 16, 256, 256, ""));
-	private final IntSetting target = add(new IntSetting("Target 1=head 2=body 3=feet", 1, 3, 2, ""));
+	private final IntSetting height = add(new IntSetting("Height", 0, 100, 50, "%"));
+	private final IntSetting thickness = add(new IntSetting("Thickness", 1, 8, 2, ""));
+	private final IntSetting matchEsp = add(new IntSetting("Match ESP color (0/1)", 0, 1, 1, ""));
 	private final IntSetting ignoreSelf = add(new IntSetting("Ignore self (0/1)", 0, 1, 0, ""));
 	private final IntSetting showInvis = add(new IntSetting("Show invisible (0/1)", 0, 1, 1, ""));
 	private final OreSetting distColor = add(new OreSetting("Distance colors", false, 2));
@@ -55,14 +57,10 @@ public class TracersModule extends Module implements EspSource {
 		boolean dc = distColor.enabled();
 		int argb = dc ? distanceColor(dist) : base;
 		float alpha = dc ? 1f : ALPHA;
-		double ty = switch (target.get()) {
-			case 1 -> feetY + height;
-			case 3 -> feetY;
-			default -> feetY + height / 2.0;
-		};
-		esp.tracer(x, ty, z, argb, alpha);
+		double ty = feetY + height * this.height.get() / 100.0;
+		esp.tracer(x, ty, z, argb, alpha, thickness.get());
 		if (stem.enabled()) {
-			esp.thinLine(x, feetY, z, x, feetY + height, z, argb, alpha);
+			esp.thinLine(x, feetY, z, x, feetY + height, z, argb, alpha, thickness.get());
 		}
 	}
 
@@ -80,7 +78,7 @@ public class TracersModule extends Module implements EspSource {
 		double max = range.get();
 
 		if (players.enabled() && isOn(PlayerEspModule.class)) {
-			int base = players.color();
+			int base = matchEsp.get() == 1 ? PlayerEspModule.currentColor() : players.color();
 			boolean freecam = FreecamModule.active();
 			for (Player e : level.players()) {
 				if (e.isSpectator()) continue;
@@ -113,11 +111,13 @@ public class TracersModule extends Module implements EspSource {
 
 	private void blocks(Esp esp, java.util.List<int[]> list, int base, double mx, double my, double mz) {
 		boolean dc = distColor.enabled();
+		boolean match = matchEsp.get() == 1;
 		for (int[] b : list) {
 			double dx = b[0] + 0.5 - mx, dy = b[1] + 0.5 - my, dz = b[2] + 0.5 - mz;
 			double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			if (d > range.get()) continue;
-			esp.tracer(b[0] + 0.5, b[1] + 0.5, b[2] + 0.5, dc ? distanceColor(d) : base, dc ? 1f : ALPHA);
+			int col = dc ? distanceColor(d) : (match && b.length > 3 ? b[3] : base);
+			esp.tracer(b[0] + 0.5, b[1] + height.get() / 100.0, b[2] + 0.5, col, dc ? 1f : ALPHA, thickness.get());
 		}
 	}
 }

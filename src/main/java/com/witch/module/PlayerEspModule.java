@@ -12,10 +12,16 @@ import net.minecraft.world.entity.player.Player;
 public class PlayerEspModule extends Module implements EspSource {
 	private final IntSetting range = add(new IntSetting("Range", 16, 128, 64, ""));
 	private final IntSetting fill = add(new IntSetting("Fill opacity", 0, 40, 10, "%"));
+	private static PlayerEspModule instance;
 	private final ColorSetting color = add(new ColorSetting("Color", 5));
+
+	public static int currentColor() {
+		return instance == null ? 0xFFEF4444 : instance.color.get();
+	}
 
 	public PlayerEspModule() {
 		super("Player ESP", Category.VISUALS);
+		instance = this;
 	}
 
 	@Override
