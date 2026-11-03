@@ -253,6 +253,7 @@ public class ClickGuiScreen extends Screen {
 		tipNow = null;
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x99000000, a));
+		glowLines(g, a);
 
 		// busca no topo
 		int sw = Math.min(150, this.width - 20);
@@ -297,6 +298,28 @@ public class ClickGuiScreen extends Screen {
 				g.fill(tipX - 1, tipY - 1, tipX + tw + 1, tipY + th + 1, RenderUtil.alpha(LINE, a));
 				g.fill(tipX, tipY, tipX + tw, tipY + th, RenderUtil.alpha(0xFF0C0C0C, a * 0.95f));
 				FontUtil.draw(g, d, tipX + 4, tipY + 3, RenderUtil.alpha(TXT, a));
+			}
+		}
+	}
+
+	/** Linhas brilhantes brancas que sobem balancando dos cantos de baixo (esquerda e direita). */
+	private void glowLines(GuiGraphicsExtractor g, float a) {
+		double t = System.nanoTime() / 1_000_000_000.0;
+		int rise = (int) (this.height * 0.55f);
+		for (int side = 0; side < 2; side++) {
+			boolean left = side == 0;
+			double ph = left ? 0.0 : 1.9;
+			for (int i = 0; i < rise; i += 2) {
+				float f = i / (float) rise;
+				float fade = (1f - f) * (1f - f);
+				double sway = Math.sin(t * 1.3 + i * 0.035 + ph) * (6 + 22 * f)
+						+ Math.sin(t * 0.7 + i * 0.012 + ph * 2) * (4 + 14 * f);
+				double bx = left ? 3 + f * 26 + sway : this.width - 3 - f * 26 - sway;
+				int y = this.height - i;
+				int x = (int) Math.round(bx);
+				g.fill(x - 5, y - 2, x + 6, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.035f));
+				g.fill(x - 3, y - 2, x + 4, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.07f));
+				g.fill(x - 1, y - 2, x + 2, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.85f));
 			}
 		}
 	}
