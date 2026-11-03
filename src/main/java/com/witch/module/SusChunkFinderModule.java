@@ -31,7 +31,9 @@ import java.util.Set;
  * Keybind "Reload chunks" limpa e rescanneia.
  */
 public class SusChunkFinderModule extends Module implements EspSource {
-	private static final int SCAN_EVERY_TICKS = 3;
+	/** Orcamento de tempo por tick para escanear chunks (varias por tick, em vez de 1 a cada 3 ticks). */
+	private static final long SCAN_BUDGET_NS = 3_000_000L;
+	private static final int MAX_SCANS_PER_TICK = 12;
 	private static final int HALF_HEIGHT = 48;
 	private static final long ALERT_DISPLAY_MS = 2800L;
 	/** Vermelho fixo pra trial (mesmo tom da palette). */
@@ -49,6 +51,9 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	private final Map<Long, int[]> found = new HashMap<>();
 	/** Chunks que ja avisaram / trial — nao alertam de novo ate reload ou desligar. */
 	private final Set<Long> seen = new HashSet<>();
+	/** Chunks de trial chamber e vizinhas (distancia 1): nao alertam nem aparecem como base. */
+	private final Set<Long> trialZone = new HashSet<>();
+	private final Set<Block> trialBlocks = buildTrialBlocks();
 	private volatile List<int[]> view = List.of();
 
 	private int[][] offsets = null;
@@ -102,6 +107,20 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		return m;
 	}
 
+	/** Blocos tipicos de trial chamber (cobre/tuff/vault). Varios deles na mesma chunk = camara, nao base. */
+	private static Set<Block> buildTrialBlocks() {
+		Set<Block> set = new HashSet<>();
+		for (Block b : BuiltInRegistries.BLOCK) {
+			String n = BuiltInRegistries.BLOCK.getKey(b).getPath();
+			if (n.equals("trial_spawner") || n.equals("vault") || n.contains("copper_bulb")
+					|| n.contains("chiseled_copper") || n.contains("copper_grate")
+					|| n.equals("tuff_bricks") || n.equals("chiseled_tuff_bricks")) {
+				set.add(b);
+			}
+		}
+		return set;
+	}
+
 	private static boolean isTrialSpawner(Block b) {
 		String n = BuiltInRegistries.BLOCK.getKey(b).getPath();
 		return n.equals("trial_spawner");
@@ -135,6 +154,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	protected void onDisable() {
 		found.clear();
 		seen.clear();
+		trialZone.clear();
 		view = List.of();
 		alertText = null;
 		alertUntil = 0L;
@@ -145,6 +165,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	private void reloadExposed() {
 		found.clear();
 		seen.clear();
+		trialZone.clear();
 		view = List.of();
 		alertCount = 0;
 		alertText = null;
@@ -183,7 +204,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		}
 
 		if (--cooldown > 0) return;
-		cooldown = SCAN_EVERY_TICKS;
+		cooldown = 1;
 
 		var level = mc.level;
 		var player = mc.player;
@@ -200,12 +221,17 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		int pcx = pp.getX() >> 4;
 		int pcz = pp.getZ() >> 4;
 
-		int[] off = offsets[cursor];
-		cursor = (cursor + 1) % offsets.length;
-		int cx = pcx + off[0];
-		int cz = pcz + off[1];
-		if (level.getChunkSource().hasChunk(cx, cz)) {
+		long t0 = System.nanoTime();
+		int scanned = 0;
+		for (int steps = 0; steps < offsets.length && steps < 600; steps++) {
+			int[] off = offsets[cursor];
+			cursor = (cursor + 1) % offsets.length;
+			int cx = pcx + off[0];
+			int cz = pcz + off[1];
+			if (!level.getChunkSource().hasChunk(cx, cz)) continue;
 			scanChunk(level, cx, cz, pp.getY(), player);
+			scanned++;
+			if (scanned >= MAX_SCANS_PER_TICK || System.nanoTime() - t0 > SCAN_BUDGET_NS) break;
 		}
 
 		found.values().removeIf(v -> Math.abs(v[0] - pcx) > r + 1 || Math.abs(v[1] - pcz) > r + 1);
@@ -220,6 +246,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		int lo = Integer.MAX_VALUE;
 		int hi = Integer.MIN_VALUE;
 		boolean hasTrial = false;
+		int markers = 0;
 
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		for (int x = 0; x < 16; x++) {
@@ -229,6 +256,11 @@ public class SusChunkFinderModule extends Module implements EspSource {
 					Block block = level.getBlockState(pos).getBlock();
 					if (isTrialSpawner(block)) {
 						hasTrial = true;
+						if (y < lo) lo = y;
+						if (y > hi) hi = y;
+					}
+					if (trialBlocks.contains(block)) {
+						markers++;
 						if (y < lo) lo = y;
 						if (y > hi) hi = y;
 					}
@@ -244,17 +276,29 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 		long key = ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
 
-		// trial spawner: sempre mostra em vermelho, sem alerta
-		if (hasTrial) {
+		// trial chamber (spawner ou varios blocos tipicos): vermelho, sem alerta; vizinhas ficam silenciosas
+		if (hasTrial || markers >= 6) {
 			if (lo == Integer.MAX_VALUE) {
 				lo = minY;
 				hi = maxY;
 			}
-			boolean isNew = !found.containsKey(key);
-			found.put(key, new int[]{cx, cz, lo, hi, score, 1});
-			if (isNew) {
-				seen.add(key); // marca vista, sem som/mensagem
+			for (int dx = -1; dx <= 1; dx++) {
+				for (int dz = -1; dz <= 1; dz++) {
+					long nk = ((long) (cx + dx) << 32) ^ ((cz + dz) & 0xFFFFFFFFL);
+					trialZone.add(nk);
+					if (nk != key) {
+						int[] v = found.get(nk);
+						if (v != null && (v.length < 6 || v[5] == 0)) found.remove(nk);
+					}
+				}
 			}
+			found.put(key, new int[]{cx, cz, lo, hi, score, 1});
+			seen.add(key);
+			return;
+		}
+		if (trialZone.contains(key)) {
+			found.remove(key);
+			seen.add(key);
 			return;
 		}
 

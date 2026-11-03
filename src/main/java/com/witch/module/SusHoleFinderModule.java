@@ -57,6 +57,79 @@ public class SusHoleFinderModule extends Module implements EspSource {
 		return (iy * d + iz) * d + ix;
 	}
 
+
+	/** Celula de tunel: h blocos de ar empilhados, piso e teto solidos e paredes solidas dos dois lados (eixo perpendicular). */
+	private static boolean hit(byte[] g, int d, int h, boolean alongX, int ix, int iy, int iz) {
+		if (ix < 1 || ix > d - 2 || iz < 1 || iz > d - 2 || iy < 1 || iy > d - 1 - h) return false;
+		if (g[idx(d, ix, iy - 1, iz)] != 1 || g[idx(d, ix, iy + h, iz)] != 1) return false;
+		for (int k = 0; k < h; k++) {
+			if (g[idx(d, ix, iy + k, iz)] != 0) return false;
+			if (alongX) {
+				if (g[idx(d, ix, iy + k, iz + 1)] != 1 || g[idx(d, ix, iy + k, iz - 1)] != 1) return false;
+			} else {
+				if (g[idx(d, ix + 1, iy + k, iz)] != 1 || g[idx(d, ix - 1, iy + k, iz)] != 1) return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Percorre tuneis ao longo de X ou Z. Um degrau de +-1 em Y entre colunas vizinhas NAO encerra o tunel
+	 * (antes qualquer degrau fazia o scanner achar que era o fim). O tamanho minimo vale para a cadeia inteira.
+	 */
+	private static void scan(byte[] g, int d, int h, boolean alongX, int min, int col,
+			int ox, int oy, int oz, List<int[]> out) {
+		for (int iy = 1; iy <= d - 1 - h; iy++) {
+			for (int l = 1; l <= d - 2; l++) {
+				int run = 0;
+				int cy = iy;
+				int segStart = 0;
+				List<int[]> segs = new ArrayList<>();
+				for (int a = 1; a <= d - 1; a++) {
+					int ix = alongX ? a : l;
+					int iz = alongX ? l : a;
+					int found = -1;
+					if (a <= d - 2) {
+						if (hit(g, d, h, alongX, ix, cy, iz)) {
+							found = cy;
+						} else if (run > 0) {
+							int ix2 = ix;
+							int iz2 = iz;
+							if (hit(g, d, h, alongX, ix2, cy - 1, iz2)) found = cy - 1;
+							else if (hit(g, d, h, alongX, ix2, cy + 1, iz2)) found = cy + 1;
+						}
+					}
+					if (found >= 0) {
+						if (run == 0) {
+							segStart = a;
+						} else if (found != cy) {
+							segs.add(new int[]{segStart, a, cy});
+							segStart = a;
+						}
+						cy = found;
+						run++;
+					} else {
+						if (run > 0) {
+							segs.add(new int[]{segStart, a, cy});
+							if (run >= min) {
+								for (int[] sg : segs) {
+									if (alongX) {
+										out.add(new int[]{ox + sg[0], oy + sg[2], oz + l, ox + sg[1], oy + sg[2] + h, oz + l + 1, col});
+									} else {
+										out.add(new int[]{ox + l, oy + sg[2], oz + sg[0], ox + l + 1, oy + sg[2] + h, oz + sg[1], col});
+									}
+								}
+							}
+						}
+						run = 0;
+						cy = iy;
+						segs.clear();
+					}
+				}
+			}
+		}
+	}
+
 	@Override
 	public void onTick() {
 		if (--cooldown > 0) return;
@@ -118,93 +191,16 @@ public class SusHoleFinderModule extends Module implements EspSource {
 
 		if (tunnels.enabled()) {
 			int col = tunnels.color();
-			// tunel ao longo do eixo X
-			for (int iy = 1; iy <= d - 2; iy++) {
-				for (int iz = 1; iz <= d - 2; iz++) {
-					int run = 0;
-					for (int ix = 1; ix <= d - 1; ix++) {
-						boolean hit = ix <= d - 2
-								&& g[idx(d, ix, iy, iz)] == 0
-								&& g[idx(d, ix, iy + 1, iz)] == 1 && g[idx(d, ix, iy - 1, iz)] == 1
-								&& g[idx(d, ix, iy, iz + 1)] == 1 && g[idx(d, ix, iy, iz - 1)] == 1;
-						if (hit) {
-							run++;
-						} else {
-							if (run >= min) {
-								out.add(new int[]{ox + ix - run, oy + iy, oz + iz, ox + ix, oy + iy + 1, oz + iz + 1, col});
-							}
-							run = 0;
-						}
-					}
-				}
-			}
-			// tunel ao longo do eixo Z
-			for (int ix = 1; ix <= d - 2; ix++) {
-				for (int iy = 1; iy <= d - 2; iy++) {
-					int run = 0;
-					for (int iz = 1; iz <= d - 1; iz++) {
-						boolean hit = iz <= d - 2
-								&& g[idx(d, ix, iy, iz)] == 0
-								&& g[idx(d, ix, iy + 1, iz)] == 1 && g[idx(d, ix, iy - 1, iz)] == 1
-								&& g[idx(d, ix + 1, iy, iz)] == 1 && g[idx(d, ix - 1, iy, iz)] == 1;
-						if (hit) {
-							run++;
-						} else {
-							if (run >= min) {
-								out.add(new int[]{ox + ix, oy + iy, oz + iz - run, ox + ix + 1, oy + iy + 1, oz + iz, col});
-							}
-							run = 0;
-						}
-					}
-				}
-			}
+			// 1x1 e 1x2, nos dois eixos; o tunel pode descer/subir 1 bloco e continua contando como o mesmo
+			scan(g, d, 1, true, min, col, ox, oy, oz, out);
+			scan(g, d, 1, false, min, col, ox, oy, oz, out);
+			scan(g, d, 2, true, min, col, ox, oy, oz, out);
+			scan(g, d, 2, false, min, col, ox, oy, oz, out);
 		}
 
-		if (tunnels.enabled()) {
-			int col = tunnels.color();
-			// tunel de 1 de largura e 2 de altura (o tipico "corredor" de jogador), eixo X
-			for (int iy = 1; iy <= d - 3; iy++) {
-				for (int iz = 1; iz <= d - 2; iz++) {
-					int run = 0;
-					for (int ix = 1; ix <= d - 1; ix++) {
-						boolean hit = ix <= d - 2
-								&& g[idx(d, ix, iy, iz)] == 0 && g[idx(d, ix, iy + 1, iz)] == 0
-								&& g[idx(d, ix, iy - 1, iz)] == 1 && g[idx(d, ix, iy + 2, iz)] == 1
-								&& g[idx(d, ix, iy, iz + 1)] == 1 && g[idx(d, ix, iy, iz - 1)] == 1
-								&& g[idx(d, ix, iy + 1, iz + 1)] == 1 && g[idx(d, ix, iy + 1, iz - 1)] == 1;
-						if (hit) {
-							run++;
-						} else {
-							if (run >= min) {
-								out.add(new int[]{ox + ix - run, oy + iy, oz + iz, ox + ix, oy + iy + 2, oz + iz + 1, col});
-							}
-							run = 0;
-						}
-					}
-				}
-			}
-			// idem, eixo Z
-			for (int ix = 1; ix <= d - 2; ix++) {
-				for (int iy = 1; iy <= d - 3; iy++) {
-					int run = 0;
-					for (int iz = 1; iz <= d - 1; iz++) {
-						boolean hit = iz <= d - 2
-								&& g[idx(d, ix, iy, iz)] == 0 && g[idx(d, ix, iy + 1, iz)] == 0
-								&& g[idx(d, ix, iy - 1, iz)] == 1 && g[idx(d, ix, iy + 2, iz)] == 1
-								&& g[idx(d, ix + 1, iy, iz)] == 1 && g[idx(d, ix - 1, iy, iz)] == 1
-								&& g[idx(d, ix + 1, iy + 1, iz)] == 1 && g[idx(d, ix - 1, iy + 1, iz)] == 1;
-						if (hit) {
-							run++;
-						} else {
-							if (run >= min) {
-								out.add(new int[]{ox + ix, oy + iy, oz + iz - run, ox + ix + 1, oy + iy + 2, oz + iz, col});
-							}
-							run = 0;
-						}
-					}
-				}
-			}
-		}
+		java.util.Map<String, int[]> uniq = new java.util.LinkedHashMap<>();
+		for (int[] b : out) uniq.put(java.util.Arrays.toString(b), b);
+		out = new ArrayList<>(uniq.values());
 
 		final int px = c.getX();
 		final int py = c.getY();
