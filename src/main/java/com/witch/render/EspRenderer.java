@@ -9,14 +9,17 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.state.level.CameraEntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -29,9 +32,11 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
- * Renderizador generico de caixas (quads) e tracers (DEBUG_LINES, estilo Meteor).
- * Origem do tracer = unproject do centro da tela (igual Meteor RenderUtils.updateScreenCenter),
- * assim a linha nao balanca com view-bobbing / walk.
+ * Caixas (quads) + tracers (DEBUG_LINES).
+ * Bob cancelado no padrao Meteor GameRendererMixin:
+ * 1) monta bobView/bobHurt
+ * 2) unproject do centro com projection*bob
+ * 3) aplica inverseBob na matrix dos vertices
  */
 public final class EspRenderer {
 	private static final RenderPipeline PIPELINE_FILLED = RenderPipelines.register(
@@ -57,7 +62,6 @@ public final class EspRenderer {
 
 	private static final List<EspSource> SOURCES = new ArrayList<>();
 	private static boolean inited = false;
-
 	private static final float K = 0.0012f;
 
 	private EspRenderer() {}
@@ -76,14 +80,61 @@ public final class EspRenderer {
 		LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(EspRenderer::onRender);
 	}
 
+	/** Copia de GameRenderer.bobHurt (26.2). */
+	private static void bobHurt(CameraRenderState crs, PoseStack pose) {
+		CameraEntityRenderState e = crs.entityRenderState;
+		if (!e.isLiving) return;
+		float hurt = e.hurtTime;
+		if (e.isDeadOrDying) {
+			float duration = Math.min(e.deathTime, 20.0f);
+			pose.mulPose(Axis.ZP.rotationDegrees(40.0f - 8000.0f / (duration + 200.0f)));
+		}
+		if (hurt < 0.0f) return;
+		if (e.hurtDuration <= 0) return;
+		hurt /= e.hurtDuration;
+		hurt = Mth.sin(hurt * hurt * hurt * hurt * (float) Math.PI);
+		float rr = e.hurtDir;
+		pose.mulPose(Axis.YP.rotationDegrees(-rr));
+		float tilt = (float) (-hurt * 14.0);
+		pose.mulPose(Axis.ZP.rotationDegrees(tilt));
+		pose.mulPose(Axis.YP.rotationDegrees(rr));
+	}
+
+	/** Copia de GameRenderer.bobView (26.2). */
+	private static void bobView(CameraRenderState crs, PoseStack pose) {
+		CameraEntityRenderState e = crs.entityRenderState;
+		if (!e.isPlayer) return;
+		float walk = e.backwardsInterpolatedWalkDistance;
+		float bob = e.bob;
+		pose.translate(
+				Mth.sin(walk * (float) Math.PI) * bob * 0.5f,
+				-Math.abs(Mth.cos(walk * (float) Math.PI) * bob),
+				0.0f
+		);
+		pose.mulPose(Axis.ZP.rotationDegrees(Mth.sin(walk * (float) Math.PI) * bob * 3.0f));
+		pose.mulPose(Axis.XP.rotationDegrees(Math.abs(Mth.cos(walk * (float) Math.PI - 0.2f) * bob) * 5.0f));
+	}
+
 	/**
-	 * Igual Meteor RenderUtils.updateScreenCenter(projection, view):
-	 * unproject de NDC (0,0,0) pelas inversas de projection e viewRotation,
-	 * depois soma a posicao da camera. Resultado = ponto no mundo colado no centro da tela,
-	 * sem balancar com bob de andar.
+	 * Monta a matrix de bob (hurt + walk) igual o GameRenderer da 26.2.
+	 * Na 26.2 o bob e multiplicado na projection: projectionMatrix.mul(bob).
 	 */
-	private static Vec3 screenCenter(CameraRenderState crs) {
-		Matrix4f invProjection = new Matrix4f(crs.projectionMatrix).invert();
+	private static Matrix4f buildBobMatrix(CameraRenderState crs, Minecraft mc) {
+		PoseStack bob = new PoseStack();
+		bobHurt(crs, bob);
+		if (mc.options.bobView().get()) {
+			bobView(crs, bob);
+		}
+		return new Matrix4f(bob.last().pose());
+	}
+
+	/**
+	 * Meteor RenderUtils.updateScreenCenter, mas com projection ja * bob (como a 26.2 usa no frame).
+	 * Assim o ponto bate no centro visual real da mira enquanto anda.
+	 */
+	private static Vec3 screenCenter(CameraRenderState crs, Matrix4f bobMatrix) {
+		Matrix4f projWithBob = new Matrix4f(crs.projectionMatrix).mul(bobMatrix);
+		Matrix4f invProjection = new Matrix4f(projWithBob).invert();
 		Matrix4f invView = new Matrix4f(crs.viewRotationMatrix).invert();
 
 		Vector4f center4 = new Vector4f(0f, 0f, 0f, 1f).mul(invProjection).mul(invView);
@@ -115,11 +166,17 @@ public final class EspRenderer {
 		CameraRenderState crs = context.levelState().cameraRenderState;
 		Vec3 cam = crs.pos;
 
-		// Origem estavel no centro da tela (Meteor-style unproject)
-		Vec3 origin = screenCenter(crs);
+		// 1) bob matrix (igual GameRenderer 26.2)
+		Matrix4f bobMatrix = buildBobMatrix(crs, mc);
+		Matrix4f inverseBob = new Matrix4f(bobMatrix).invert();
 
+		// 2) origem = centro da tela com projection*bob (Meteor updateScreenCenter adaptado)
+		Vec3 origin = screenCenter(crs, bobMatrix);
+
+		// 3) camera translate + inverseBob nos vertices (Meteor mul inverseBob no modelview)
 		pose.pushPose();
 		pose.translate(-cam.x, -cam.y, -cam.z);
+		pose.last().pose().mul(inverseBob);
 		Esp esp = new Esp(pose.last().pose(), cam, pt, origin);
 		for (EspSource s : SOURCES) {
 			if (s.active()) s.collect(esp);
@@ -243,10 +300,6 @@ public final class EspRenderer {
 			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.003f, false);
 		}
 
-		/**
-		 * DEBUG_LINES + Normal + LineWidth (formato de linhas da 26.2).
-		 * Origem ja vem do unproject do centro da tela.
-		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
 			float[] c = rgba(argb, alpha);
 			VertexConsumer vb = lines();
