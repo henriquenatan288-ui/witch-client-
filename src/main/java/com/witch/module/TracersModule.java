@@ -8,12 +8,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
-/** Tracers estilo Meteor, so para os alvos do Player ESP, Farm ESP e Storage ESP (precisam estar ligados): linha do centro da tela ate alvos, com cor por distancia, fade, alvo (cabeca/corpo/pes) e stem. */
+/**
+ * Tracers baseados no Tracers.java do Meteor (linhas do centro da tela, alvo cabeca/corpo/pes, stem,
+ * cor por distancia, ignore self/invisiveis, max distance). Aqui so desenham para os alvos do
+ * Player ESP, Farm ESP e Storage ESP, que precisam estar ligados.
+ */
 public class TracersModule extends Module implements EspSource {
-	private final IntSetting range = add(new IntSetting("Range", 16, 256, 128, ""));
+	/** Alpha padrao das cores do Meteor (127/255). */
+	private static final float ALPHA = 127f / 255f;
+
+	private final IntSetting range = add(new IntSetting("Max distance", 16, 256, 256, ""));
 	private final IntSetting target = add(new IntSetting("Target 1=head 2=body 3=feet", 1, 3, 2, ""));
-	private final IntSetting fade = add(new IntSetting("Distance fade", 0, 100, 40, "%"));
-	private final OreSetting distColor = add(new OreSetting("Color by distance", false, 2));
+	private final IntSetting ignoreSelf = add(new IntSetting("Ignore self (0/1)", 0, 1, 0, ""));
+	private final IntSetting showInvis = add(new IntSetting("Show invisible (0/1)", 0, 1, 1, ""));
+	private final OreSetting distColor = add(new OreSetting("Distance colors", false, 2));
 	private final OreSetting stem = add(new OreSetting("Stem", true, 7));
 	private final OreSetting players = add(new OreSetting("Player ESP", true, 5));
 	private final OreSetting farm = add(new OreSetting("Farm ESP", true, 2));
@@ -28,32 +36,33 @@ public class TracersModule extends Module implements EspSource {
 		return isEnabled();
 	}
 
-	/** Verde (perto) -> amarelo -> vermelho (longe). */
-	private static int gradient(float t) {
-		t = Mth.clamp(t, 0f, 1f);
+	/** Igual ao EntityUtils.getColorFromDistance do Meteor: perto = vermelho, meio = amarelo, longe (60+) = verde. */
+	private static int distanceColor(double dist) {
+		double percent = dist / 60.0;
+		if (percent < 0 || percent > 1) return 0xFF00FF00;
 		int r, g;
-		if (t < 0.5f) {
-			r = (int) (255 * (t * 2f));
-			g = 230;
-		} else {
+		if (percent < 0.5) {
 			r = 255;
-			g = (int) (230 * (1f - (t - 0.5f) * 2f));
+			g = (int) (255 * percent / 0.5);
+		} else {
+			g = 255;
+			r = 255 - (int) (255 * (percent - 0.5) / 0.5);
 		}
-		return 0xFF000000 | (r << 16) | (g << 8) | 0x40;
+		return 0xFF000000 | (r << 16) | (g << 8);
 	}
 
-	private void draw(Esp esp, double x, double y, double z, double h, double dist, int base) {
-		float t = (float) (dist / range.get());
-		int argb = distColor.enabled() ? gradient(t) : base;
-		float alpha = 1f - (fade.get() / 100f) * 0.75f * Mth.clamp(t, 0f, 1f);
+	private void entity(Esp esp, double x, double feetY, double z, double height, double dist, int base) {
+		boolean dc = distColor.enabled();
+		int argb = dc ? distanceColor(dist) : base;
+		float alpha = dc ? 1f : ALPHA;
 		double ty = switch (target.get()) {
-			case 1 -> y + h * 0.9;
-			case 3 -> y;
-			default -> y + h * 0.5;
+			case 1 -> feetY + height;
+			case 3 -> feetY;
+			default -> feetY + height / 2.0;
 		};
 		esp.tracer(x, ty, z, argb, alpha);
 		if (stem.enabled()) {
-			esp.line(x, y, z, x, y + h, z, argb, alpha * 0.8f);
+			esp.line(x, feetY, z, x, feetY + height, z, argb, alpha);
 		}
 	}
 
@@ -68,26 +77,28 @@ public class TracersModule extends Module implements EspSource {
 		double mx = Mth.lerp(pt, me.xOld, me.getX());
 		double my = Mth.lerp(pt, me.yOld, me.getY());
 		double mz = Mth.lerp(pt, me.zOld, me.getZ());
-		double r2 = (double) range.get() * range.get();
+		double max = range.get();
 
 		if (players.enabled() && isOn(PlayerEspModule.class)) {
 			int base = players.color();
+			boolean freecam = FreecamModule.active();
 			for (Player e : level.players()) {
-				if (e == me || e.isSpectator()) continue;
+				if (e.isSpectator()) continue;
+				if (e == me && (!freecam || ignoreSelf.get() == 1)) continue;
+				if (showInvis.get() == 0 && e.isInvisible()) continue;
 				double x = Mth.lerp(pt, e.xOld, e.getX());
 				double y = Mth.lerp(pt, e.yOld, e.getY());
 				double z = Mth.lerp(pt, e.zOld, e.getZ());
 				double dx = x - mx, dy = y - my, dz = z - mz;
-				double d2 = dx * dx + dy * dy + dz * dz;
-				if (d2 > r2) continue;
-				draw(esp, x, y, z, e.getBbHeight(), Math.sqrt(d2), base);
+				double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+				if (d > max) continue;
+				entity(esp, x, y, z, e.getBbHeight(), d, base);
 			}
 		}
 
 		if (farm.enabled() && isOn(FarmEspModule.class)) {
 			blocks(esp, FarmEspModule.blocks(), farm.color(), mx, my, mz);
 		}
-
 		if (storage.enabled() && isOn(StorageEspModule.class)) {
 			blocks(esp, StorageEspModule.blocks(), storage.color(), mx, my, mz);
 		}
@@ -100,14 +111,13 @@ public class TracersModule extends Module implements EspSource {
 		return false;
 	}
 
-	private void blocks(Esp esp, java.util.List<int[]> list, int argb, double mx, double my, double mz) {
+	private void blocks(Esp esp, java.util.List<int[]> list, int base, double mx, double my, double mz) {
+		boolean dc = distColor.enabled();
 		for (int[] b : list) {
 			double dx = b[0] + 0.5 - mx, dy = b[1] + 0.5 - my, dz = b[2] + 0.5 - mz;
 			double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			if (d > range.get()) continue;
-			float t = (float) (d / range.get());
-			float alpha = 1f - (fade.get() / 100f) * 0.75f * Mth.clamp(t, 0f, 1f);
-			esp.tracer(b[0] + 0.5, b[1] + 0.5, b[2] + 0.5, distColor.enabled() ? gradient(t) : argb, alpha);
+			esp.tracer(b[0] + 0.5, b[1] + 0.5, b[2] + 0.5, dc ? distanceColor(d) : base, dc ? 1f : ALPHA);
 		}
 	}
 }
