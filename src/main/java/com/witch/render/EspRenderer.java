@@ -191,12 +191,12 @@ public final class EspRenderer {
 
 		/** Linha do centro da tela ate o ponto (x, y, z). */
 		public void tracer(double tx, double ty, double tz, int argb) {
-			line(start.x, start.y, start.z, tx, ty, tz, argb, 1f);
+			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, 1f);
 		}
 
 		/** Igual ao tracer, com transparencia propria (fade por distancia). */
 		public void tracer(double tx, double ty, double tz, int argb, float alpha) {
-			line(start.x, start.y, start.z, tx, ty, tz, argb, alpha);
+			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, alpha);
 		}
 
 		/** Caixa so de preenchimento (sem contorno), com transparencia propria. */
@@ -206,6 +206,16 @@ public final class EspRenderer {
 
 		/** Fita de A ate B (largura cresce com a distancia pra ficar visivel). */
 		public void line(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.004f);
+		}
+
+		/** Linha fina (cerca de 1px na tela, largura constante da mira ate o alvo). */
+		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.0005f, 0.00002f);
+		}
+
+		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
+							float kw, float minW) {
 			float ax = (float) sx, ay = (float) sy, az = (float) sz;
 			float bx = (float) tx, by = (float) ty, bz = (float) tz;
 			float dx = bx - ax, dy = by - ay, dz = bz - az;
@@ -230,8 +240,8 @@ public final class EspRenderer {
 			float vy = nz * ux - nx * uz;
 			float vz = nx * uy - ny * ux;
 
-			float w0 = Math.max(0.004f, K * dist(ax, ay, az));
-			float w1 = Math.max(0.004f, K * dist(bx, by, bz));
+			float w0 = Math.max(minW, kw * dist(ax, ay, az));
+			float w1 = Math.max(minW, kw * dist(bx, by, bz));
 			float[] c = rgba(argb, alpha);
 			VertexConsumer vb = b();
 			quad(vb, m, c,

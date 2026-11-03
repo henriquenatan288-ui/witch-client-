@@ -62,7 +62,7 @@ public class TracersModule extends Module implements EspSource {
 		};
 		esp.tracer(x, ty, z, argb, alpha);
 		if (stem.enabled()) {
-			esp.line(x, feetY, z, x, feetY + height, z, argb, alpha);
+			esp.thinLine(x, feetY, z, x, feetY + height, z, argb, alpha);
 		}
 	}
 
