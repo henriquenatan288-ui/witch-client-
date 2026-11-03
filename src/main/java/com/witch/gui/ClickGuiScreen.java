@@ -237,9 +237,7 @@ public class ClickGuiScreen extends Screen {
 			float u = k - 1f;
 			float e = 1f + 2.4f * u * u * u + 1.4f * u * u; // easeOutBack: passa um pouco e volta
 			curYOff = Math.round((1f - e) * 22f);
-			float depth = 2f + c.ordinal();
-			curXOff = Math.round(parX * depth * 6f);
-			curYOff += Math.round(parY * depth * 4f);
+			curXOff = 0;
 			renderWindow(g, c, mx, my, speed, a * Math.min(1f, k * 1.6f));
 		}
 	}
@@ -275,21 +273,13 @@ public class ClickGuiScreen extends Screen {
 		sc[0] = Mth.clamp(sc[0], 0, maxScroll);
 
 		int totalH = HEAD_H + vh + BOT;
-		boolean lifted = dragWin == c;
-		int lift = lifted ? 3 : 0;
-		for (int k = 5; k >= 1; k--) {
-			RenderUtil.roundRect(g, x - k - curXOff / 2, y - k + 2 + lift + k / 2, w + 2 * k, totalH + 2 * k, 6 + k,
-					RenderUtil.alpha(0xFF000000, a * (lifted ? 0.09f : 0.06f)));
-		}
-		RenderUtil.roundRect(g, x - 2, y - 2, w + 4, totalH + 4, 8, RenderUtil.alpha(0xFFFFFFFF, a * 0.04f));
 		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, totalH + 2, 7, RenderUtil.alpha(LINE, a));
 		sweep(g, x + 6, x + w - 6, y - 1, a, c.ordinal(), false);
 		sweep(g, x + 6, x + w - 6, y + totalH, a, c.ordinal(), true);
 		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a * GLASS));
 		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a * (GLASS + 0.12f)));
 		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * (GLASS + 0.12f)));
-		g.fill(x + 5, y + 1, x + w - 5, y + 2, RenderUtil.alpha(0xFFFFFFFF, a * 0.16f));
-		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(0xFF000000, a * 0.6f));
+		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(LINE, a * 0.8f));
 		String title = c.label;
 		FontUtil.draw(g, title, x + (w - FontUtil.width(title)) / 2, y + (HEAD_H - 1 - FontUtil.height()) / 2, RenderUtil.alpha(TXT, a));
 
