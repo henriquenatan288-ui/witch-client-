@@ -27,11 +27,27 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
-/** Renderizador generico de caixas e linhas atraves das paredes. */
+/**
+ * Renderizador generico de caixas (quads) e tracers (DEBUG_LINES, estilo Meteor).
+ * Tracers usam PrimitiveTopology.DEBUG_LINES = linha de 1px na tela, nao fita/retangulo.
+ */
 public final class EspRenderer {
-	private static final RenderPipeline PIPELINE = RenderPipelines.register(
+	/** Caixas / preenchimento (quads). */
+	private static final RenderPipeline PIPELINE_FILLED = RenderPipelines.register(
 			RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
-					.withLocation(Identifier.fromNamespaceAndPath("witch", "pipeline/esp_through_walls"))
+					.withLocation(Identifier.fromNamespaceAndPath("witch", "pipeline/esp_filled"))
+					.withDepthStencilState(Optional.empty())
+					.build()
+	);
+
+	/**
+	 * Tracers / linhas finas — mesmo padrao do Meteor:
+	 * LINES_SNIPPET + DEBUG_LINES + depth desligado = linha de 1px atraves das paredes.
+	 */
+	private static final RenderPipeline PIPELINE_LINES = RenderPipelines.register(
+			RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
+					.withLocation(Identifier.fromNamespaceAndPath("witch", "pipeline/esp_lines"))
+					.withPrimitiveTopology(PrimitiveTopology.DEBUG_LINES)
 					.withDepthStencilState(Optional.empty())
 					.build()
 	);
@@ -45,7 +61,7 @@ public final class EspRenderer {
 	private static final List<EspSource> SOURCES = new ArrayList<>();
 	private static boolean inited = false;
 
-	/** Espessura das linhas em blocos por bloco de distancia (mantem a espessura na tela). */
+	/** Espessura das arestas de caixa (nao dos tracers). */
 	private static final float K = 0.0012f;
 
 	private EspRenderer() {}
@@ -73,7 +89,8 @@ public final class EspRenderer {
 			}
 		}
 		if (!any) return;
-		if (PIPELINE.getVertexFormatBinding(0) == null) return;
+		if (PIPELINE_FILLED.getVertexFormatBinding(0) == null) return;
+		if (PIPELINE_LINES.getVertexFormatBinding(0) == null) return;
 
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.level == null) return;
@@ -82,11 +99,7 @@ public final class EspRenderer {
 		PoseStack pose = context.poseStack();
 		Vec3 cam = context.levelState().cameraRenderState.pos;
 
-		/*
-		 * Origem dos tracers = posicao da camera do frame.
-		 * Usa a MESMA `cam` do translate abaixo: linha fica colada no centro da tela
-		 * e nao balanca com view-bobbing / walk.
-		 */
+		// Origem dos tracers = ponto ~0.1 a frente da camera (centro da tela), igual Meteor
 		var crs = context.levelState().cameraRenderState;
 		double yr = Math.toRadians(crs.yRot);
 		double pr = Math.toRadians(crs.xRot);
@@ -103,16 +116,21 @@ public final class EspRenderer {
 		}
 		pose.popPose();
 
-		if (esp.draw == null) return;
 		STAGED.upload();
-		StagedVertexBuffer.ExecuteInfo info = STAGED.getExecuteInfo(esp.draw);
-		if (info != null) {
-			execute(mc, info);
+
+		if (esp.drawFilled != null) {
+			StagedVertexBuffer.ExecuteInfo info = STAGED.getExecuteInfo(esp.drawFilled);
+			if (info != null) execute(mc, info, PIPELINE_FILLED);
 		}
+		if (esp.drawLines != null) {
+			StagedVertexBuffer.ExecuteInfo info = STAGED.getExecuteInfo(esp.drawLines);
+			if (info != null) execute(mc, info, PIPELINE_LINES);
+		}
+
 		STAGED.endFrame();
 	}
 
-	private static void execute(Minecraft client, StagedVertexBuffer.ExecuteInfo info) {
+	private static void execute(Minecraft client, StagedVertexBuffer.ExecuteInfo info, RenderPipeline pipeline) {
 		GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
 				RenderSystem.getModelViewMatrixCopy(), COLOR_MODULATOR, MODEL_OFFSET, TEXTURE_MATRIX);
 
@@ -126,7 +144,7 @@ public final class EspRenderer {
 				Optional.empty(),
 				mainTarget.getDepthTextureView(),
 				OptionalDouble.empty())) {
-			renderPass.setPipeline(PIPELINE);
+			renderPass.setPipeline(pipeline);
 			RenderSystem.bindDefaultUniforms(renderPass);
 			renderPass.setUniform("DynamicTransforms", dynamicTransforms);
 			renderPass.setVertexBuffer(0, info.vertexBuffer().slice());
@@ -135,14 +153,18 @@ public final class EspRenderer {
 		}
 	}
 
-	/** Entregue aos modulos: eles chamam box() e tracer() em coordenadas do mundo. */
+	/** Entregue aos modulos: box() = quads, tracer()/thinLine() = DEBUG_LINES. */
 	public static final class Esp {
 		private final Matrix4fc m;
 		private final Vec3 cam;
 		private final float partial;
 		private final Vec3 start;
-		private StagedVertexBuffer.Draw draw;
-		private VertexConsumer buf;
+
+		private StagedVertexBuffer.Draw drawFilled;
+		private VertexConsumer bufFilled;
+
+		private StagedVertexBuffer.Draw drawLines;
+		private VertexConsumer bufLines;
 
 		private Esp(Matrix4fc m, Vec3 cam, float partial, Vec3 origin) {
 			this.m = m;
@@ -155,17 +177,27 @@ public final class EspRenderer {
 			return partial;
 		}
 
-		private VertexConsumer b() {
-			if (buf == null) {
-				var binding = PIPELINE.getVertexFormatBinding(0);
-				var primitive = PIPELINE.getPrimitiveTopology();
+		private VertexConsumer filled() {
+			if (bufFilled == null) {
+				var binding = PIPELINE_FILLED.getVertexFormatBinding(0);
+				var primitive = PIPELINE_FILLED.getPrimitiveTopology();
 				var sorting = primitive == PrimitiveTopology.QUADS
 						? RenderSystem.getProjectionType().vertexSorting()
 						: null;
-				draw = STAGED.appendDraw(binding, primitive, sorting);
-				buf = STAGED.getVertexBuilder(draw);
+				drawFilled = STAGED.appendDraw(binding, primitive, sorting);
+				bufFilled = STAGED.getVertexBuilder(drawFilled);
 			}
-			return buf;
+			return bufFilled;
+		}
+
+		private VertexConsumer lines() {
+			if (bufLines == null) {
+				var binding = PIPELINE_LINES.getVertexFormatBinding(0);
+				var primitive = PIPELINE_LINES.getPrimitiveTopology();
+				drawLines = STAGED.appendDraw(binding, primitive, null);
+				bufLines = STAGED.getVertexBuilder(drawLines);
+			}
+			return bufLines;
 		}
 
 		private float dist(double x, double y, double z) {
@@ -177,7 +209,7 @@ public final class EspRenderer {
 
 		/** Caixa com contorno e preenchimento opcional (fillA 0 = so contorno). */
 		public void box(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float fillA) {
-			VertexConsumer vb = b();
+			VertexConsumer vb = filled();
 			float h = Math.max(0.015f, K * dist((x0 + x1) * 0.5, (y0 + y1) * 0.5, (z0 + z1) * 0.5));
 			float[] line = rgba(argb, 1f);
 			if (fillA > 0f) {
@@ -187,32 +219,35 @@ public final class EspRenderer {
 			outline(vb, m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, line, h);
 		}
 
-		/** Linha do centro da tela ate o ponto (x, y, z). */
+		/** Linha do centro da tela ate o ponto (DEBUG_LINES, 1px). */
 		public void tracer(double tx, double ty, double tz, int argb) {
 			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, 1f);
 		}
 
-		/** Igual ao tracer, com transparencia propria (fade por distancia). */
+		/** Igual ao tracer, com transparencia propria. */
 		public void tracer(double tx, double ty, double tz, int argb, float alpha) {
 			thinLine(start.x, start.y, start.z, tx, ty, tz, argb, alpha);
 		}
 
-		/** Caixa so de preenchimento (sem contorno), com transparencia propria. */
+		/** Caixa so de preenchimento (sem contorno). */
 		public void solid(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float alpha) {
-			fillBox(b(), m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, rgba(argb, alpha));
+			fillBox(filled(), m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, rgba(argb, alpha));
 		}
 
-		/** Fita de A ate B (largura cresce com a distancia pra ficar visivel). */
+		/** Linha grossa (ainda fita) — usado por outros ESP se precisar. */
 		public void line(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
 			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.003f, false);
 		}
 
 		/**
-		 * Linha de tracer SLIM + SMOOTH (estilo Meteor / Wurst).
-		 * 0.00027 = ~2x mais fino que a versao anterior (0.00055).
+		 * Tracer real estilo Meteor: 2 vertices, PrimitiveTopology.DEBUG_LINES.
+		 * Resultado = linha de 1 pixel na tela, sem virar retangulo.
 		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
-			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.00027f, 0.00002f, true);
+			float[] c = rgba(argb, alpha);
+			VertexConsumer vb = lines();
+			vb.addVertex(m, (float) sx, (float) sy, (float) sz).setColor(c[0], c[1], c[2], c[3]);
+			vb.addVertex(m, (float) tx, (float) ty, (float) tz).setColor(c[0], c[1], c[2], c[3]);
 		}
 
 		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
@@ -249,7 +284,7 @@ public final class EspRenderer {
 				w1 = w;
 			}
 			float[] c = rgba(argb, alpha);
-			VertexConsumer vb = b();
+			VertexConsumer vb = filled();
 			quad(vb, m, c,
 					ax - ux * w0, ay - uy * w0, az - uz * w0,
 					bx - ux * w1, by - uy * w1, bz - uz * w1,
