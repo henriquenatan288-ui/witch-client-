@@ -40,7 +40,23 @@ public abstract class CameraMixin {
 	@Inject(method = "update(Lnet/minecraft/client/DeltaTracker;)V", at = @At("TAIL"), require = 0)
 	private void witch$freelook(DeltaTracker deltaTracker, CallbackInfo ci) {
 		if (FreecamModule.active() || !FreeLookModule.active()) return;
-		setRotation(FreeLookModule.yaw(), FreeLookModule.pitch());
+		var p = net.minecraft.client.Minecraft.getInstance().player;
+		if (p == null) return;
+		float partial = deltaTracker.getGameTimeDeltaPartialTick(true);
+		float yaw = FreeLookModule.yaw();
+		float pitch = FreeLookModule.pitch();
+		setRotation(yaw, pitch);
+		// orbita em volta do personagem: posicao = olhos - direcao_do_olhar * distancia
+		double ex = net.minecraft.util.Mth.lerp(partial, p.xOld, p.getX());
+		double ey = net.minecraft.util.Mth.lerp(partial, p.yOld, p.getY()) + p.getEyeHeight();
+		double ez = net.minecraft.util.Mth.lerp(partial, p.zOld, p.getZ());
+		double yr = Math.toRadians(yaw);
+		double pr = Math.toRadians(pitch);
+		double lx = -Math.sin(yr) * Math.cos(pr);
+		double ly = -Math.sin(pr);
+		double lz = Math.cos(yr) * Math.cos(pr);
+		double d = FreeLookModule.distance();
+		setPosition(new Vec3(ex - lx * d, ey - ly * d, ez - lz * d));
 		detached = true;
 	}
 
