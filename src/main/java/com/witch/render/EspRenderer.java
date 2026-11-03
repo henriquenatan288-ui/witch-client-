@@ -185,13 +185,10 @@ public final class EspRenderer {
 
 		STAGED.upload();
 
-		if (esp.drawFilled != null) {
-			StagedVertexBuffer.ExecuteInfo info = STAGED.getExecuteInfo(esp.drawFilled);
-			if (info != null) execute(mc, info, PIPELINE_FILLED);
-		}
-		if (esp.drawLines != null) {
-			StagedVertexBuffer.ExecuteInfo info = STAGED.getExecuteInfo(esp.drawLines);
-			if (info != null) execute(mc, info, PIPELINE_LINES);
+		for (StagedVertexBuffer.Draw dr : esp.draws) {
+			StagedVertexBuffer.ExecuteInfo info = STAGED.getExecuteInfo(dr);
+			if (info == null) continue;
+			execute(mc, info, esp.drawIsLines.contains(dr) ? PIPELINE_LINES : PIPELINE_FILLED);
 		}
 
 		STAGED.endFrame();
@@ -226,11 +223,11 @@ public final class EspRenderer {
 		private final float partial;
 		private final Vec3 start;
 
-		private StagedVertexBuffer.Draw drawFilled;
-		private VertexConsumer bufFilled;
-
-		private StagedVertexBuffer.Draw drawLines;
-		private VertexConsumer bufLines;
+		/** Cada troca filled<->lines abre uma draw nova: o builder anterior e fechado pelo appendDraw. */
+		private final java.util.List<StagedVertexBuffer.Draw> draws = new java.util.ArrayList<>();
+		private final java.util.Set<StagedVertexBuffer.Draw> drawIsLines = new java.util.HashSet<>();
+		private VertexConsumer cur;
+		private boolean curLines;
 
 		private Esp(Matrix4fc m, Vec3 cam, float partial, Vec3 origin) {
 			this.m = m;
@@ -244,26 +241,31 @@ public final class EspRenderer {
 		}
 
 		private VertexConsumer filled() {
-			if (bufFilled == null) {
+			if (cur == null || curLines) {
 				var binding = PIPELINE_FILLED.getVertexFormatBinding(0);
 				var primitive = PIPELINE_FILLED.getPrimitiveTopology();
 				var sorting = primitive == PrimitiveTopology.QUADS
 						? RenderSystem.getProjectionType().vertexSorting()
 						: null;
-				drawFilled = STAGED.appendDraw(binding, primitive, sorting);
-				bufFilled = STAGED.getVertexBuilder(drawFilled);
+				StagedVertexBuffer.Draw dr = STAGED.appendDraw(binding, primitive, sorting);
+				draws.add(dr);
+				cur = STAGED.getVertexBuilder(dr);
+				curLines = false;
 			}
-			return bufFilled;
+			return cur;
 		}
 
 		private VertexConsumer lines() {
-			if (bufLines == null) {
+			if (cur == null || !curLines) {
 				var binding = PIPELINE_LINES.getVertexFormatBinding(0);
 				var primitive = PIPELINE_LINES.getPrimitiveTopology();
-				drawLines = STAGED.appendDraw(binding, primitive, null);
-				bufLines = STAGED.getVertexBuilder(drawLines);
+				StagedVertexBuffer.Draw dr = STAGED.appendDraw(binding, primitive, null);
+				draws.add(dr);
+				drawIsLines.add(dr);
+				cur = STAGED.getVertexBuilder(dr);
+				curLines = true;
 			}
-			return bufLines;
+			return cur;
 		}
 
 		private float dist(double x, double y, double z) {
