@@ -39,8 +39,50 @@ public class ClickGuiScreen extends Screen {
 	private static final int SW_GAP = 3;
 	private static final int ARROW_W = 18;
 
-	/** Opacidade do fundo das janelas (menor = mais transparente). */
-	private static final float GLASS = 0.55f;
+	/** Opacidade do fundo das janelas (ajustavel em "GUI Settings"); soma e limitada a 1. */
+	private static float gl(float add) {
+		return Math.min(1f, com.witch.module.GuiSettingsModule.opacity() + add);
+	}
+
+	private Module tipNow = null;
+	private Module tipLast = null;
+	private long tipSince = 0L;
+
+	private static String desc(String n) {
+		return switch (n) {
+			case "Ambient Dust" -> "Particulas brancas flutuando no ar em volta de voce.";
+			case "Ancient Finder" -> "Procura blocos/estruturas antigas nas chunks carregadas.";
+			case "Anti Vanish" -> "Mostra jogadores que ficaram invisiveis por vanish.";
+			case "Auto Eat" -> "Come sozinho quando a fome baixa.";
+			case "Auto Tool" -> "Troca para a melhor ferramenta ao quebrar um bloco.";
+			case "Auto Totem" -> "Mantem um totem na mao secundaria.";
+			case "Break Delay" -> "Ajusta o atraso entre quebrar blocos.";
+			case "Break Wave" -> "Efeito visual ao quebrar blocos.";
+			case "Farm ESP" -> "Destaca plantacoes proximas.";
+			case "Fly" -> "Voo livre.";
+			case "FreeLook" -> "Gira a camera em volta do personagem sem mudar para onde ele olha.";
+			case "Freecam" -> "Camera livre fora do corpo, sem limite de distancia.";
+			case "Fullbright" -> "Clareia o mundo (visao noturna no seu cliente).";
+			case "Jesus" -> "Andar sobre a agua.";
+			case "Mood Filter" -> "Escurece a tela, tom frio e vinheta.";
+			case "No Ghost Blocks" -> "Evita blocos fantasma ao quebrar/colocar.";
+			case "No Hurt Cam" -> "Tira o tranco da camera ao tomar dano.";
+			case "Particles" -> "Particulas extras.";
+			case "Player ESP" -> "Destaca jogadores atraves das paredes.";
+			case "Slow Hit Visual" -> "Visual de golpe lento.";
+			case "Speed" -> "Aumenta a velocidade de movimento (0 = normal).";
+			case "Storage ESP" -> "Destaca baus e containers proximos.";
+			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 30).";
+			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
+			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor).";
+			case "Trigger Bot" -> "Ataca sozinho quando a mira esta num alvo.";
+			case "Witch Particles" -> "Chapeus de bruxa girando em volta de voce.";
+			case "X-Ray Hologram" -> "Mostra minerios atraves dos blocos.";
+			case "Zoom" -> "Aproxima a visao com transicao suave.";
+			case "GUI Settings" -> "Opacidade do ClickGUI e tooltips.";
+			default -> "";
+		};
+	}
 	private static final int BG = 0xFF111111;
 	private static final int HEAD = 0xFF1A1A1A;
 	private static final int LINE = 0xFF3A3A3A;
@@ -208,6 +250,7 @@ public class ClickGuiScreen extends Screen {
 		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
 		openT += speed / 60f;
 		float a = openAnim;
+		tipNow = null;
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x99000000, a));
 
@@ -215,7 +258,7 @@ public class ClickGuiScreen extends Screen {
 		int sw = Math.min(150, this.width - 20);
 		int sx = (this.width - sw) / 2;
 		g.fill(sx - 1, 4, sx + sw + 1, 19, RenderUtil.alpha(LINE, a));
-		g.fill(sx, 5, sx + sw, 18, RenderUtil.alpha(0xFF0C0C0C, a * (GLASS + 0.1f)));
+		g.fill(sx, 5, sx + sw, 18, RenderUtil.alpha(0xFF0C0C0C, a * gl(0.1f)));
 		String shown;
 		int col;
 		if (search.isEmpty() && !searchFocused) {
@@ -239,6 +282,22 @@ public class ClickGuiScreen extends Screen {
 			curYOff = Math.round((1f - e) * 22f);
 			curXOff = 0;
 			renderWindow(g, c, mx, my, speed, a * Math.min(1f, k * 1.6f));
+		}
+		if (tipNow != tipLast) {
+			tipLast = tipNow;
+			tipSince = System.currentTimeMillis();
+		}
+		if (tipNow != null && com.witch.module.GuiSettingsModule.tooltips() && System.currentTimeMillis() - tipSince > 350) {
+			String d = desc(tipNow.name);
+			if (!d.isEmpty()) {
+				int tw = FontUtil.width(d) + 8;
+				int th = FontUtil.height() + 6;
+				int tx = Math.min(this.width - tw - 2, mx + 10);
+				int ty = Math.min(this.height - th - 2, my + 12);
+				g.fill(tx - 1, ty - 1, tx + tw + 1, ty + th + 1, RenderUtil.alpha(LINE, a));
+				g.fill(tx, ty, tx + tw, ty + th, RenderUtil.alpha(0xFF0C0C0C, a * 0.95f));
+				FontUtil.draw(g, d, tx + 4, ty + 3, RenderUtil.alpha(TXT, a));
+			}
 		}
 	}
 
@@ -276,9 +335,9 @@ public class ClickGuiScreen extends Screen {
 		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, totalH + 2, 7, RenderUtil.alpha(LINE, a));
 		sweep(g, x + 6, x + w - 6, y - 1, a, c.ordinal(), false);
 		sweep(g, x + 6, x + w - 6, y + totalH, a, c.ordinal(), true);
-		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a * GLASS));
-		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a * (GLASS + 0.12f)));
-		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * (GLASS + 0.12f)));
+		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a * gl(0f)));
+		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
+		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
 		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(LINE, a * 0.8f));
 		String title = c.label;
 		FontUtil.draw(g, title, x + (w - FontUtil.width(title)) / 2, y + (HEAD_H - 1 - FontUtil.height()) / 2, RenderUtil.alpha(TXT, a));
@@ -289,6 +348,7 @@ public class ClickGuiScreen extends Screen {
 		int fh = FontUtil.height();
 		for (Module m : modules(c)) {
 			boolean hover = RenderUtil.inside(mx, my, x, ry, w, ROW) && RenderUtil.inside(mx, my, x, by, w, vh);
+			if (hover && dragWin == null) tipNow = m;
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			if (m.toggleAnim > 0.02f) {
 				int sl = 20;
@@ -314,7 +374,7 @@ public class ClickGuiScreen extends Screen {
 			if (open) {
 				for (Setting s : m.settings()) {
 					int sh = setH(s, w);
-					g.fill(x, ry, x + w, ry + sh, RenderUtil.alpha(SUB_BG, a * (GLASS + 0.05f)));
+					g.fill(x, ry, x + w, ry + sh, RenderUtil.alpha(SUB_BG, a * gl(0.05f)));
 					g.fill(x, ry, x + 1, ry + sh, RenderUtil.alpha(LINE, a));
 					drawSetting(g, s, x, ry, w, sh, mx, my, by, vh, a);
 					ry += sh;
@@ -406,6 +466,10 @@ public class ClickGuiScreen extends Screen {
 		int w = winW();
 		int x = p[0];
 		int y = p[1];
+		if (my < y + HEAD_H && button == 1) {
+			POS.remove(c);
+			return true;
+		}
 		if (my < y + HEAD_H) {
 			dragWin = c;
 			dragOffX = (int) mx - x;
@@ -578,6 +642,10 @@ public class ClickGuiScreen extends Screen {
 				searchFocused = false;
 				return true;
 			}
+		}
+		if (key == GLFW.GLFW_KEY_HOME) {
+			POS.clear();
+			return true;
 		}
 		if (key == GLFW.GLFW_KEY_RIGHT_SHIFT) {
 			this.onClose();
