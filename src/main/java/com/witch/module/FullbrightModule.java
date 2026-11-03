@@ -24,6 +24,7 @@ public class FullbrightModule extends Module {
 	@Override
 	protected void onEnable() {
 		Minecraft mc = Minecraft.getInstance();
+		if (mc.options == null) return; // config load cedo demais
 		original = mc.options.gamma().get();
 		ticks = 0;
 	}
@@ -31,6 +32,7 @@ public class FullbrightModule extends Module {
 	@Override
 	protected void onDisable() {
 		Minecraft mc = Minecraft.getInstance();
+		if (mc.options == null) return;
 		mc.options.gamma().set(original);
 		if (mc.player != null) {
 			mc.player.removeEffect(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(MobEffects.NIGHT_VISION.value()));
@@ -40,6 +42,7 @@ public class FullbrightModule extends Module {
 	@Override
 	public void onTick() {
 		Minecraft mc = Minecraft.getInstance();
+		if (mc.options == null) return;
 		ticks++;
 		float t = Math.min(1f, ticks / (fade.get() * 20f));
 		float eased = t * t * (3f - 2f * t);

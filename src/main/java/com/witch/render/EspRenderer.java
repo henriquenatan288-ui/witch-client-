@@ -242,12 +242,29 @@ public final class EspRenderer {
 		/**
 		 * Tracer real estilo Meteor: 2 vertices, PrimitiveTopology.DEBUG_LINES.
 		 * Resultado = linha de 1 pixel na tela, sem virar retangulo.
+		 * MC 26.2 exige Normal + LineWidth no vertex format de linhas.
 		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
 			float[] c = rgba(argb, alpha);
 			VertexConsumer vb = lines();
-			vb.addVertex(m, (float) sx, (float) sy, (float) sz).setColor(c[0], c[1], c[2], c[3]);
-			vb.addVertex(m, (float) tx, (float) ty, (float) tz).setColor(c[0], c[1], c[2], c[3]);
+
+			float dx = (float) (tx - sx);
+			float dy = (float) (ty - sy);
+			float dz = (float) (tz - sz);
+			float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if (len < 1.0E-6f) return;
+			dx /= len;
+			dy /= len;
+			dz /= len;
+
+			vb.addVertex(m, (float) sx, (float) sy, (float) sz)
+					.setColor(c[0], c[1], c[2], c[3])
+					.setNormal(dx, dy, dz)
+					.setLineWidth(1.0f);
+			vb.addVertex(m, (float) tx, (float) ty, (float) tz)
+					.setColor(c[0], c[1], c[2], c[3])
+					.setNormal(dx, dy, dz)
+					.setLineWidth(1.0f);
 		}
 
 		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
