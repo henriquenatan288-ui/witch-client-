@@ -39,7 +39,6 @@ public final class ModuleManager {
 		MODULES.add(new JesusModule());
 		MODULES.add(new AutoEatModule());
 		MODULES.add(new AutoToolModule());
-		MODULES.add(new BatteryModule());
 		MODULES.add(new AmbientDustModule());
 		MODULES.add(new MoodFilterModule());
 
