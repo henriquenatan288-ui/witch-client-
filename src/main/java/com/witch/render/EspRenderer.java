@@ -87,7 +87,15 @@ public final class EspRenderer {
 		 * Usa a MESMA `cam` do translate abaixo: linha fica colada no centro da tela
 		 * e nao balanca com view-bobbing / walk (antes misturava eyePosition sem bob + cam com bob).
 		 */
-		Vec3 origin = cam;
+		// Linha que nasce EXATAMENTE na camera vira um ponto (vista de frente). O Meteor usa um ponto ~0.1 a frente
+		// da camera (centro da tela); fazemos igual, pela direcao da camera.
+		var crs = context.levelState().cameraRenderState;
+		double yr = Math.toRadians(crs.yRot);
+		double pr = Math.toRadians(crs.xRot);
+		Vec3 origin = new Vec3(
+				cam.x - Math.sin(yr) * Math.cos(pr) * 0.1,
+				cam.y - Math.sin(pr) * 0.1,
+				cam.z + Math.cos(yr) * Math.cos(pr) * 0.1);
 
 		pose.pushPose();
 		pose.translate(-cam.x, -cam.y, -cam.z);
