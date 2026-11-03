@@ -210,11 +210,11 @@ public final class EspRenderer {
 		}
 
 		/**
-		 * Linha de tracer: mais grossa e com a MESMA espessura nos dois extremos
-		 * (sem taper), pra ficar reta na tela.
+		 * Linha de tracer: espessura media, igual nos dois extremos (reta na tela).
+		 * 0.0010 fica entre o “fino demais” e o “grosso demais”.
 		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
-			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.0022f, 0.00015f, true);
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.0010f, 0.0001f, true);
 		}
 
 		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
