@@ -39,6 +39,8 @@ public class ClickGuiScreen extends Screen {
 	private static final int SW_GAP = 3;
 	private static final int ARROW_W = 18;
 
+	/** Opacidade do fundo das janelas (menor = mais transparente). */
+	private static final float GLASS = 0.55f;
 	private static final int BG = 0xFF111111;
 	private static final int HEAD = 0xFF1A1A1A;
 	private static final int LINE = 0xFF3A3A3A;
@@ -213,7 +215,7 @@ public class ClickGuiScreen extends Screen {
 		int sw = Math.min(150, this.width - 20);
 		int sx = (this.width - sw) / 2;
 		g.fill(sx - 1, 4, sx + sw + 1, 19, RenderUtil.alpha(LINE, a));
-		g.fill(sx, 5, sx + sw, 18, RenderUtil.alpha(0xFF0C0C0C, a));
+		g.fill(sx, 5, sx + sw, 18, RenderUtil.alpha(0xFF0C0C0C, a * (GLASS + 0.1f)));
 		String shown;
 		int col;
 		if (search.isEmpty() && !searchFocused) {
@@ -283,9 +285,9 @@ public class ClickGuiScreen extends Screen {
 		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, totalH + 2, 7, RenderUtil.alpha(LINE, a));
 		sweep(g, x + 6, x + w - 6, y - 1, a, c.ordinal(), false);
 		sweep(g, x + 6, x + w - 6, y + totalH, a, c.ordinal(), true);
-		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a));
-		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a));
-		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a));
+		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a * GLASS));
+		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a * (GLASS + 0.12f)));
+		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * (GLASS + 0.12f)));
 		g.fill(x + 5, y + 1, x + w - 5, y + 2, RenderUtil.alpha(0xFFFFFFFF, a * 0.16f));
 		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(0xFF000000, a * 0.6f));
 		String title = c.label;
@@ -322,7 +324,7 @@ public class ClickGuiScreen extends Screen {
 			if (open) {
 				for (Setting s : m.settings()) {
 					int sh = setH(s, w);
-					g.fill(x, ry, x + w, ry + sh, RenderUtil.alpha(SUB_BG, a));
+					g.fill(x, ry, x + w, ry + sh, RenderUtil.alpha(SUB_BG, a * (GLASS + 0.05f)));
 					g.fill(x, ry, x + 1, ry + sh, RenderUtil.alpha(LINE, a));
 					drawSetting(g, s, x, ry, w, sh, mx, my, by, vh, a);
 					ry += sh;
