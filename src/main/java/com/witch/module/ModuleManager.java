@@ -45,6 +45,7 @@ public final class ModuleManager {
 		MODULES.add(new NoHurtCamModule());
 		MODULES.add(new AutoTotemModule());
 		MODULES.add(new MoodFilterModule());
+		MODULES.add(new HideNameModule());
 
 		for (Module m : MODULES) {
 			if (m instanceof EspSource s) {

@@ -46,7 +46,7 @@ public final class EspRenderer {
 	private static boolean inited = false;
 
 	/** Espessura das linhas em blocos por bloco de distancia (mantem a espessura na tela). */
-	private static final float K = 0.0015f;
+	private static final float K = 0.0012f;
 
 	private EspRenderer() {}
 
@@ -180,7 +180,7 @@ public final class EspRenderer {
 		/** Caixa com contorno e preenchimento opcional (fillA 0 = so contorno). */
 		public void box(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float fillA) {
 			VertexConsumer vb = b();
-			float h = Math.max(0.02f, K * dist((x0 + x1) * 0.5, (y0 + y1) * 0.5, (z0 + z1) * 0.5));
+			float h = Math.max(0.015f, K * dist((x0 + x1) * 0.5, (y0 + y1) * 0.5, (z0 + z1) * 0.5));
 			float[] line = rgba(argb, 1f);
 			if (fillA > 0f) {
 				fillBox(vb, m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1,
@@ -206,15 +206,15 @@ public final class EspRenderer {
 
 		/** Fita de A ate B (largura cresce com a distancia pra ficar visivel). */
 		public void line(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
-			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.004f, false);
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, K, 0.003f, false);
 		}
 
 		/**
-		 * Linha de tracer: espessura media, igual nos dois extremos (reta na tela).
-		 * 0.0010 fica entre o “fino demais” e o “grosso demais”.
+		 * Linha de tracer SLIM + SMOOTH (estilo Meteor / Wurst).
+		 * kw baixo = linha fina; equalWidth = mesma espessura nos dois extremos (reta na tela).
 		 */
 		public void thinLine(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha) {
-			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.0010f, 0.0001f, true);
+			ribbon(sx, sy, sz, tx, ty, tz, argb, alpha, 0.00055f, 0.00004f, true);
 		}
 
 		private void ribbon(double sx, double sy, double sz, double tx, double ty, double tz, int argb, float alpha,
