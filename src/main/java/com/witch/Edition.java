@@ -15,10 +15,6 @@ public final class Edition {
 			"X-Ray Hologram", "Player ESP", "Storage ESP", "Farm ESP", "Tracers",
 			"Fullbright", "Zoom", "FreeLook", "Freecam", "No Hurt Cam", "GUI Settings");
 
-	/** Light: beta + modulos visuais. */
-	private static final Set<String> LIGHT_EXTRA = Set.of(
-			"Mood Filter", "Ambient Dust", "Witch Particles", "Particles", "Break Wave",
-			"Slow Hit Visual", "Hide Name");
 
 	private static String load() {
 		try (InputStream in = Edition.class.getResourceAsStream("/witch_edition.properties")) {
@@ -46,9 +42,9 @@ public final class Edition {
 		return !NAME.equals("beta");
 	}
 
+	/** Beta: so o essencial. Light e Full: todos os modulos (a Light ainda traz o visual e as texturas). */
 	public static boolean allows(String moduleName) {
-		if (NAME.equals("full")) return true;
-		if (BETA.contains(moduleName)) return true;
-		return NAME.equals("light") && LIGHT_EXTRA.contains(moduleName);
+		if (!NAME.equals("beta")) return true;
+		return BETA.contains(moduleName);
 	}
 }

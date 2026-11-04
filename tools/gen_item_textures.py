@@ -159,15 +159,28 @@ def boots():
 
 def totem():
     c=Cv()
-    c.rect(5,2,10,6,L)
-    for x in (5,7,8,10): c.set(x,1,GOLD[3])
-    c.rect(5,1,10,1,GOLD[2]) if False else None
-    c.rect(5,2,5,6,W);c.rect(10,2,10,6,S)
-    c.set(6,4,C);c.set(9,4,C);c.set(7,6,D);c.set(8,6,D)
-    c.rect(5,7,10,13,S);c.rect(5,7,5,13,L);c.rect(10,7,10,13,G)
-    c.rect(2,7,4,8,S);c.rect(11,7,13,8,G);c.rect(2,7,4,7,L)
-    c.rect(7,9,8,10,C);c.set(7,9,W)
-    c.rect(5,14,6,14,G);c.rect(9,14,10,14,D)
+    GD=GOLD
+    # bracos: vertical 4 de largura, horizontal 4 de altura
+    for y in range(2,14):
+        for x in range(6,10):
+            c.set(x,y,S if x in (7,8) else (L if x==6 else G))
+    for x in range(2,14):
+        for y in range(5,9):
+            c.set(x,y,S if y in (6,7) else (L if y==5 else G))
+    # pontas alargadas (cruz pattee)
+    c.rect(5,1,10,2,S);c.rect(5,1,10,1,L);c.rect(10,1,10,2,G)
+    c.rect(1,4,2,9,S);c.rect(1,4,2,4,L);c.rect(1,9,2,9,G)
+    c.rect(13,4,14,9,S);c.rect(13,4,14,4,L);c.rect(13,9,14,9,G)
+    c.rect(5,13,10,14,S);c.rect(5,13,10,13,L);c.rect(5,14,10,14,G)
+    # filetes dourados nas pontas
+    for x in range(5,11): c.set(x,1,GD[3])
+    for x in range(5,11): c.set(x,14,GD[1])
+    for y in range(4,10): c.set(1,y,GD[3]);c.set(14,y,GD[1])
+    # ranhura no braco de baixo
+    for y in range(10,13): c.set(7,y,D);c.set(8,y,G)
+    # centro: joia ciano com engaste dourado
+    c.rect(6,5,9,8,GD[2]);c.rect(6,5,9,5,GD[3]);c.rect(6,8,9,8,GD[1])
+    c.rect(7,6,8,7,C);c.set(7,6,W);c.set(8,7,Cd)
     c.outline();return c
 
 def crystal():
