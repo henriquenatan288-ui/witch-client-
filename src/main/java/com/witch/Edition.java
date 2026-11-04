@@ -4,7 +4,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
 
-/** Edicao do client (beta / light / full), definida no build (-Pedition=...). Full e o padrao. */
+/** Edicao do client (beta / light / full), definida no build (-Pedition=...). Light e o padrao do build; a Full existe no codigo mas nao e mais gerada. */
 public final class Edition {
 	private Edition() {}
 

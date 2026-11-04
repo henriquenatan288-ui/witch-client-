@@ -5,7 +5,7 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
-def witchEdition = (findProperty('edition') ?: 'full').toString().toLowerCase()
+def witchEdition = (findProperty('edition') ?: 'light').toString().toLowerCase()
 
 base {
 	archivesName = project.archives_base_name + '-' + witchEdition
