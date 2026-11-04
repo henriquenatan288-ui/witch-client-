@@ -56,41 +56,50 @@ class Cv:
         for (x,y),c in s.p.items(): im.putpixel((x,y),c)
         return im
 
-def sword():
+def sword(bl=None,bs=None,gem=None):
+    bl=bl or L; bs=bs or S; gem=gem or C
     c=Cv()
     for t in range(8):
         x=13-t;y=2+t
-        c.set(x-1,y,L);c.set(x,y,S)
+        c.set(x-1,y,bl);c.set(x,y,bs)
     c.set(14,1,W);c.set(13,2,W)
     c.line(3,8,7,12,G);c.set(3,8,S);c.set(4,9,S)
-    c.set(5,10,C)
+    c.set(5,10,gem)
     c.line(4,11,2,13,D);c.set(4,11,G);c.set(3,12,G)
     c.set(1,14,L)
     c.outline();return c
 
+def dsword():
+    return sword(H('b4fbf6'),H('2fc4cf'),H('b4fbf6'))
+
 def axe():
     c=Cv()
-    c.line(3,13,11,5,G);c.line(3,14,11,6,D)
-    rows={1:(9,14),2:(9,15),3:(10,15),4:(10,14),5:(11,13)}
+    c.line(2,14,11,5,G);c.line(2,15,11,6,D)
+    for t in range(0,9,2): c.set(2+t,14-t,L)
+    c.set(1,15,S)
+    rows={1:(6,11),2:(5,12),3:(5,12),4:(6,12),5:(8,12),6:(10,12)}
     for y,(a,b) in rows.items():
         for x in range(a,b+1): c.set(x,y,S)
-        c.set(a,y,L)
-        if y<=3:
-            for x in range(a,b+1): 
-                if y==1 or x==a+1: c.set(x,y,L)
-    for y in (2,3): c.set(15,y,C)
-    c.set(14,4,C);c.set(14,1,Cd);c.set(13,5,Cd)
-    c.set(2,14,L)
+        for x in range(a,min(b,a+1)+1): c.set(x,y,L)
+        c.set(b,y,G)
+    for x in range(6,12): c.set(x,1,L)
+    for y in (2,3,4): c.set(5 if y<4 else 6,y,C)
+    c.set(6,1,Cl);c.set(5,2,Cl)
+    c.set(8,4,G);c.set(9,5,D)
     c.outline();return c
 
 def mace():
     c=Cv()
-    c.line(3,13,8,8,G);c.line(3,14,8,9,D);c.set(2,14,L);c.set(3,13,S)
-    c.shaded_circle(11,5,3.6,STEEL)
-    for x in range(8,15): c.set(x,5,D)
-    c.set(11,5,C)
-    for (x,y,col) in((11,1,W),(15,5,L),(7,5,L),(11,9,G),(14,2,L),(8,2,L),(14,8,G)):
-        c.set(x,y,col)
+    c.line(2,14,8,8,G);c.line(2,15,8,9,D)
+    for t in range(0,6,2): c.set(3+t,13-t,L)
+    c.set(1,15,S);c.set(2,14,S)
+    c.shaded_circle(10.5,5.5,4.3,STEEL)
+    for a in range(0,360,45):
+        t=math.radians(a)
+        c.set(10.5+5.6*math.cos(t),5.5+5.6*math.sin(t),L if a<180 else G)
+    c.set(10.5,0,W)
+    for x in range(7,15): c.set(x,6,D)
+    c.rect(10,5,11,6,C);c.set(10,5,Cl)
     c.outline();return c
 
 def spear():
@@ -230,15 +239,21 @@ def beef():
 def bucket():
     c=Cv()
     for y in range(6,15):
-        a=3+(y-6)*0.12; b=12-(y-6)*0.12
+        a=3.2+(y-6)*0.18; b=12.2-(y-6)*0.18
         for x in range(int(round(a)),int(round(b))+1):
             c.set(x,y,S)
-        c.set(int(round(a)),y,L);c.set(int(round(b)),y,G)
-    c.rect(2,5,13,5,L);c.rect(2,6,13,6,S)
-    c.rect(3,5,12,5,C);c.rect(3,5,6,5,Cl);c.set(5,5,W)
-    c.rect(4,13,11,14,G)
-    c.line(3,5,4,3,G);c.line(4,3,11,3,G);c.line(11,3,12,5,G)
-    c.set(8,3,L)
+        c.set(int(round(a)),y,L);c.set(int(round(a))+1,y,L if y%2 else S);c.set(int(round(b)),y,G)
+    for y in (8,12):
+        for x in range(3,13):
+            if (x,y) in c.p: c.set(x,y,G)
+    c.rect(2,6,13,6,L)
+    for x in range(3,13):
+        c.set(x,4,C);c.set(x,5,CYAN[1] if x>8 else C)
+    for x in range(3,7): c.set(x,4,Cl)
+    c.set(5,4,W)
+    c.rect(2,3,13,3,L);c.set(2,3,W)
+    c.line(3,3,4,1,G);c.line(4,1,11,1,G);c.line(11,1,12,3,G)
+    c.set(7,1,L);c.set(8,1,L)
     c.outline();return c
 
 def wind():
@@ -265,7 +280,7 @@ def cobweb():
             c.set(8+r*math.cos(t),8+r*math.sin(t),(230,237,243,170))
     return c
 
-ITEMS={'netherite_sword':sword,'netherite_axe':axe,'mace':mace,'netherite_helmet':helmet,'netherite_chestplate':chest,
+ITEMS={'netherite_sword':sword,'diamond_sword':dsword,'netherite_axe':axe,'mace':mace,'netherite_helmet':helmet,'netherite_chestplate':chest,
  'netherite_leggings':leggings,'netherite_boots':boots,'totem_of_undying':totem,'end_crystal':crystal,'ender_pearl':pearl,
  'experience_bottle':xp,'golden_apple':gapple,'cooked_beef':beef,'water_bucket':bucket,'wind_charge':wind}
 
