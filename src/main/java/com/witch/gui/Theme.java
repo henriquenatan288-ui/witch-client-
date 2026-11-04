@@ -3,6 +3,11 @@ package com.witch.gui;
 public final class Theme {
 	private Theme() {}
 
+	/** Cor de destaque escolhida em GUI Settings. */
+	public static int accent() {
+		return com.witch.module.GuiSettingsModule.accent();
+	}
+
 	public static final int ACCENT = 0xFFE0E0E0;
 	/** Cor de destaque do ClickGUI (monocromatico preto/branco). */
 	public static final int GUI_ACCENT = 0xFFFFFFFF;

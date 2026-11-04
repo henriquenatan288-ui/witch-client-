@@ -26,6 +26,7 @@ public final class HudRenderer {
 		com.witch.module.AntiVanishModule.drawHud(g);
 		com.witch.module.SusChunkFinderModule.drawHud(g);
 		com.witch.module.SusSoloFinderModule.drawHud(g);
+		Toasts.draw(g);
 
 		long now = System.nanoTime();
 		float dt = last == 0 ? 1f : Math.min(3f, (now - last) / 16_666_667f);
@@ -46,11 +47,11 @@ public final class HudRenderer {
 
 		int x = 5;
 		int y = 5;
-		FontUtil.draw(g, "WITCH", x + 1, y, 0xFFFFFFFF);
-		FontUtil.draw(g, "CLIENT", x + 6 + FontUtil.width("WITCH"), y, 0xFF9A9A9A);
-		FontUtil.draw(g, com.witch.Edition.label(), x + 12 + FontUtil.width("WITCH CLIENT"), y, 0xFF5A5A5A);
-		y += FontUtil.height() + 3;
-		g.fill(x, y - 2, x + FontUtil.width("WITCH CLIENT") + 12, y - 1, 0x55FFFFFF);
+		int lw = 40;
+		WitchLogo.draw(g, x, y, lw, 0.95f);
+		FontUtil.draw(g, com.witch.Edition.label(), x + lw + 5, y + (WitchLogo.height(lw) - FontUtil.height()) / 2, 0xFF7A7A7A);
+		y += WitchLogo.height(lw) + 4;
+		g.fill(x, y - 2, x + lw + 5 + FontUtil.width(com.witch.Edition.label()), y - 1, RenderUtil.alpha(Theme.accent(), 0.5f));
 
 		int rh = FontUtil.height() + 3;
 		for (Module m : shown) {
@@ -59,7 +60,7 @@ public final class HudRenderer {
 			int w = FontUtil.width(m.name) + 9;
 			int ox = Math.round(-(1f - e) * (w + 6));
 			g.fill(x + ox, y, x + ox + w, y + rh, RenderUtil.alpha(0xFF000000, 0.62f * a));
-			g.fill(x + ox, y, x + ox + 1, y + rh, RenderUtil.alpha(0xFFFFFFFF, a));
+			g.fill(x + ox, y, x + ox + 1, y + rh, RenderUtil.alpha(Theme.accent(), a));
 			FontUtil.draw(g, m.name, x + ox + 5, y + 2, RenderUtil.alpha(0xFFFFFFFF, a));
 			y += Math.round(rh * e);
 		}

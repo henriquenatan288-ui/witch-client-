@@ -30,6 +30,7 @@ public final class ModuleDescriptions {
 			case "Speed" -> "Aumenta a velocidade de movimento (0 = normal).";
 			case "Storage ESP" -> "Destaca baus e containers proximos.";
 			case "Sus Solo Finder" -> "Escaneia chunks de cima (bom voando), apita e marca o solo. Cor = chance de base (heuristica).";
+			case "Witch Theme" -> "Liga de uma vez o filtro de humor e a poeira ambiente.";
 			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 40).";
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
 			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor, bem slim).";

@@ -83,7 +83,7 @@ public final class WitchLoading {
 		g.fill(bx, by, bx + bw, by + 3, 0x33FFFFFF);
 		if (progress >= 0f) {
 			int fw = Math.round(bw * Math.min(1f, progress));
-			g.fill(bx, by, bx + fw, by + 3, 0xFFFFFFFF);
+			g.fill(bx, by, bx + fw, by + 3, Theme.accent());
 			float pulse = 0.35f + 0.25f * (float) Math.sin(t * 5);
 			g.fill(Math.max(bx, bx + fw - 6), by - 1, bx + fw + 1, by + 4, RenderUtil.alpha(0xFFFFFFFF, pulse));
 			String pct = Math.round(Math.min(1f, progress) * 100) + "%  -  " + elapsed + "s";
@@ -93,7 +93,7 @@ public final class WitchLoading {
 			double p = (t * 0.9) % 1.0;
 			int sx = bx + (int) ((bw + seg) * p) - seg;
 			int x0 = Math.max(bx, sx), x1 = Math.min(bx + bw, sx + seg);
-			if (x1 > x0) g.fill(x0, by, x1, by + 3, 0xFFFFFFFF);
+			if (x1 > x0) g.fill(x0, by, x1, by + 3, Theme.accent());
 		}
 
 		if (sub != null && !sub.isEmpty()) {

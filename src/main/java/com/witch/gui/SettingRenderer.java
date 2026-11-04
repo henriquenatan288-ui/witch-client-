@@ -45,7 +45,7 @@ public final class SettingRenderer {
 			FontUtil.draw(g, toggleName(t.name), x + 7, ry + (sh - fh) / 2, RenderUtil.alpha(on ? TXT : TXT_DIM, a));
 			int sx = x + w - 6 - 18;
 			int sy = ry + (sh - 9) / 2;
-			RenderUtil.roundRect(g, sx, sy, 18, 9, 4, RenderUtil.alpha(on ? 0xFFFFFFFF : 0xFF2A2A2A, a * (on ? 0.9f : 1f)));
+			RenderUtil.roundRect(g, sx, sy, 18, 9, 4, RenderUtil.alpha(on ? Theme.accent() : 0xFF2A2A2A, a * (on ? 0.9f : 1f)));
 			int kx = on ? sx + 10 : sx + 1;
 			RenderUtil.roundRect(g, kx, sy + 1, 7, 7, 3, RenderUtil.alpha(on ? 0xFF111111 : 0xFFA8A8A8, a));
 		} else if (s instanceof IntSetting is) {
@@ -57,7 +57,7 @@ public final class SettingRenderer {
 			int ty = ry + fh + 8;
 			g.fill(tx, ty, tx + tw, ty + 3, RenderUtil.alpha(0xFF2A2A2A, a));
 			int fw = Math.round(tw * is.fraction());
-			if (fw > 0) g.fill(tx, ty, tx + fw, ty + 3, RenderUtil.alpha(TXT, a));
+			if (fw > 0) g.fill(tx, ty, tx + fw, ty + 3, RenderUtil.alpha(Theme.accent(), a));
 			g.fill(tx + fw - 1, ty - 2, tx + fw + 1, ty + 5, RenderUtil.alpha(TXT, a));
 		} else if (s instanceof ColorSetting cs) {
 			FontUtil.draw(g, cs.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));

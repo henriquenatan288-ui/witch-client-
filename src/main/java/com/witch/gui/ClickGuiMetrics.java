@@ -4,10 +4,10 @@ package com.witch.gui;
 public final class ClickGuiMetrics {
 	public static final int WIN_W = 100;
 	public static final int GAP = 5;
-	public static final int HEAD_H = 15;
-	public static final int ROW = 13;
-	public static final int INT_H = 22;
-	public static final int ORE_H = 13;
+	public static final int HEAD_H = 18;
+	public static final int ROW = 16;
+	public static final int INT_H = 26;
+	public static final int ORE_H = 16;
 	public static final int SW = 8;
 	public static final int SW_GAP = 3;
 	public static final int ARROW_W = 18;

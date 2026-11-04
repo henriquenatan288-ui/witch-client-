@@ -33,9 +33,9 @@ public final class ModuleRow {
 			for (int q = 0; q < sl; q++) {
 				int x0 = x + w * q / sl;
 				int x1 = x + w * (q + 1) / sl;
-				g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * m.toggleAnim * (0.16f - 0.14f * q / (sl - 1f))));
+				g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(Theme.accent(), a * m.toggleAnim * (0.16f - 0.14f * q / (sl - 1f))));
 			}
-			g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(TXT, a * m.toggleAnim));
+			g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(Theme.accent(), a * m.toggleAnim));
 		}
 		m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
 		if (m.hoverAnim > 0.02f && m.toggleAnim < 0.5f) {

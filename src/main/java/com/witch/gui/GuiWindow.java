@@ -28,7 +28,7 @@ public final class GuiWindow {
 			int px = cx - segW / 2 + i;
 			if (px < x0 || px >= x1) continue;
 			float al = 1f - Math.abs(i - segW / 2f) / (segW / 2f);
-			g.fill(px, y, px + 1, y + 1, RenderUtil.alpha(0xFFFFFFFF, a * al * 0.8f));
+			g.fill(px, y, px + 1, y + 1, RenderUtil.alpha(Theme.accent(), a * al * 0.8f));
 		}
 	}
 
@@ -56,6 +56,7 @@ public final class GuiWindow {
 		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
 		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(LINE, a * 0.8f));
 		String title = c.label;
+		CategoryIcons.draw(g, c, x + 7, y + (HEAD_H - 1 - 7) / 2, RenderUtil.alpha(Theme.accent(), a));
 		FontUtil.draw(g, title, x + (w - FontUtil.width(title)) / 2, y + (HEAD_H - 1 - FontUtil.height()) / 2, RenderUtil.alpha(TXT, a));
 
 		int by = y + HEAD_H;
@@ -85,7 +86,7 @@ public final class GuiWindow {
 			int ty = by + Math.round((vh - th) * (scroll / maxScroll));
 			int bx = x + w - SB_VIS - 1;
 			g.fill(bx, by + 1, bx + SB_VIS, by + vh - 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.06f));
-			g.fill(bx, ty, bx + SB_VIS, ty + th, RenderUtil.alpha(sbWin == c ? 0xFFFFFFFF : 0xFFA8A8A8, a * 0.9f));
+			g.fill(bx, ty, bx + SB_VIS, ty + th, RenderUtil.alpha(sbWin == c ? Theme.accent() : 0xFFA8A8A8, a * 0.9f));
 		}
 	}
 }

@@ -172,6 +172,10 @@ public class ClickGuiScreen extends Screen {
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x99000000, a));
 		glowLines(g, a);
 
+		// logo WT no canto superior esquerdo
+		int lgw = 34;
+		WitchLogo.draw(g, 8, 4, lgw, a * 0.95f);
+
 		// busca no topo
 		int sw = Math.min(150, this.width - 20);
 		int sx = (this.width - sw) / 2;
@@ -257,7 +261,7 @@ public class ClickGuiScreen extends Screen {
 				double sway = Math.sin(t * 1.3 + i * 0.035 + ph) * (6 + 22 * f);
 				int x = (int) Math.round(left ? 3 + f * 26 + sway : this.width - 3 - f * 26 - sway);
 				int y = this.height - i;
-				g.fill(x - 1, y - 4, x + 2, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.8f));
+				g.fill(x - 1, y - 4, x + 2, y, RenderUtil.alpha(Theme.accent(), a * fade * 0.8f));
 			}
 		}
 	}

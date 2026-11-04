@@ -38,6 +38,7 @@ public abstract class Module {
 	public void setEnabled(boolean value) {
 		if (this.enabled == value) return;
 		this.enabled = value;
+		com.witch.gui.Toasts.push(name, value);
 		if (value) onEnable(); else onDisable();
 	}
 
