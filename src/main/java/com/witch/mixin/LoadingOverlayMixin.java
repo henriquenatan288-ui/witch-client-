@@ -54,6 +54,7 @@ public abstract class LoadingOverlayMixin {
 		int w = mc.getWindow().getGuiScaledWidth();
 		int h = mc.getWindow().getGuiScaledHeight();
 		int ai = (int) (a * 255f) << 24;
+		com.witch.gui.WitchLoading.glow(g, w / 2, h / 2 - 10, Math.min(w, 520) / 2, a);
 		String t1 = "WITCH CLIENT";
 		String t2 = "MADE BY BISTECK";
 		g.text(mc.font, Component.literal(t1), (w - mc.font.width(t1)) / 2, (int) (h * 0.9f), ai | 0xCFCFCF, false);

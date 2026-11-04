@@ -8,6 +8,7 @@
     "LevelLoadingScreenMixin",
     "ConnectScreenMixin",
     "LoadingOverlayMixin",
+    "SelectWorldScreenMixin",
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin"
   ],

@@ -18,14 +18,19 @@ public final class WitchLoading {
 	private static long startMs = 0L;
 	private static long lastMs = 0L;
 
-	/** progress 0..1, ou negativo = indeterminado (barra que desliza). */
-	public static void draw(GuiGraphicsExtractor g, int w, int h, String title, String sub, float progress, String hint) {
-		double t = System.nanoTime() / 1_000_000_000.0;
-		long nowMs = System.currentTimeMillis();
-		if (nowMs - lastMs > 1500L) startMs = nowMs;
-		lastMs = nowMs;
-		long elapsed = (nowMs - startMs) / 1000L;
+	/** Luz suave (camadas de baixa opacidade) centrada em (cx, cy). */
+	public static void glow(GuiGraphicsExtractor g, int cx, int cy, int r, float alpha) {
+		for (int i = 0; i < 9; i++) {
+			float k = 1f - i / 9f;
+			int rr = Math.round(r * k);
+			int rh = Math.round(r * k * 0.6f);
+			if (rr < 2 || rh < 2) break;
+			RenderUtil.roundRect(g, cx - rr, cy - rh, rr * 2, rh * 2, rh, RenderUtil.alpha(0xFFFFFFFF, alpha * 0.018f));
+		}
+	}
 
+	/** Fundo do Witch: degrade escuro e linhas brilhantes balancando nos cantos de baixo. */
+	public static void backdrop(GuiGraphicsExtractor g, int w, int h, double t) {
 		// fundo: degrade escuro
 		int n = 24;
 		for (int i = 0; i < n; i++) {
@@ -48,12 +53,24 @@ public final class WitchLoading {
 				g.fill(x - 1, y - 2, x + 2, y, RenderUtil.alpha(0xFFFFFFFF, fade * 0.7f));
 			}
 		}
+	}
+
+	/** progress 0..1, ou negativo = indeterminado (barra que desliza). */
+	public static void draw(GuiGraphicsExtractor g, int w, int h, String title, String sub, float progress, String hint) {
+		double t = System.nanoTime() / 1_000_000_000.0;
+		long nowMs = System.currentTimeMillis();
+		if (nowMs - lastMs > 1500L) startMs = nowMs;
+		lastMs = nowMs;
+		long elapsed = (nowMs - startMs) / 1000L;
+
+		backdrop(g, w, h, t);
 
 		int cx = w / 2;
 		int cy = h / 2;
 
-		String brand = "WITCH CLIENT";
-		FontUtil.draw(g, brand, cx - FontUtil.width(brand) / 2, cy - 34, 0xFFFFFFFF);
+		int lw = Math.min(96, w / 3);
+		glow(g, cx, cy - 36, 120, 1f);
+		WitchLogo.draw(g, cx - lw / 2, cy - 38 - WitchLogo.height(lw) / 2, lw, 1f);
 
 		int dots = (int) (t * 2.5) % 4;
 		FontUtil.draw(g, title, cx - FontUtil.width(title) / 2, cy - 14, 0xFFCFCFCF);
