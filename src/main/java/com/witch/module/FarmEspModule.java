@@ -35,7 +35,7 @@ public class FarmEspModule extends Module implements EspSource {
 	public FarmEspModule() {
 		super("Farm ESP", Category.VISUALS);
 
-		range = add(new IntSetting("Range", 8, 24, 16, ""));
+		range = add(new IntSetting("Range", 8, 48, 16, ""));
 		fill = add(new IntSetting("Fill opacity", 0, 40, 10, "%"));
 
 		// nome, ligado por padrao, cor (indice da paleta), blocos
@@ -80,7 +80,7 @@ public class FarmEspModule extends Module implements EspSource {
 	@Override
 	public void onTick() {
 		if (--cooldown > 0) return;
-		cooldown = SCAN_INTERVAL_TICKS;
+		cooldown = SCAN_INTERVAL_TICKS * (range.get() > 24 ? 3 : 1);
 
 		Minecraft mc = Minecraft.getInstance();
 		var level = mc.level;
@@ -90,6 +90,7 @@ public class FarmEspModule extends Module implements EspSource {
 		}
 
 		int r = range.get();
+		int vr = Math.min(r, 24); // vertical limitado: o custo cresce com o volume
 		BlockPos center = mc.player.blockPosition();
 		int cx = center.getX();
 		int cy = center.getY();
@@ -98,7 +99,7 @@ public class FarmEspModule extends Module implements EspSource {
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		List<int[]> found = new ArrayList<>();
 		for (int dx = -r; dx <= r; dx++) {
-			for (int dy = -r; dy <= r; dy++) {
+			for (int dy = -vr; dy <= vr; dy++) {
 				for (int dz = -r; dz <= r; dz++) {
 					pos.set(cx + dx, cy + dy, cz + dz);
 					BlockState state = level.getBlockState(pos);

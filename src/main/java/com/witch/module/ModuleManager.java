@@ -41,6 +41,7 @@ public final class ModuleManager {
 		MODULES.add(new AutoToolModule());
 		MODULES.add(new AmbientDustModule());
 		MODULES.add(new ZoomModule());
+		MODULES.add(new BoatFlyModule());
 		MODULES.add(new GuiSettingsModule());
 		MODULES.add(new NoHurtCamModule());
 		MODULES.add(new AutoTotemModule());

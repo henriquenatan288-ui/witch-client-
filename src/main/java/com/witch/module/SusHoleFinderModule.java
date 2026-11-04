@@ -17,7 +17,7 @@ public class SusHoleFinderModule extends Module implements EspSource {
 	private static final int MAX_RESULTS = 48;
 	private static final int SCAN_INTERVAL_TICKS = 40;
 
-	private final IntSetting range = add(new IntSetting("Range", 8, 24, 16, ""));
+	private final IntSetting range = add(new IntSetting("Range", 8, 32, 16, ""));
 	private final IntSetting minLen = add(new IntSetting("Min length", 3, 12, 4, ""));
 	private final IntSetting fill = add(new IntSetting("Fill opacity", 0, 40, 12, "%"));
 	private final OreSetting shafts = add(new OreSetting("Vertical holes", true, 1));
@@ -144,7 +144,7 @@ public class SusHoleFinderModule extends Module implements EspSource {
 
 	private void scanTick() {
 		if (--cooldown > 0) return;
-		cooldown = SCAN_INTERVAL_TICKS;
+		cooldown = SCAN_INTERVAL_TICKS * (range.get() > 20 ? 2 : 1);
 
 		Minecraft mc = Minecraft.getInstance();
 		var level = mc.level;
