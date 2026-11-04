@@ -5,6 +5,8 @@
   "client": [
     "CameraMixin",
     "GameRendererMixin",
+    "LevelLoadingScreenMixin",
+    "ConnectScreenMixin",
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin"
   ],
