@@ -6,9 +6,25 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class WitchLoading {
 	private WitchLoading() {}
 
+	private static final String[] TIPS = {
+			"F9 liga e desliga a fonte Inter do client.",
+			"Passe o mouse num modulo do ClickGUI para ver o que ele faz.",
+			"A tecla Home devolve as janelas do ClickGUI ao lugar original.",
+			"Clique direito no titulo de uma janela reseta so aquela janela.",
+			"Em GUI Settings voce ajusta a transparencia do ClickGUI.",
+			"Tracers: a cor da linha acompanha a cor do ESP.",
+			"Sus Chunk Finder: ajuste o raio de 1 a 30 chunks.",
+	};
+	private static long startMs = 0L;
+	private static long lastMs = 0L;
+
 	/** progress 0..1, ou negativo = indeterminado (barra que desliza). */
 	public static void draw(GuiGraphicsExtractor g, int w, int h, String title, String sub, float progress, String hint) {
 		double t = System.nanoTime() / 1_000_000_000.0;
+		long nowMs = System.currentTimeMillis();
+		if (nowMs - lastMs > 1500L) startMs = nowMs;
+		lastMs = nowMs;
+		long elapsed = (nowMs - startMs) / 1000L;
 
 		// fundo: degrade escuro
 		int n = 24;
@@ -51,7 +67,9 @@ public final class WitchLoading {
 		if (progress >= 0f) {
 			int fw = Math.round(bw * Math.min(1f, progress));
 			g.fill(bx, by, bx + fw, by + 3, 0xFFFFFFFF);
-			String pct = Math.round(Math.min(1f, progress) * 100) + "%";
+			float pulse = 0.35f + 0.25f * (float) Math.sin(t * 5);
+			g.fill(Math.max(bx, bx + fw - 6), by - 1, bx + fw + 1, by + 4, RenderUtil.alpha(0xFFFFFFFF, pulse));
+			String pct = Math.round(Math.min(1f, progress) * 100) + "%  -  " + elapsed + "s";
 			FontUtil.draw(g, pct, cx - FontUtil.width(pct) / 2, by + 8, 0xFF8E8E8E);
 		} else {
 			int seg = bw / 4;
@@ -63,6 +81,9 @@ public final class WitchLoading {
 
 		if (sub != null && !sub.isEmpty()) {
 			FontUtil.draw(g, sub, cx - FontUtil.width(sub) / 2, by + 22, 0xFF8E8E8E);
+		}
+		if (hint == null || hint.isEmpty()) {
+			hint = "Dica: " + TIPS[(int) ((nowMs / 6000L) % TIPS.length)];
 		}
 		if (hint != null && !hint.isEmpty()) {
 			FontUtil.draw(g, hint, cx - FontUtil.width(hint) / 2, h - 28, 0xFF666666);
