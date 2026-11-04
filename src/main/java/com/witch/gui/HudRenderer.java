@@ -25,6 +25,7 @@ public final class HudRenderer {
 		com.witch.module.MoodFilterModule.drawHud(g);
 		com.witch.module.AntiVanishModule.drawHud(g);
 		com.witch.module.SusChunkFinderModule.drawHud(g);
+		com.witch.module.SusSoloFinderModule.drawHud(g);
 
 		long now = System.nanoTime();
 		float dt = last == 0 ? 1f : Math.min(3f, (now - last) / 16_666_667f);

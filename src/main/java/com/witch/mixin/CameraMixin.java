@@ -87,4 +87,10 @@ public abstract class CameraMixin {
 	private boolean witch$spectatorForCull(LocalPlayer player) {
 		return player.isSpectator() || FreecamModule.active() || FreeLookModule.active();
 	}
+
+	/** Zoom: divide o FOV do mundo (em 26.x o calculateFov fica na Camera; a mao usa outro calculo). */
+	@Inject(method = "calculateFov", at = @At("RETURN"), cancellable = true, require = 0)
+	private void witch$zoom(float partial, CallbackInfoReturnable<Float> cir) {
+		cir.setReturnValue(com.witch.module.ZoomModule.apply(cir.getReturnValueF()));
+	}
 }

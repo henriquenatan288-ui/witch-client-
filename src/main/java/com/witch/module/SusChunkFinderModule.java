@@ -27,7 +27,7 @@ import java.util.Set;
  * Cada bloco tem um peso; blocos que nascem naturalmente (tabua, trilho, tocha...) nao contam.
  * Alerta com mensagem no centro + som de level-up quando encontra uma chunk nova.
  * Trial spawner: marca vermelho e nao apita.
- * Range de chunks 1-36. Limite de avisos 1-10. Cada chunk so alerta uma vez.
+ * Range de chunks 1-40. Limite de avisos 1-10. Cada chunk so alerta uma vez.
  * Keybind "Reload chunks" limpa e rescanneia.
  */
 public class SusChunkFinderModule extends Module implements EspSource {
@@ -41,7 +41,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 
 	private static SusChunkFinderModule instance;
 
-	private final IntSetting radius = add(new IntSetting("Chunk radius", 1, 30, 4, ""));
+	private final IntSetting radius = add(new IntSetting("Chunk radius", 1, 40, 4, ""));
 	private final IntSetting threshold = add(new IntSetting("Min score", 5, 200, 30, ""));
 	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 10, 3, ""));
 	private final ColorSetting color = add(new ColorSetting("Color", 4));
@@ -70,7 +70,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		instance = this;
 	}
 
-	private static int weightOf(String n) {
+	static int weightOf(String n) {
 		// quase nunca aparecem sozinhos
 		if (n.endsWith("shulker_box") || n.equals("ender_chest") || n.equals("beacon")
 				|| n.equals("enchanting_table")) {
@@ -98,7 +98,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		return 0;
 	}
 
-	private static Map<Block, Integer> buildWeights() {
+	static Map<Block, Integer> buildWeights() {
 		Map<Block, Integer> m = new HashMap<>();
 		for (Block b : BuiltInRegistries.BLOCK) {
 			int w = weightOf(BuiltInRegistries.BLOCK.getKey(b).getPath());
@@ -108,7 +108,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	}
 
 	/** Blocos tipicos de trial chamber (cobre/tuff/vault). Varios deles na mesma chunk = camara, nao base. */
-	private static Set<Block> buildTrialBlocks() {
+	static Set<Block> buildTrialBlocks() {
 		Set<Block> set = new HashSet<>();
 		for (Block b : BuiltInRegistries.BLOCK) {
 			String n = BuiltInRegistries.BLOCK.getKey(b).getPath();
@@ -121,7 +121,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 		return set;
 	}
 
-	private static boolean isTrialSpawner(Block b) {
+	static boolean isTrialSpawner(Block b) {
 		String n = BuiltInRegistries.BLOCK.getKey(b).getPath();
 		return n.equals("trial_spawner");
 	}

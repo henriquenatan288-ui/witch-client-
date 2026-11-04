@@ -29,7 +29,8 @@ public final class ModuleDescriptions {
 			case "Slow Hit Visual" -> "Visual de golpe lento.";
 			case "Speed" -> "Aumenta a velocidade de movimento (0 = normal).";
 			case "Storage ESP" -> "Destaca baus e containers proximos.";
-			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 30).";
+			case "Sus Solo Finder" -> "Escaneia chunks de cima (bom voando), apita e marca o solo. Cor = chance de base (heuristica).";
+			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 40).";
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
 			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor, bem slim).";
 			case "Trigger Bot" -> "Ataca sozinho quando a mira esta num alvo.";

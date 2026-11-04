@@ -22,6 +22,7 @@ public final class ModuleManager {
 		MODULES.add(new TracersModule());
 		MODULES.add(new SusHoleFinderModule());
 		MODULES.add(new SusChunkFinderModule());
+		MODULES.add(new SusSoloFinderModule());
 		MODULES.add(new SlowHitModule());
 		MODULES.add(new NoGhostBlocksModule());
 		MODULES.add(new BreakDelayModule());
