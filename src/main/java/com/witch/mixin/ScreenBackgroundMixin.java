@@ -36,9 +36,11 @@ public abstract class ScreenBackgroundMixin {
 		if (Minecraft.getInstance().level != null) return;
 		double t = System.nanoTime() / 1_000_000_000.0;
 		WitchLoading.backdrop(g, this.width, this.height, t);
-		int lw = Math.min(64, this.width / 6);
-		WitchLoading.glow(g, 12 + lw / 2, 8 + WitchLogo.height(lw) / 2, lw * 2, 0.8f);
-		WitchLogo.draw(g, 12, 8, lw, 0.9f);
+		if (!(self instanceof CreateWorldScreen)) { // la a logo cobriria as abas
+			int lw = Math.min(64, this.width / 6);
+			WitchLoading.glow(g, 12 + lw / 2, 8 + WitchLogo.height(lw) / 2, lw * 2, 0.8f);
+			WitchLogo.draw(g, 12, 8, lw, 0.9f);
+		}
 		ci.cancel();
 	}
 }
