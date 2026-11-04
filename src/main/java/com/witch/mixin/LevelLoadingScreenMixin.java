@@ -25,6 +25,7 @@ public abstract class LevelLoadingScreenMixin extends Screen {
 
 	@Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true, require = 0)
 	private void witch$render(GuiGraphicsExtractor g, int mx, int my, float delta, CallbackInfo ci) {
+		if (!com.witch.Edition.visuals()) return;
 		String title = switch (reason) {
 			case NETHER_PORTAL -> "Atravessando o portal";
 			case END_PORTAL -> "Viajando para o End";
@@ -38,6 +39,7 @@ public abstract class LevelLoadingScreenMixin extends Screen {
 
 	@Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true, require = 0)
 	private void witch$bg(GuiGraphicsExtractor g, int mx, int my, float delta, CallbackInfo ci) {
+		if (!com.witch.Edition.visuals()) return;
 		ci.cancel();
 	}
 }

@@ -5,8 +5,10 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+def witchEdition = (findProperty('edition') ?: 'full').toString().toLowerCase()
+
 base {
-	archivesName = project.archives_base_name
+	archivesName = project.archives_base_name + '-' + witchEdition
 }
 
 dependencies {
@@ -35,8 +37,16 @@ fabricApi {
 
 processResources {
 	inputs.property "version", project.version
+	inputs.property "edition", witchEdition
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version
+	}
+	filesMatching("witch_edition.properties") {
+		expand "edition": witchEdition
+	}
+	// beta: sem fonte global, sem texturas de itens e sem sol/lua novos (so Light e Full)
+	if (witchEdition == 'beta') {
+		exclude 'assets/minecraft/**'
 	}
 }
 

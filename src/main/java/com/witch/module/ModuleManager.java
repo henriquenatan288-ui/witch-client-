@@ -48,6 +48,8 @@ public final class ModuleManager {
 		MODULES.add(new MoodFilterModule());
 		MODULES.add(new HideNameModule());
 
+		MODULES.removeIf(m -> !com.witch.Edition.allows(m.name));
+
 		for (Module m : MODULES) {
 			if (m instanceof EspSource s) {
 				EspRenderer.register(s);

@@ -23,6 +23,7 @@ public abstract class ConnectScreenMixin extends Screen {
 
 	@Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true, require = 0)
 	private void witch$render(GuiGraphicsExtractor g, int mx, int my, float delta, CallbackInfo ci) {
+		if (!com.witch.Edition.visuals()) return;
 		String sub = status == null ? "" : status.getString();
 		WitchLoading.draw(g, this.width, this.height, "Entrando no servidor", sub, -1f, "Esc para cancelar");
 		ci.cancel();

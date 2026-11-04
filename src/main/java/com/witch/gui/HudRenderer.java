@@ -47,6 +47,7 @@ public final class HudRenderer {
 		int y = 5;
 		FontUtil.draw(g, "WITCH", x + 1, y, 0xFFFFFFFF);
 		FontUtil.draw(g, "CLIENT", x + 6 + FontUtil.width("WITCH"), y, 0xFF9A9A9A);
+		FontUtil.draw(g, com.witch.Edition.label(), x + 12 + FontUtil.width("WITCH CLIENT"), y, 0xFF5A5A5A);
 		y += FontUtil.height() + 3;
 		g.fill(x, y - 2, x + FontUtil.width("WITCH CLIENT") + 12, y - 1, 0x55FFFFFF);
 

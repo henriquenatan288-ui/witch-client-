@@ -4,6 +4,10 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [beta, light, full]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -17,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          gradle build --stacktrace 2>&1 | tee build.log
+          gradle build -Pedition=${{ matrix.edition }} --stacktrace 2>&1 | tee build.log
       - name: Report compile errors
         if: failure()
         shell: bash
@@ -25,5 +29,5 @@ jobs:
           grep -E "error:|\.java:[0-9]+|symbol:|location:|required:|found:|reason:" build.log | head -20 | while IFS= read -r l; do echo "::error::$l"; done
       - uses: actions/upload-artifact@v4
         with:
-          name: witch-client
+          name: witch-client-${{ matrix.edition }}
           path: build/libs/*.jar
