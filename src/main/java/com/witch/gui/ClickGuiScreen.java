@@ -189,13 +189,12 @@ public class ClickGuiScreen extends Screen {
 		}
 		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
 
-		// botao de resetar as posicoes das janelas (substitui depender de Home / clique direito)
-		int rx = sx + sw + 4;
-		int rw = FontUtil.width("Reset") + 10;
+		// botao de resetar as posicoes das janelas (pilula discreta ao lado da busca)
+		int rw = FontUtil.width("Reset") + 12;
+		int rx = sx + sw + 6;
 		boolean rh = RenderUtil.inside(mx, my, rx, 5, rw, 13);
-		g.fill(rx - 1, 4, rx + rw + 1, 19, RenderUtil.alpha(LINE, a));
-		g.fill(rx, 5, rx + rw, 18, RenderUtil.alpha(rh ? 0xFF262626 : 0xFF0C0C0C, a * gl(0.1f)));
-		FontUtil.draw(g, "Reset", rx + 5, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(rh ? TXT : TXT_DIM, a));
+		RenderUtil.roundRect(g, rx, 5, rw, 13, 4, RenderUtil.alpha(rh ? 0xFF2A2A2A : 0xFF121212, a * gl(0.15f)));
+		FontUtil.draw(g, "Reset", rx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(rh ? TXT : TXT_DIM, a));
 
 		float tx = (mx - this.width / 2f) / Math.max(1, this.width);
 		float ty = (my - this.height / 2f) / Math.max(1, this.height);
@@ -246,22 +245,19 @@ public class ClickGuiScreen extends Screen {
 
 	/** Linhas brilhantes brancas que sobem balançando dos cantos de baixo. */
 	private void glowLines(GuiGraphicsExtractor g, float a) {
+		if (!com.witch.module.GuiSettingsModule.glow()) return;
 		double t = System.nanoTime() / 1_000_000_000.0;
-		int rise = (int) (this.height * 0.55f);
+		int rise = (int) (this.height * 0.5f);
 		for (int side = 0; side < 2; side++) {
 			boolean left = side == 0;
 			double ph = left ? 0.0 : 1.9;
-			for (int i = 0; i < rise; i += 2) {
+			for (int i = 0; i < rise; i += 4) {
 				float f = i / (float) rise;
 				float fade = (1f - f) * (1f - f);
-				double sway = Math.sin(t * 1.3 + i * 0.035 + ph) * (6 + 22 * f)
-						+ Math.sin(t * 0.7 + i * 0.012 + ph * 2) * (4 + 14 * f);
-				double bx = left ? 3 + f * 26 + sway : this.width - 3 - f * 26 - sway;
+				double sway = Math.sin(t * 1.3 + i * 0.035 + ph) * (6 + 22 * f);
+				int x = (int) Math.round(left ? 3 + f * 26 + sway : this.width - 3 - f * 26 - sway);
 				int y = this.height - i;
-				int x = (int) Math.round(bx);
-				g.fill(x - 5, y - 2, x + 6, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.035f));
-				g.fill(x - 3, y - 2, x + 4, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.07f));
-				g.fill(x - 1, y - 2, x + 2, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.85f));
+				g.fill(x - 1, y - 4, x + 2, y, RenderUtil.alpha(0xFFFFFFFF, a * fade * 0.8f));
 			}
 		}
 	}
@@ -286,7 +282,7 @@ public class ClickGuiScreen extends Screen {
 
 		int sw = Math.min(150, this.width - 20);
 		int sx = (this.width - sw) / 2;
-		if (RenderUtil.inside(mx, my, sx + sw + 4, 5, FontUtil.width("Reset") + 10, 13)) {
+		if (RenderUtil.inside(mx, my, sx + sw + 6, 5, FontUtil.width("Reset") + 12, 13)) {
 			POS.clear();
 			return true;
 		}
