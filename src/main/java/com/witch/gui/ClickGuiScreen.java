@@ -189,6 +189,14 @@ public class ClickGuiScreen extends Screen {
 		}
 		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
 
+		// botao de resetar as posicoes das janelas (substitui depender de Home / clique direito)
+		int rx = sx + sw + 4;
+		int rw = FontUtil.width("Reset") + 10;
+		boolean rh = RenderUtil.inside(mx, my, rx, 5, rw, 13);
+		g.fill(rx - 1, 4, rx + rw + 1, 19, RenderUtil.alpha(LINE, a));
+		g.fill(rx, 5, rx + rw, 18, RenderUtil.alpha(rh ? 0xFF262626 : 0xFF0C0C0C, a * gl(0.1f)));
+		FontUtil.draw(g, "Reset", rx + 5, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(rh ? TXT : TXT_DIM, a));
+
 		float tx = (mx - this.width / 2f) / Math.max(1, this.width);
 		float ty = (my - this.height / 2f) / Math.max(1, this.height);
 		parX = Mth.lerp(Math.min(1f, speed * 0.12f), parX, tx);
@@ -278,6 +286,10 @@ public class ClickGuiScreen extends Screen {
 
 		int sw = Math.min(150, this.width - 20);
 		int sx = (this.width - sw) / 2;
+		if (RenderUtil.inside(mx, my, sx + sw + 4, 5, FontUtil.width("Reset") + 10, 13)) {
+			POS.clear();
+			return true;
+		}
 		searchFocused = RenderUtil.inside(mx, my, sx, 5, sw, 13);
 		if (searchFocused) return true;
 		Category c = winAt(mx, my);

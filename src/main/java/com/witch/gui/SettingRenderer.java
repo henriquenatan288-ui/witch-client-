@@ -17,7 +17,17 @@ import static com.witch.gui.ClickGuiMetrics.*;
 public final class SettingRenderer {
 	private SettingRenderer() {}
 
+	/** Opcao de sim/nao (0 ou 1): desenhada como interruptor. */
+	private static boolean isToggle(Setting s) {
+		return s instanceof IntSetting is && is.min == 0 && is.max == 1;
+	}
+
+	private static String toggleName(String n) {
+		return n.replace(" (0/1)", "");
+	}
+
 	public static int height(Setting s, int w) {
+		if (isToggle(s)) return ORE_H;
 		if (s instanceof IntSetting) return INT_H;
 		if (s instanceof ColorSetting) {
 			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
@@ -29,7 +39,16 @@ public final class SettingRenderer {
 
 	public static void draw(GuiGraphicsExtractor g, Setting s, int x, int ry, int w, int sh, float a, float glAdd) {
 		int fh = FontUtil.height();
-		if (s instanceof IntSetting is) {
+		if (isToggle(s)) {
+			IntSetting t = (IntSetting) s;
+			boolean on = t.get() == 1;
+			FontUtil.draw(g, toggleName(t.name), x + 7, ry + (sh - fh) / 2, RenderUtil.alpha(on ? TXT : TXT_DIM, a));
+			int sx = x + w - 6 - 18;
+			int sy = ry + (sh - 9) / 2;
+			RenderUtil.roundRect(g, sx, sy, 18, 9, 4, RenderUtil.alpha(on ? 0xFFFFFFFF : 0xFF2A2A2A, a * (on ? 0.9f : 1f)));
+			int kx = on ? sx + 10 : sx + 1;
+			RenderUtil.roundRect(g, kx, sy + 1, 7, 7, 3, RenderUtil.alpha(on ? 0xFF111111 : 0xFFA8A8A8, a));
+		} else if (s instanceof IntSetting is) {
 			FontUtil.draw(g, is.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
 			String val = is.get() + is.suffix;
 			FontUtil.draw(g, val, x + w - 6 - FontUtil.width(val), ry + 3, RenderUtil.alpha(TXT, a));
@@ -75,6 +94,11 @@ public final class SettingRenderer {
 	 */
 	public static IntSetting click(Setting s, int x, int ry, int w, int sh, double mx, double my, int fh,
 								   Runnable[] pendingOut) {
+		if (isToggle(s)) {
+			IntSetting t = (IntSetting) s;
+			pendingOut[0] = () -> { t.set(t.get() == 1 ? 0 : 1); Config.save(); };
+			return null;
+		}
 		if (s instanceof IntSetting is) {
 			int tx = x + 7;
 			int tw = w - 14;
