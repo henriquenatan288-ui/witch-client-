@@ -53,16 +53,16 @@ public final class HudRenderer {
 		y += WitchLogo.height(lw) + 4;
 		g.fill(x, y - 2, x + lw + 5 + FontUtil.width(com.witch.Edition.label()), y - 1, RenderUtil.alpha(Theme.accent(), 0.5f));
 
-		int rh = FontUtil.height() + 3;
+		int rh = FontUtil.height() + 2;
 		for (Module m : shown) {
 			float a = ANIM.get(m);
 			float e = 1f - (1f - a) * (1f - a);
-			int w = FontUtil.width(m.name) + 9;
+			int w = FontUtil.width(m.name) + 10;
 			int ox = Math.round(-(1f - e) * (w + 6));
-			g.fill(x + ox, y, x + ox + w, y + rh, RenderUtil.alpha(0xFF000000, 0.62f * a));
-			g.fill(x + ox, y, x + ox + 1, y + rh, RenderUtil.alpha(Theme.accent(), a));
-			FontUtil.draw(g, m.name, x + ox + 5, y + 2, RenderUtil.alpha(0xFFFFFFFF, a));
-			y += Math.round(rh * e);
+			RenderUtil.roundRect(g, x + ox, y, w, rh, 3, RenderUtil.alpha(0xFF000000, 0.55f * a));
+			RenderUtil.roundRect(g, x + ox + 2, y + 2, 1, rh - 4, 0, RenderUtil.alpha(Theme.accent(), a));
+			FontUtil.draw(g, m.name, x + ox + 6, y + 1, RenderUtil.alpha(0xFFFFFFFF, a));
+			y += Math.round((rh + 1) * e);
 		}
 	}
 }
