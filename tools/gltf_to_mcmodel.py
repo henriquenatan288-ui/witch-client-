@@ -22,7 +22,7 @@ for nd in g['nodes']:
         vs=range(f*4,f*4+4); n=N[f*4]; nx,ny,nz=n[2],n[1],-n[0]
         d=max(((abs(nx),'x'),(abs(ny),'y'),(abs(nz),'z')))[1]
         name={'x':'east' if nx>0 else 'west','y':'up' if ny>0 else 'down','z':'south' if nz>0 else 'north'}[d]
-        us=[UV[i][0]*16 for i in vs]; vv=[UV[i][1]*16 for i in vs]
+        us=[UV[i][0]*16 for i in vs]; vv=[(1-UV[i][1])*16 for i in vs]
         faces[name]={"uv":[min(us),min(vv),max(us),max(vv)],"texture":"#0"}
     e={"from":fr,"to":to,"faces":faces}
     if abs(ang)>0.1: e["rotation"]={"angle":-SIGN*ang,"axis":"z","origin":o}
