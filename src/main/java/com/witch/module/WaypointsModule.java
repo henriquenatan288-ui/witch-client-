@@ -103,13 +103,13 @@ public class WaypointsModule extends Module implements EspSource {
 			var w = list.get(i);
 			String t = w.name() + "  " + Math.round(Math.sqrt(d2(w, p.getX(), p.getZ()))) + "m";
 			int bw = FontUtil.width(t) + 12;
-			int x = sw - 5 - bw + ox;
+			int x = sw - 5 - bw - 6 + ox;
 			minX = Math.min(minX, x);
 			maxW = Math.max(maxW, bw);
-			RenderUtil.roundRect(g, x, y, bw, lh, 3, RenderUtil.alpha(0xFF000000, 0.55f));
-			g.fill(x + 2, y + 2, x + 3, y + lh - 2, instance.color.get());
-			FontUtil.draw(g, t, x + 7, y + 2, 0xFFFFFFFF);
-			y += lh + 1;
+			RenderUtil.panel(g, x, y, bw + 6, lh + 2, 1f);
+			RenderUtil.roundRect(g, x + 6, y + (lh + 2) / 2 - 1, 3, 3, 1, instance.color.get());
+			FontUtil.draw(g, t, x + 13, y + 3, 0xFFFFFFFF);
+			y += lh + 4;
 		}
 		if (maxW > 0) com.witch.gui.HudLayout.report("waypoints", minX, top, maxW, y - top);
 	}

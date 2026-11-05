@@ -40,17 +40,19 @@ public class ArmorHudModule extends Module {
 			ItemStack st = i < 4 ? p.getItemBySlot(SLOTS[i]) : p.getMainHandItem();
 			if (st.isEmpty() || !st.isDamageableItem()) continue;
 			int v = pct(st);
-			int col = v > 60 ? 0xFF34D399 : v > 25 ? 0xFFFACC15 : 0xFFEF4444;
+			int col = v > 60 ? 0xFFFFFFFF : v > 25 ? 0xFFBDBDBD : 0xFF8A8A8A;
 			String label = i < 4 ? NAMES[i] : "Hand";
 			String val = v + "%";
 			int bw = FontUtil.width(label) + FontUtil.width(val) + 22;
 			int x = sw - 5 - bw + ox;
 			minX = Math.min(minX, x);
 			maxW = Math.max(maxW, bw);
-			RenderUtil.roundRect(g, x, y, bw, lh, 3, RenderUtil.alpha(0xFF000000, 0.55f));
-			FontUtil.draw(g, label, x + 6, y + 2, 0xFFCFCFCF);
-			FontUtil.draw(g, val, x + bw - 6 - FontUtil.width(val), y + 2, col);
-			y += lh + 1;
+			RenderUtil.panel(g, x, y, bw, lh + 2, 1f);
+			int fw = Math.round((bw - 12) * v / 100f);
+			g.fill(x + 6, y + lh + 1, x + 6 + fw, y + lh + 2, RenderUtil.alpha(0xFFFFFFFF, 0.55f));
+			FontUtil.draw(g, label, x + 7, y + 3, 0xFF9A9A9A);
+			FontUtil.draw(g, val, x + bw - 7 - FontUtil.width(val), y + 3, col);
+			y += lh + 4;
 		}
 		if (maxW > 0) com.witch.gui.HudLayout.report("armor", minX, top, maxW, y - top);
 	}

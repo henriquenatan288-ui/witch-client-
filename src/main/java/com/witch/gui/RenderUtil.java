@@ -20,6 +20,13 @@ public final class RenderUtil {
 		return (aa << 24) | (ar << 16) | (ag << 8) | ab;
 	}
 
+	/** Painel padrao do Witch: pilula fina, fundo escuro translucido e contorno claro de 1px. */
+	public static void panel(GuiGraphicsExtractor g, int x, int y, int w, int h, float a) {
+		int r = Math.min(h / 2, 6);
+		roundRect(g, x, y, w, h, r, alpha(0xFFFFFFFF, 0.14f * a));
+		roundRect(g, x + 1, y + 1, w - 2, h - 2, Math.max(0, r - 1), alpha(0xFF050505, 0.62f * a));
+	}
+
 	/** Retangulo arredondado com borda suavizada (pixel de transicao com alfa parcial). */
 	public static void roundRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
 		if (w <= 0 || h <= 0) return;

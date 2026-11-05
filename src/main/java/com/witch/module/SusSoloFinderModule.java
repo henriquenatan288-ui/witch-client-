@@ -243,15 +243,15 @@ public class SusSoloFinderModule extends Module implements EspSource {
 		int sw = mc.getWindow().getGuiScaledWidth();
 		int sh = mc.getWindow().getGuiScaledHeight();
 		int tw = FontUtil.width(text);
-		int bw = tw + 20;
-		int bh = FontUtil.height() + 12;
+		int bw = tw + 26;
+		int bh = FontUtil.height() + 10;
 		int x = (sw - bw) / 2;
 		int y = sh / 2 - 66;
 		long left = until - System.currentTimeMillis();
 		float a = left > 500 ? 1f : Math.max(0f, left / 500f);
 
-		RenderUtil.roundRect(g, x, y, bw, bh, 5, RenderUtil.alpha(0xFF1A1028, 0.82f * a));
-		RenderUtil.roundRect(g, x, y, 3, bh, 1, RenderUtil.alpha(0xFF22C55E, a));
-		FontUtil.draw(g, text, x + 10, y + 6, RenderUtil.alpha(0xFFFFF0C8, a));
+		RenderUtil.panel(g, x, y, bw, bh, a);
+		RenderUtil.roundRect(g, x + 8, y + bh / 2 - 1, 3, 3, 1, RenderUtil.alpha(0xFF22C55E, a));
+		FontUtil.draw(g, text, x + 16, y + 6, RenderUtil.alpha(0xFFFFFFFF, a));
 	}
 }

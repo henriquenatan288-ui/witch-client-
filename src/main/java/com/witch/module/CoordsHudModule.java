@@ -30,9 +30,9 @@ public class CoordsHudModule extends Module {
 		int bw = Math.max(FontUtil.width(l1), FontUtil.width(l2)) + 12;
 		int x0 = 5 + com.witch.gui.HudLayout.dx("coords");
 		int y = sh - 4 - lh * 2 - 2 + com.witch.gui.HudLayout.dy("coords");
-		RenderUtil.roundRect(g, x0, y, bw, lh * 2 + 2, 3, RenderUtil.alpha(0xFF000000, 0.55f));
-		FontUtil.draw(g, l1, x0 + 6, y + 2, 0xFFFFFFFF);
-		FontUtil.draw(g, l2, x0 + 6, y + 2 + lh, 0xFF9A9A9A);
-		com.witch.gui.HudLayout.report("coords", x0, y, bw, lh * 2 + 2);
+		RenderUtil.panel(g, x0, y, bw, lh * 2 + 4, 1f);
+		FontUtil.draw(g, l1, x0 + 7, y + 3, 0xFFFFFFFF);
+		FontUtil.draw(g, l2, x0 + 7, y + 3 + lh, 0xFF8A8A8A);
+		com.witch.gui.HudLayout.report("coords", x0, y, bw, lh * 2 + 4);
 	}
 }

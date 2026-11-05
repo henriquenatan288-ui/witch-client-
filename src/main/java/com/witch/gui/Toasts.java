@@ -39,15 +39,15 @@ public final class Toasts {
 			float e = 1f - (1f - in) * (1f - in);
 			String state = t.on ? "ON" : "OFF";
 			int tw = FontUtil.width(t.name) + 8 + FontUtil.width(state);
-			int bw = tw + 14;
+			int bw = tw + 19;
 			int bh = FontUtil.height() + 8;
 			int x = sw - 6 - bw + Math.round((1f - e) * (bw + 8));
 			float a = out;
 			int bar = t.on ? Theme.accent() : 0xFF6A6A6A;
-			RenderUtil.roundRect(g, x, y, bw, bh, 4, RenderUtil.alpha(0xFF0C0C0C, 0.8f * a));
-			g.fill(x, y + 2, x + 2, y + bh - 2, RenderUtil.alpha(bar, a));
-			FontUtil.draw(g, t.name, x + 8, y + 4, RenderUtil.alpha(0xFFFFFFFF, a));
-			FontUtil.draw(g, state, x + 8 + FontUtil.width(t.name) + 8, y + 4, RenderUtil.alpha(t.on ? Theme.accent() : 0xFF8E8E8E, a));
+			RenderUtil.panel(g, x, y, bw, bh, a);
+			RenderUtil.roundRect(g, x + 6, y + bh / 2 - 1, 3, 3, 1, RenderUtil.alpha(t.on ? 0xFFFFFFFF : 0xFF5A5A5A, a));
+			FontUtil.draw(g, t.name, x + 13, y + 4, RenderUtil.alpha(0xFFFFFFFF, a));
+			FontUtil.draw(g, state, x + 13 + FontUtil.width(t.name) + 8, y + 4, RenderUtil.alpha(t.on ? 0xFFBDBDBD : 0xFF6A6A6A, a));
 			y += bh + 3;
 		}
 	}
