@@ -277,8 +277,9 @@ public final class EspRenderer {
 
 		public void box(double x0, double y0, double z0, double x1, double y1, double z1, int argb, float fillA) {
 			VertexConsumer vb = filled();
-			float h = Math.max(0.015f, K * dist((x0 + x1) * 0.5, (y0 + y1) * 0.5, (z0 + z1) * 0.5));
-			float[] line = rgba(argb, 1f);
+			float h = Math.max(0.011f, 0.7f * K * dist((x0 + x1) * 0.5, (y0 + y1) * 0.5, (z0 + z1) * 0.5));
+			float[] line = rgba(argb, 0.9f);
+			fillA *= 0.55f;
 			if (fillA > 0f) {
 				fillBox(vb, m, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1,
 						rgba(argb, fillA));
