@@ -94,17 +94,24 @@ public class WaypointsModule extends Module implements EspSource {
 		int lh = FontUtil.height() + 3;
 		int shown = Math.min(n, list.size());
 		// canto direito, logo acima do Armor HUD (a esquerda fica a lista de modulos)
-		int y = sh / 2 - 26 - shown * (lh + 1);
+		int y = sh / 2 - 26 - shown * (lh + 1) + com.witch.gui.HudLayout.dy("waypoints");
+		int ox = com.witch.gui.HudLayout.dx("waypoints");
+		int top = y;
+		int minX = Integer.MAX_VALUE;
+		int maxW = 0;
 		for (int i = 0; i < shown; i++) {
 			var w = list.get(i);
 			String t = w.name() + "  " + Math.round(Math.sqrt(d2(w, p.getX(), p.getZ()))) + "m";
 			int bw = FontUtil.width(t) + 12;
-			int x = sw - 5 - bw;
+			int x = sw - 5 - bw + ox;
+			minX = Math.min(minX, x);
+			maxW = Math.max(maxW, bw);
 			RenderUtil.roundRect(g, x, y, bw, lh, 3, RenderUtil.alpha(0xFF000000, 0.55f));
 			g.fill(x + 2, y + 2, x + 3, y + lh - 2, instance.color.get());
 			FontUtil.draw(g, t, x + 7, y + 2, 0xFFFFFFFF);
 			y += lh + 1;
 		}
+		if (maxW > 0) com.witch.gui.HudLayout.report("waypoints", minX, top, maxW, y - top);
 	}
 
 	private static double d2(Waypoints.Wp w, double px, double pz) {

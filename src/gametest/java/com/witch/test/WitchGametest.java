@@ -27,6 +27,9 @@ public class WitchGametest implements FabricClientGameTest {
 			context.runOnClient(mc -> mc.gui.setScreen(new net.minecraft.client.gui.screens.options.OptionsScreen(null, mc.options, false)));
 			context.waitTicks(30);
 			context.takeScreenshot("08-options");
+			context.runOnClient(mc -> mc.gui.setScreen(new com.witch.gui.HudEditScreen()));
+			context.waitTicks(20);
+			context.takeScreenshot("12-hudedit");
 			context.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
 			context.waitTicks(60);
 			context.takeScreenshot("05-clickgui-world");

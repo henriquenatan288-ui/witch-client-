@@ -48,7 +48,6 @@ public final class ModuleDescriptions {
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
 			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor, bem slim).";
 			case "Trigger Bot" -> "Ataca sozinho quando a mira esta num alvo.";
-			case "Witch Particles" -> "Chapeus de bruxa girando em volta de voce.";
 			case "X-Ray Hologram" -> "Mostra minerios atraves dos blocos.";
 			case "Zoom" -> "Aproxima a visao com transicao suave.";
 			case "GUI Settings" -> "Opacidade do ClickGUI e tooltips.";

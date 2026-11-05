@@ -58,9 +58,9 @@ public class TracersModule extends Module implements EspSource {
 		int argb = dc ? distanceColor(dist) : base;
 		float alpha = dc ? 1f : ALPHA;
 		double ty = feetY + height * this.height.get() / 100.0;
-		esp.tracer(x, ty, z, argb, alpha, thickness.get());
+		esp.tracer(x, ty, z, argb, alpha, thickness.get() * 1.25f);
 		if (stem.enabled()) {
-			esp.thinLine(x, feetY, z, x, feetY + height, z, argb, alpha, thickness.get());
+			esp.thinLine(x, feetY, z, x, feetY + height, z, argb, alpha, thickness.get() * 1.25f);
 		}
 	}
 
@@ -117,7 +117,7 @@ public class TracersModule extends Module implements EspSource {
 			double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			if (d > range.get()) continue;
 			int col = dc ? distanceColor(d) : (match && b.length > 3 ? b[3] : base);
-			esp.tracer(b[0] + 0.5, b[1] + height.get() / 100.0, b[2] + 0.5, col, dc ? 1f : ALPHA, thickness.get());
+			esp.tracer(b[0] + 0.5, b[1] + height.get() / 100.0, b[2] + 0.5, col, dc ? 1f : ALPHA, thickness.get() * 1.25f);
 		}
 	}
 }

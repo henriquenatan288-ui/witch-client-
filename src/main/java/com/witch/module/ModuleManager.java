@@ -32,7 +32,6 @@ public final class ModuleManager {
 		MODULES.add(new FullbrightModule());
 		MODULES.add(new FreecamModule());
 		MODULES.add(new FreeLookModule());
-		MODULES.add(new WitchParticlesModule());
 		MODULES.add(new BreakWaveModule());
 		MODULES.add(new AntiVanishModule());
 		MODULES.add(new ParticlesModule());

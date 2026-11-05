@@ -200,6 +200,13 @@ public class ClickGuiScreen extends Screen {
 		RenderUtil.roundRect(g, rx, 5, rw, 13, 4, RenderUtil.alpha(rh ? 0xFF2A2A2A : 0xFF121212, a * gl(0.15f)));
 		FontUtil.draw(g, "Reset", rx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(rh ? TXT : TXT_DIM, a));
 
+		// botao para editar a posicao do HUD
+		int ew = FontUtil.width("Edit HUD") + 12;
+		int ex = rx + rw + 6;
+		boolean eh = RenderUtil.inside(mx, my, ex, 5, ew, 13);
+		RenderUtil.roundRect(g, ex, 5, ew, 13, 4, RenderUtil.alpha(eh ? 0xFF2A2A2A : 0xFF121212, a * gl(0.15f)));
+		FontUtil.draw(g, "Edit HUD", ex + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(eh ? TXT : TXT_DIM, a));
+
 		float tx = (mx - this.width / 2f) / Math.max(1, this.width);
 		float ty = (my - this.height / 2f) / Math.max(1, this.height);
 		parX = Mth.lerp(Math.min(1f, speed * 0.12f), parX, tx);
@@ -288,6 +295,11 @@ public class ClickGuiScreen extends Screen {
 		int sx = (this.width - sw) / 2;
 		if (RenderUtil.inside(mx, my, sx + sw + 6, 5, FontUtil.width("Reset") + 12, 13)) {
 			POS.clear();
+			return true;
+		}
+		int rwid = FontUtil.width("Reset") + 12;
+		if (RenderUtil.inside(mx, my, sx + sw + 6 + rwid + 6, 5, FontUtil.width("Edit HUD") + 12, 13)) {
+			net.minecraft.client.Minecraft.getInstance().gui.setScreen(new HudEditScreen());
 			return true;
 		}
 		searchFocused = RenderUtil.inside(mx, my, sx, 5, sw, 13);

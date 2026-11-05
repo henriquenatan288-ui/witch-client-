@@ -8,9 +8,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public class MoodFilterModule extends Module {
 	private static MoodFilterModule instance;
 
-	private final IntSetting dark = add(new IntSetting("Darkness", 0, 80, 25, "%"));
-	private final IntSetting tint = add(new IntSetting("Cold tint", 0, 60, 18, "%"));
-	private final IntSetting vignette = add(new IntSetting("Vignette", 0, 100, 55, "%"));
+	private final IntSetting dark = add(new IntSetting("Darkness", 0, 80, 8, "%"));
+	private final IntSetting tint = add(new IntSetting("Cold tint", 0, 60, 8, "%"));
+	private final IntSetting vignette = add(new IntSetting("Vignette", 0, 100, 35, "%"));
 
 	public MoodFilterModule() {
 		super("Mood Filter", Category.VISUALS);
@@ -28,8 +28,8 @@ public class MoodFilterModule extends Module {
 		int w = mc.getWindow().getGuiScaledWidth();
 		int h = mc.getWindow().getGuiScaledHeight();
 
-		float d = instance.dark.get() / 100f;
-		float t = instance.tint.get() / 100f;
+		float d = instance.dark.get() / 100f * 0.6f; // mais leve que o valor bruto: nao deixa o mundo lavado
+		float t = instance.tint.get() / 100f * 0.6f;
 		if (d > 0f) g.fill(0, 0, w, h, argb(d, 0x05070A));
 		if (t > 0f) g.fill(0, 0, w, h, argb(t * 0.5f, 0x30445A));
 
