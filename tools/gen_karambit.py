@@ -25,10 +25,23 @@ def make(blade_hi, blade_lo, edge, handle, ring):
         for x in range(W):
             r,g,b,a=px[x,y]
             px[x,y]=(r,g,b,255 if a>110 else 0)
+    src=im.copy(); sp=src.load()
+    for y in range(W):
+        for x in range(W):
+            r,g,b,a=sp[x,y]
+            if a==0: continue
+            if (r,g,b)[:3] in (blade_hi[:3], blade_lo[:3]):
+                t=min(1.0,max(0.0,((x+(W-y))-16)/40.0))
+                base=blade_hi if (r,g,b)==blade_hi[:3] else blade_lo
+                top=tuple(min(255,int(c*1.15)) for c in base[:3]); bot=tuple(int(c*0.55) for c in base[:3])
+                px[x,y]=tuple(int(top[i]*(1-t)+bot[i]*t) for i in range(3))+(255,)
+            edge=any(0<=x+dx<W and 0<=y+dy<W and sp[x+dx,y+dy][3]==0 for dx,dy in((1,0),(-1,0),(0,1),(0,-1)))
+            if edge:
+                cr,cg,cb,_=px[x,y]; px[x,y]=(int(cr*0.5),int(cg*0.5),int(cb*0.55),255)
     return im
 out=sys.argv[1]
 dia=make((150,245,245,255),(40,170,190,255),(235,255,255,255),(38,38,44,255),(150,150,160,255))
-net=make((120,100,125,255),(52,44,56,255),(210,190,215,255),(30,28,32,255),(110,100,112,255))
+net=make((235,120,200,255),(90,40,120,255),(255,210,240,255),(30,28,32,255),(150,120,160,255))
 dia.save(out+"/diamond_sword.png"); net.save(out+"/netherite_sword.png")
 pv=Image.new("RGBA",(320*2+30,330),(40,40,46,255))
 pv.paste(dia.resize((320,320),Image.NEAREST),(5,5),dia.resize((320,320),Image.NEAREST))
