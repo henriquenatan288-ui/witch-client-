@@ -61,6 +61,7 @@ public final class ModuleManager {
 		MODULES.add(new NoFallModule());
 		MODULES.add(new StepModule());
 		MODULES.add(new SpiderModule());
+		MODULES.add(new CrosshairModule());
 
 		MODULES.removeIf(m -> !com.witch.Edition.allows(m.name));
 

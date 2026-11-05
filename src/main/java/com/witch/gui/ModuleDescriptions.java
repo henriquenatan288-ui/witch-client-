@@ -42,6 +42,7 @@ public final class ModuleDescriptions {
 			case "No Fall" -> "Sem dano de queda. Anticheat detecta.";
 			case "Step" -> "Sobe blocos sem pular. Anticheat detecta.";
 			case "Spider" -> "Sobe paredes andando contra elas. Anticheat detecta.";
+			case "Crosshair" -> "Mira nova: 4 estilos, cor, tamanho e espaco.";
 			case "Witch Theme" -> "Liga de uma vez o filtro de humor e a poeira ambiente.";
 			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 40).";
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
