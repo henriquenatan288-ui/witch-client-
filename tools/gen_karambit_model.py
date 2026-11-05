@@ -43,7 +43,7 @@ def build():
 def model(tex):
     return {"parent":"minecraft:item/handheld","textures":{"0":tex,"particle":tex},"elements":build(),
       "display":{"thirdperson_righthand":{"rotation":[0,-90,55],"translation":[0,2,1],"scale":[0.9,0.9,0.9]},
-                 "firstperson_righthand":{"rotation":[0,-90,25],"translation":[1.1,3.2,1.13],"scale":[0.68,0.68,0.68]},
+                 "firstperson_righthand":{"rotation":[0,-90,25],"translation":[0.5,2.0,1.0],"scale":[0.4,0.4,0.4]},
                  "gui":{"rotation":[30,225,0],"translation":[0,0,0],"scale":[0.9,0.9,0.9]}}}
 os.makedirs(R+"/assets/witch/models/item",exist_ok=True); os.makedirs(R+"/assets/witch/textures/item",exist_ok=True)
 os.makedirs(R+"/assets/minecraft/items",exist_ok=True)
