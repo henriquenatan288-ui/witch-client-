@@ -29,17 +29,12 @@ public final class ModuleRow {
 		int fh = FontUtil.height();
 		m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 		if (m.toggleAnim > 0.02f) {
-			int sl = 20;
-			for (int q = 0; q < sl; q++) {
-				int x0 = x + w * q / sl;
-				int x1 = x + w * (q + 1) / sl;
-				g.fill(x0, ry, x1, ry + ROW, RenderUtil.alpha(Theme.accent(), a * m.toggleAnim * (0.16f - 0.14f * q / (sl - 1f))));
-			}
-			g.fill(x, ry, x + 2, ry + ROW, RenderUtil.alpha(Theme.accent(), a * m.toggleAnim));
+			RenderUtil.roundRect(g, x + 2, ry + 1, w - 4, ROW - 2, 4, RenderUtil.alpha(Theme.accent(), a * m.toggleAnim * 0.13f));
+			RenderUtil.roundRect(g, x + 3, ry + 4, 2, ROW - 8, 1, RenderUtil.alpha(Theme.accent(), a * m.toggleAnim));
 		}
 		m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
 		if (m.hoverAnim > 0.02f && m.toggleAnim < 0.5f) {
-			g.fill(x, ry, x + w, ry + ROW, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f * m.hoverAnim));
+			RenderUtil.roundRect(g, x + 2, ry + 1, w - 4, ROW - 2, 4, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f * m.hoverAnim));
 		}
 		int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
 		FontUtil.draw(g, fit(m.name, w - 7 - 11), x + 7, ry + (ROW - fh) / 2, RenderUtil.alpha(tc, a));

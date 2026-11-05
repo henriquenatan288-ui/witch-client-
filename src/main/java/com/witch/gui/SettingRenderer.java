@@ -55,36 +55,36 @@ public final class SettingRenderer {
 			int tx = x + 7;
 			int tw = w - 14;
 			int ty = ry + fh + 8;
-			g.fill(tx, ty, tx + tw, ty + 3, RenderUtil.alpha(0xFF2A2A2A, a));
+			RenderUtil.roundRect(g, tx, ty, tw, 3, 1, RenderUtil.alpha(0xFF2A2A2A, a));
 			int fw = Math.round(tw * is.fraction());
-			if (fw > 0) g.fill(tx, ty, tx + fw, ty + 3, RenderUtil.alpha(Theme.accent(), a));
-			g.fill(tx + fw - 1, ty - 2, tx + fw + 1, ty + 5, RenderUtil.alpha(TXT, a));
+			if (fw > 0) RenderUtil.roundRect(g, tx, ty, fw, 3, 1, RenderUtil.alpha(Theme.accent(), a));
+			RenderUtil.roundRect(g, tx + fw - 2, ty - 2, 4, 7, 2, RenderUtil.alpha(TXT, a));
 		} else if (s instanceof ColorSetting cs) {
 			FontUtil.draw(g, cs.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
 			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
 			for (int i = 0; i < ColorSetting.PALETTE.length; i++) {
 				int sx = x + 7 + (i % per) * (SW + SW_GAP);
 				int sy = ry + 13 + (i / per) * (SW + SW_GAP);
-				if (i == cs.index()) g.fill(sx - 1, sy - 1, sx + SW + 1, sy + SW + 1, RenderUtil.alpha(TXT, a));
-				g.fill(sx, sy, sx + SW, sy + SW, RenderUtil.alpha(ColorSetting.PALETTE[i], a));
+				if (i == cs.index()) RenderUtil.roundRect(g, sx - 1, sy - 1, SW + 2, SW + 2, 3, RenderUtil.alpha(TXT, a));
+				RenderUtil.roundRect(g, sx, sy, SW, SW, 2, RenderUtil.alpha(ColorSetting.PALETTE[i], a));
 			}
 		} else if (s instanceof KeybindSetting ks) {
 			FontUtil.draw(g, ks.name, x + 7, ry + (sh - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
 			String lab = ks.listening ? "..." : ks.label();
 			int cw = Math.max(26, FontUtil.width(lab) + 10);
 			int cx = x + w - 6 - cw;
-			g.fill(cx, ry + 2, cx + cw, ry + sh - 2, RenderUtil.alpha(ks.listening ? 0xFF4A4A4A : 0xFF222222, a));
+			RenderUtil.roundRect(g, cx, ry + 2, cw, sh - 4, 3, RenderUtil.alpha(ks.listening ? 0xFF4A4A4A : 0xFF222222, a));
 			FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (sh - fh) / 2, RenderUtil.alpha(TXT, a));
 		} else if (s instanceof OreSetting os) {
 			int bx = x + 7;
 			int bY = ry + (sh - 9) / 2;
-			g.fill(bx, bY, bx + 9, bY + 9, RenderUtil.alpha(0xFF3A3A3A, a));
-			g.fill(bx + 1, bY + 1, bx + 8, bY + 8, RenderUtil.alpha(0xFF0C0C0C, a));
-			if (os.enabled()) g.fill(bx + 2, bY + 2, bx + 7, bY + 7, RenderUtil.alpha(TXT, a));
+			RenderUtil.roundRect(g, bx, bY, 9, 9, 3, RenderUtil.alpha(0xFF3A3A3A, a));
+			RenderUtil.roundRect(g, bx + 1, bY + 1, 7, 7, 2, RenderUtil.alpha(0xFF0C0C0C, a));
+			if (os.enabled()) RenderUtil.roundRect(g, bx + 2, bY + 2, 5, 5, 1, RenderUtil.alpha(TXT, a));
 			FontUtil.draw(g, os.name, bx + 14, ry + (sh - fh) / 2, RenderUtil.alpha(os.enabled() ? TXT : TXT_DIM, a));
 			int cx = x + w - 6 - 12;
-			g.fill(cx - 1, bY - 1, cx + 13, bY + 10, RenderUtil.alpha(0xFF3A3A3A, a));
-			g.fill(cx, bY, cx + 12, bY + 9, RenderUtil.alpha(os.color(), a));
+			RenderUtil.roundRect(g, cx - 1, bY - 1, 14, 11, 3, RenderUtil.alpha(0xFF3A3A3A, a));
+			RenderUtil.roundRect(g, cx, bY, 12, 9, 2, RenderUtil.alpha(os.color(), a));
 		}
 	}
 

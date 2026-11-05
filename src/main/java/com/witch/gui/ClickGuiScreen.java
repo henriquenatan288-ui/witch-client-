@@ -178,8 +178,8 @@ public class ClickGuiScreen extends Screen {
 		// busca no topo
 		int sw = Math.min(150, this.width - 20);
 		int sx = (this.width - sw) / 2;
-		g.fill(sx - 1, 4, sx + sw + 1, 19, RenderUtil.alpha(LINE, a));
-		g.fill(sx, 5, sx + sw, 18, RenderUtil.alpha(0xFF0C0C0C, a * gl(0.1f)));
+		RenderUtil.roundRect(g, sx - 1, 4, sw + 2, 15, 7, RenderUtil.alpha(LINE, a));
+		RenderUtil.roundRect(g, sx, 5, sw, 13, 6, RenderUtil.alpha(0xFF0C0C0C, a * gl(0.1f)));
 		String shown;
 		int col;
 		if (search.isEmpty() && !searchFocused) {
@@ -246,8 +246,8 @@ public class ClickGuiScreen extends Screen {
 				int th = FontUtil.height() + 6;
 				int tipX = Math.min(this.width - tw - 2, mx + 10);
 				int tipY = Math.min(this.height - th - 2, my + 12);
-				g.fill(tipX - 1, tipY - 1, tipX + tw + 1, tipY + th + 1, RenderUtil.alpha(LINE, a));
-				g.fill(tipX, tipY, tipX + tw, tipY + th, RenderUtil.alpha(0xFF0C0C0C, a * 0.95f));
+				RenderUtil.roundRect(g, tipX - 1, tipY - 1, tw + 2, th + 2, 5, RenderUtil.alpha(LINE, a));
+				RenderUtil.roundRect(g, tipX, tipY, tw, th, 4, RenderUtil.alpha(0xFF0C0C0C, a * 0.95f));
 				FontUtil.draw(g, d, tipX + 4, tipY + 3, RenderUtil.alpha(TXT, a));
 			}
 		}
