@@ -31,7 +31,7 @@ public class LightLevelModule extends Module implements EspSource {
 	@Override
 	public void collect(Esp esp) {
 		for (int[] s : spots) {
-			esp.box(s[0] + 0.1, s[1] + 0.02, s[2] + 0.1, s[0] + 0.9, s[1] + 0.05, s[2] + 0.9, RED, 0.55f);
+			esp.box(s[0] + 0.1, s[1] + 0.02, s[2] + 0.1, s[0] + 0.9, s[1] + 0.05, s[2] + 0.9, RED, 0.3f);
 		}
 	}
 

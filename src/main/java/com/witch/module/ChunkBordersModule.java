@@ -34,7 +34,7 @@ public class ChunkBordersModule extends Module implements EspSource {
 			for (int cz = pcz - r; cz <= pcz + r + 1; cz++) {
 				double x = cx * 16.0;
 				double z = cz * 16.0;
-				esp.box(x - 0.03, y0, z - 0.03, x + 0.03, y1, z + 0.03, c, 0f);
+				esp.box(x - 0.015, y0, z - 0.015, x + 0.015, y1, z + 0.015, c, 0f);
 			}
 		}
 		double x0 = pcx * 16.0;
@@ -42,7 +42,7 @@ public class ChunkBordersModule extends Module implements EspSource {
 		int base = Math.floorDiv(p.getBlockY(), 16) * 16;
 		for (int k = -1; k <= 2; k++) {
 			double y = base + k * 16.0;
-			esp.box(x0, y, z0, x0 + 16, y + 0.03, z0 + 16, c, 0f);
+			esp.box(x0, y, z0, x0 + 16, y + 0.015, z0 + 16, c, 0f);
 		}
 	}
 }

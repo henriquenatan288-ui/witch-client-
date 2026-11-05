@@ -53,11 +53,8 @@ public class HudEditScreen extends Screen {
 			int[] r = HudLayout.rect(id);
 			boolean hot = id.equals(dragId) || (dragId == null && RenderUtil.inside(mx, my, r[0], r[1], r[2], r[3]));
 			int col = RenderUtil.alpha(accent, hot ? 0.95f : 0.55f);
-			g.fill(r[0], r[1], r[0] + r[2], r[1] + 1, col);
-			g.fill(r[0], r[1] + r[3] - 1, r[0] + r[2], r[1] + r[3], col);
-			g.fill(r[0], r[1], r[0] + 1, r[1] + r[3], col);
-			g.fill(r[0] + r[2] - 1, r[1], r[0] + r[2], r[1] + r[3], col);
-			g.fill(r[0] + 1, r[1] + 1, r[0] + r[2] - 1, r[1] + r[3] - 1, RenderUtil.alpha(accent, hot ? 0.16f : 0.07f));
+			RenderUtil.roundRect(g, r[0], r[1], r[2], r[3], 5, col);
+			RenderUtil.roundRect(g, r[0] + 1, r[1] + 1, r[2] - 2, r[3] - 2, 4, RenderUtil.alpha(0xFF0A0A0A, hot ? 0.55f : 0.4f));
 			String lab = HudLayout.LABELS[i];
 			FontUtil.draw(g, lab, r[0] + 3, Math.max(1, r[1] - FontUtil.height() - 2), RenderUtil.alpha(0xFFFFFFFF, hot ? 1f : 0.8f));
 		}

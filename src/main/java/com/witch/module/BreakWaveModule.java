@@ -10,11 +10,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Ao quebrar um bloco (por padrao so olhando pra baixo), solta ondas que se expandem pelo chao. */
+/** Ao quebrar um bloco abaixo dos seus pes (por padrao), solta ondas finas que se expandem pelo chao. */
 public class BreakWaveModule extends Module implements EspSource {
-	private static final int COLOR = 0xFFB57BEA;
+	private static final int COLOR = 0xFFFFFFFF;
 	private static final double DURATION = 1.1; // segundos
-	private static final int SEGMENTS = 28;
+	private static final int SEGMENTS = 48;
 	private static final int MAX_WAVES = 6;
 
 	private final IntSetting radius = add(new IntSetting("Radius", 2, 10, 4, " blocks"));
@@ -23,6 +23,7 @@ public class BreakWaveModule extends Module implements EspSource {
 
 	private final List<double[]> waves = new ArrayList<>(); // {x, y, z, inicioSeg}
 	private BlockPos last = null;
+	private int lastFeetY = 0;
 
 	public BreakWaveModule() {
 		super("Break Wave", Category.EFFECTS);
@@ -47,7 +48,8 @@ public class BreakWaveModule extends Module implements EspSource {
 		if (p == null || level == null) return;
 
 		if (last != null && level.getBlockState(last).isAir()) {
-			boolean down = downOnly.get() == 0 || (p.getXRot() > 35f && last.getY() < p.blockPosition().getY());
+			boolean down = downOnly.get() == 0 || (last.getY() < lastFeetY
+					&& Math.abs(last.getX() + 0.5 - p.getX()) < 1.6 && Math.abs(last.getZ() + 0.5 - p.getZ()) < 1.6);
 			if (down) {
 				waves.add(new double[]{last.getX() + 0.5, last.getY() + 1.02, last.getZ() + 0.5, now()});
 				if (waves.size() > MAX_WAVES) waves.remove(0);
@@ -56,7 +58,10 @@ public class BreakWaveModule extends Module implements EspSource {
 		}
 		if (mc.hitResult instanceof BlockHitResult bhr && mc.options.keyAttack.isDown()) {
 			BlockPos pos = bhr.getBlockPos();
-			if (!level.getBlockState(pos).isAir()) last = pos.immutable();
+			if (!level.getBlockState(pos).isAir()) {
+				last = pos.immutable();
+				lastFeetY = p.blockPosition().getY();
+			}
 		}
 	}
 
@@ -75,7 +80,7 @@ public class BreakWaveModule extends Module implements EspSource {
 				double pr = prog - k * 0.14;
 				if (pr <= 0 || pr >= 1) continue;
 				double r = 0.4 + (radius.get() - 0.4) * (1.0 - Math.pow(1.0 - pr, 2.0));
-				float alpha = (float) (1.0 - pr) * 0.85f;
+				float alpha = (float) Math.pow(1.0 - pr, 1.4) * 0.8f;
 				ring(esp, w[0], w[1], w[2], r, alpha);
 			}
 		}
@@ -88,7 +93,7 @@ public class BreakWaveModule extends Module implements EspSource {
 			double a = i * (Math.PI * 2 / SEGMENTS);
 			double nx = cx + Math.cos(a) * r;
 			double nz = cz + Math.sin(a) * r;
-			esp.line(px, cy, pz, nx, cy, nz, COLOR, alpha);
+			esp.thinLine(px, cy, pz, nx, cy, nz, COLOR, alpha, 0.8f);
 			px = nx;
 			pz = nz;
 		}
