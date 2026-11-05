@@ -43,7 +43,7 @@ public class WitchTitleScreen extends Screen {
 	private static final String[] SUBS = {"Your worlds, offline and private", "Servers and LAN games", "Video, audio and controls", "Witch modules and HUD", "Close the game"};
 	private final LeafParticles hats = new LeafParticles();
 	private long last = 0L;
-	private int menuX, menuY, itemW = 176, itemH = 25;
+	private int menuX, menuY, itemW = 100, itemH = 25;
 	private final float[] hoverAnim = new float[5];
 
 	public WitchTitleScreen() {
