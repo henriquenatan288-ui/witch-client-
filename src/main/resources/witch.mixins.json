@@ -10,6 +10,7 @@
     "LoadingOverlayMixin",
     "ScreenBackgroundMixin",
     "ChatComponentMixin",
+    "LivingEntityMixin",
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin"
   ],

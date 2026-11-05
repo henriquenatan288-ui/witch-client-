@@ -58,20 +58,23 @@ public class CrosshairModule extends Module {
 		int s = size.get();
 		int gp = gap.get();
 		int st = style.get();
-		int half = t / 2;
+		// o centro da mira e o bloco t x t em (x0, y0): bracos simetricos dos dois lados
+		int x0 = (mc.getWindow().getGuiScaledWidth() - t) / 2;
+		int y0 = (mc.getWindow().getGuiScaledHeight() - t) / 2;
 
 		if (st == 1 || st == 4) {
-			bar(g, cx - gp - s, cy - half, s, t, col);
-			bar(g, cx + gp, cy - half, s, t, col);
-			bar(g, cx - half, cy - gp - s, t, s, col);
-			bar(g, cx - half, cy + gp, t, s, col);
+			bar(g, x0 - gp - s, y0, s, t, col);
+			bar(g, x0 + t + gp, y0, s, t, col);
+			bar(g, x0, y0 - gp - s, t, s, col);
+			bar(g, x0, y0 + t + gp, t, s, col);
 		}
 		if (st == 2 || st == 4) {
-			int d = Math.max(1, t);
-			bar(g, cx - d / 2, cy - d / 2, d, d, col);
+			bar(g, x0, y0, t, t, col);
 		}
 		if (st == 3) {
 			int r = gp + s / 2 + 2;
+			cx = x0 + t / 2;
+			cy = y0 + t / 2;
 			for (int i = 0; i < 72; i++) {
 				double a = i * Math.PI * 2 / 72;
 				int px = cx + (int) Math.round(Math.cos(a) * r);
