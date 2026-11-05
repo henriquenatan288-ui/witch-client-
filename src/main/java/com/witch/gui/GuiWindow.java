@@ -49,8 +49,6 @@ public final class GuiWindow {
 
 		int totalH = HEAD_H + vh + BOT;
 		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, totalH + 2, 7, RenderUtil.alpha(LINE, a));
-		sweep(g, x + 6, x + w - 6, y - 1, a, c.ordinal(), false);
-		sweep(g, x + 6, x + w - 6, y + totalH, a, c.ordinal(), true);
 		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a * gl(0f)));
 		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
 		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));

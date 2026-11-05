@@ -61,6 +61,10 @@ public final class ModuleManager {
 		MODULES.add(new StepModule());
 		MODULES.add(new SpiderModule());
 		MODULES.add(new CrosshairModule());
+		MODULES.add(new SkyModule());
+		MODULES.add(new FogModule());
+		MODULES.add(new GlowPlayersModule());
+		MODULES.add(new JumpCirclesModule());
 
 		MODULES.removeIf(m -> !com.witch.Edition.allows(m.name));
 

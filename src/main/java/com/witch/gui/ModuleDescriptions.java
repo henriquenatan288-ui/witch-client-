@@ -43,6 +43,10 @@ public final class ModuleDescriptions {
 			case "Step" -> "Sobe blocos sem pular. Anticheat detecta.";
 			case "Spider" -> "Sobe paredes andando contra elas. Anticheat detecta.";
 			case "Crosshair" -> "Mira nova: 4 estilos, cor, tamanho e espaco.";
+			case "Sky" -> "Cor do ceu e mais estrelas.";
+			case "Fog" -> "Neblina: visao mais curta e nevoa colorida.";
+			case "Glow Players" -> "Contorno brilhante nos outros jogadores.";
+			case "Jump Circles" -> "Anel de luz no chao ao pular.";
 			case "Witch Theme" -> "Liga de uma vez o filtro de humor e a poeira ambiente.";
 			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 40).";
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";

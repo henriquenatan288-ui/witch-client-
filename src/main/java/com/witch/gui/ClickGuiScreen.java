@@ -169,8 +169,7 @@ public class ClickGuiScreen extends Screen {
 		float a = openAnim;
 		tipNow = null;
 
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x99000000, a));
-		glowLines(g, a);
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x30000000, a));
 
 		// logo WT no canto superior esquerdo
 		int lgw = 34;

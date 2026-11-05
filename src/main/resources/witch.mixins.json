@@ -11,6 +11,10 @@
     "ScreenBackgroundMixin",
     "ChatComponentMixin",
     "LivingEntityMixin",
+    "SkyRendererMixin",
+    "FogRendererMixin",
+    "MinecraftGlowMixin",
+    "EntityGlowColorMixin",
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin"
   ],
