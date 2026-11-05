@@ -98,8 +98,8 @@ public class WitchTitleScreen extends Screen {
 			hoverAnim[i] += ((hover ? 1f : 0f) - hoverAnim[i]) * Math.min(1f, 0.25f * speed);
 			float ha = hoverAnim[i];
 			int bx = menuX - 8, bw = itemW + 16, bh = itemH - 4;
-			RenderUtil.roundRect(g, bx, y, bw, bh, bh / 2, RenderUtil.alpha(0xFFFFFFFF, 0.16f + 0.34f * ha));
-			RenderUtil.roundRect(g, bx + 1, y + 1, bw - 2, bh - 2, bh / 2 - 1, RenderUtil.mix(0xFF0A0A0A, 0xFF1E1E1E, ha));
+			RenderUtil.roundRect(g, bx, y, bw, bh, bh / 2, RenderUtil.alpha(0xFFFFFFFF, 0.12f + 0.30f * ha));
+			RenderUtil.roundRect(g, bx + 1, y + 1, bw - 2, bh - 2, bh / 2 - 1, RenderUtil.alpha(0xFF050505, 0.30f + 0.15f * ha));
 			int shift = Math.round(2 * ha);
 			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.mix(0xFFC8C8C8, 0xFFFFFFFF, ha));
 		}
