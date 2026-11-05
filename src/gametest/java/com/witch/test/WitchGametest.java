@@ -20,6 +20,8 @@ public class WitchGametest implements FabricClientGameTest {
 				}
 			});
 			context.waitTicks(40);
+			context.runOnClient(mc -> com.witch.module.CardParticlesModule.burst(mc.player.getX(), mc.player.getY() + 1.6, mc.player.getZ() + 2.5, 14));
+			context.waitTicks(8);
 			context.takeScreenshot("04-hud");
 			context.runOnClient(mc -> mc.gui.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)));
 			context.waitTicks(30);
