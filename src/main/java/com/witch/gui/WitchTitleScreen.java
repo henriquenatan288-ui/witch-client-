@@ -43,7 +43,7 @@ public class WitchTitleScreen extends Screen {
 	private static final String[] SUBS = {"Your worlds, offline and private", "Servers and LAN games", "Video, audio and controls", "Witch modules and HUD", "Close the game"};
 	private final LeafParticles hats = new LeafParticles();
 	private long last = 0L;
-	private int menuX, menuY, itemW = 176, itemH = 28;
+	private int menuX, menuY, itemW = 176, itemH = 25;
 	private final float[] hoverAnim = new float[5];
 
 	public WitchTitleScreen() {
@@ -97,14 +97,11 @@ public class WitchTitleScreen extends Screen {
 			boolean hover = RenderUtil.inside(mx, my, menuX - 8, y, itemW + 16, itemH - 4);
 			hoverAnim[i] += ((hover ? 1f : 0f) - hoverAnim[i]) * Math.min(1f, 0.25f * speed);
 			float ha = hoverAnim[i];
-			if (ha > 0.02f) {
-				RenderUtil.roundRect(g, menuX - 8, y, itemW + 16, itemH - 4, 8, RenderUtil.alpha(0xFFFFFFFF, 0.07f * ha));
-				RenderUtil.roundRect(g, menuX - 8, y + 4, 2, itemH - 12, 1, RenderUtil.alpha(Theme.ACCENT, ha));
-			}
-			int shift = Math.round(3 * ha);
-			g.fill(menuX + 3 + shift, y + 7, menuX + 6 + shift, y + 10, RenderUtil.mix(0xFF8A8A8A, 0xFFFFFFFF, ha));
-			FontUtil.draw(g, LABELS[i], menuX + 14 + shift, y + 3, RenderUtil.mix(0xFFD0D0D0, 0xFFFFFFFF, ha));
-			FontUtil.draw(g, SUBS[i], menuX + 14 + shift, y + 3 + FontUtil.height() + 1, RenderUtil.mix(0xFF666666, 0xFFB0B0B0, ha));
+			int bx = menuX - 8, bw = itemW + 16, bh = itemH - 4;
+			RenderUtil.roundRect(g, bx, y, bw, bh, bh / 2, RenderUtil.alpha(0xFFFFFFFF, 0.16f + 0.34f * ha));
+			RenderUtil.roundRect(g, bx + 1, y + 1, bw - 2, bh - 2, bh / 2 - 1, RenderUtil.mix(0xFF0A0A0A, 0xFF1E1E1E, ha));
+			int shift = Math.round(2 * ha);
+			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.mix(0xFFC8C8C8, 0xFFFFFFFF, ha));
 		}
 
 		FontUtil.draw(g, "Witch Client  -  Minecraft 26.2", 8, h - 12, 0xFF666666);

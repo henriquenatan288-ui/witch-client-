@@ -3,7 +3,6 @@ package com.witch.mixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.LoadingOverlay;
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,9 +37,9 @@ public abstract class LoadingOverlayMixin {
 		if (!com.witch.Edition.visuals()) return;
 		int cy = (minY + maxY) / 2;
 		int a = Mth.clamp((int) (alpha * 255f), 0, 255);
-		g.fill(minX, cy - 1, maxX, cy + 1, ((a * 40 / 255) << 24) | 0xFFFFFF);
-		int fw = Math.round((maxX - minX) * Mth.clamp(currentProgress, 0f, 1f));
-		g.fill(minX, cy - 1, minX + fw, cy + 1, (a << 24) | 0xFFFFFF);
+		com.witch.gui.RenderUtil.roundRect(g, minX, cy - 1, maxX - minX, 3, 1, ((a * 40 / 255) << 24) | 0xFFFFFF);
+		int fw = Math.max(3, Math.round((maxX - minX) * Mth.clamp(currentProgress, 0f, 1f)));
+		com.witch.gui.RenderUtil.roundRect(g, minX, cy - 1, fw, 3, 1, (a << 24) | 0xFFFFFF);
 		ci.cancel();
 	}
 
@@ -55,9 +54,9 @@ public abstract class LoadingOverlayMixin {
 		int h = mc.getWindow().getGuiScaledHeight();
 		int ai = (int) (a * 255f) << 24;
 		com.witch.gui.WitchLoading.glow(g, w / 2, h / 2 - 10, Math.min(w, 520) / 2, a);
-		String t1 = "WITCH CLIENT";
-		String t2 = "MADE BY BISTECK";
-		g.text(mc.font, Component.literal(t1), (w - mc.font.width(t1)) / 2, (int) (h * 0.9f), ai | 0xCFCFCF, false);
-		g.text(mc.font, Component.literal(t2), (w - mc.font.width(t2)) / 2, (int) (h * 0.9f) + 11, ai | 0x666666, false);
+		int lw = 44;
+		int lx = (w - lw) / 2;
+		int ly = (int) (h * 0.88f) - com.witch.gui.WitchLogo.height(lw) / 2;
+		com.witch.gui.WitchLogo.draw(g, lx, ly, lw, a * 0.9f);
 	}
 }
