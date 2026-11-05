@@ -48,7 +48,7 @@ public class CrosshairModule extends Module {
 
 	private void draw(GuiGraphicsExtractor g) {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) return;
+		if (!mc.options.getCameraType().isFirstPerson()) return;
 		int cx = mc.getWindow().getGuiScaledWidth() / 2;
 		int cy = mc.getWindow().getGuiScaledHeight() / 2;
 		int col = color.get();
