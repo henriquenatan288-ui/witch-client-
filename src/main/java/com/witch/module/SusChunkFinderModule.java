@@ -45,6 +45,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 	private final IntSetting threshold = add(new IntSetting("Min score", 5, 200, 30, ""));
 	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 10, 3, ""));
 	private final ColorSetting color = add(new ColorSetting("Color", 4));
+	private final IntSetting autoWp = add(new IntSetting("Auto waypoint (0/1)", 0, 1, 0, ""));
 	private final KeybindSetting reloadKey = add(new KeybindSetting("Reload chunks"));
 
 	private final Map<Block, Integer> weights = buildWeights();
@@ -307,6 +308,7 @@ public class SusChunkFinderModule extends Module implements EspSource {
 			found.put(key, new int[]{cx, cz, lo, hi, score, 0});
 			if (isNew) {
 				tryAlert(key, player);
+				if (autoWp.get() == 1) Waypoints.addAuto("Chunk", cx * 16 + 8, (lo + hi) / 2, cz * 16 + 8);
 			}
 		} else {
 			found.remove(key);
