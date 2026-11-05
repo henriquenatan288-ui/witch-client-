@@ -49,6 +49,18 @@ public final class ModuleManager {
 		MODULES.add(new AutoTotemModule());
 		MODULES.add(new MoodFilterModule());
 		MODULES.add(new HideNameModule());
+		MODULES.add(new WaypointsModule());
+		MODULES.add(new CoordsHudModule());
+		MODULES.add(new ArmorHudModule());
+		MODULES.add(new ChunkBordersModule());
+		MODULES.add(new LightLevelModule());
+		MODULES.add(new WeatherOffModule());
+		MODULES.add(new AutoSprintModule());
+		MODULES.add(new AutoReconnectModule());
+		MODULES.add(new ChatTimestampsModule());
+		MODULES.add(new NoFallModule());
+		MODULES.add(new StepModule());
+		MODULES.add(new SpiderModule());
 
 		MODULES.removeIf(m -> !com.witch.Edition.allows(m.name));
 

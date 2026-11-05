@@ -47,6 +47,7 @@ public class SusSoloFinderModule extends Module implements EspSource {
 	private final IntSetting minChance = add(new IntSetting("Min chance", 25, 81, 25, "%"));
 	private final IntSetting maxAlerts = add(new IntSetting("Max alerts", 1, 20, 6, ""));
 	private final IntSetting fill = add(new IntSetting("Fill opacity", 5, 60, 25, "%"));
+	private final IntSetting autoWp = add(new IntSetting("Auto waypoint (0/1)", 0, 1, 0, ""));
 	private final KeybindSetting reloadKey = add(new KeybindSetting("Reload chunks"));
 
 	private final Map<Block, Integer> weights = SusChunkFinderModule.buildWeights();
@@ -213,7 +214,10 @@ public class SusSoloFinderModule extends Module implements EspSource {
 		if (score > 0 && chance >= minChance.get()) {
 			boolean isNew = !found.containsKey(key);
 			found.put(key, new int[]{cx, cz, ground, Math.min(chance, 99)});
-			if (isNew) tryAlert(key, player, chance);
+			if (isNew) {
+				tryAlert(key, player, chance);
+				if (autoWp.get() == 1) Waypoints.addAuto("Solo " + Math.min(chance, 99) + "%", cx * 16 + 8, ground, cz * 16 + 8);
+			}
 		} else {
 			found.remove(key);
 		}

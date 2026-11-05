@@ -30,6 +30,18 @@ public final class ModuleDescriptions {
 			case "Speed" -> "Aumenta a velocidade de movimento (0 = normal).";
 			case "Storage ESP" -> "Destaca baus e containers proximos.";
 			case "Sus Solo Finder" -> "Escaneia chunks de cima (bom voando), apita e marca o solo. Cor = chance de base (heuristica).";
+			case "Waypoints" -> "Salva pontos (tecla Add waypoint), coluna visivel de longe e distancia na tela.";
+			case "Coords HUD" -> "Coordenadas, direcao e velocidade na tela.";
+			case "Armor HUD" -> "Durabilidade da armadura e do item na mao.";
+			case "Chunk Borders" -> "Mostra as bordas das chunks ao redor.";
+			case "Light Level" -> "Marca o chao com luz de bloco 0 (mobs nascem).";
+			case "Weather Off" -> "Tira chuva e trovoada da sua tela.";
+			case "Auto Sprint" -> "Corre sozinho ao andar pra frente.";
+			case "Auto Reconnect" -> "Reconecta no servidor quando cai.";
+			case "Chat Timestamps" -> "Poe a hora em cada mensagem do chat.";
+			case "No Fall" -> "Sem dano de queda. Anticheat detecta.";
+			case "Step" -> "Sobe blocos sem pular. Anticheat detecta.";
+			case "Spider" -> "Sobe paredes andando contra elas. Anticheat detecta.";
 			case "Witch Theme" -> "Liga de uma vez o filtro de humor e a poeira ambiente.";
 			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 40).";
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
