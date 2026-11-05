@@ -47,6 +47,8 @@ public final class ModuleDescriptions {
 			case "Fog" -> "Neblina: visao mais curta e nevoa colorida.";
 			case "Glow Players" -> "Contorno brilhante nos outros jogadores.";
 			case "Jump Circles" -> "Anel de luz no chao ao pular.";
+			case "Card Particles" -> "Cartas de baralho ao acertar, pular ou flutuando.";
+			case "Filter" -> "Filtro de cor: 1 quente 2 frio 3 neon 4 escuro 5 por do sol 6 menta.";
 			case "Witch Theme" -> "Liga de uma vez o filtro de humor e a poeira ambiente.";
 			case "Sus Chunk Finder" -> "Procura chunks suspeitas num raio proprio (1 a 40).";
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";

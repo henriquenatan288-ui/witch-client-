@@ -16,7 +16,7 @@ public class WitchGametest implements FabricClientGameTest {
 			context.takeScreenshot("03-world");
 			context.runOnClient(mc -> {
 				for (var m : com.witch.module.ModuleManager.all()) {
-					if (m.name.equals("Fullbright") || m.name.equals("Tracers") || m.name.equals("Player ESP") || m.name.equals("Fly") || m.name.equals("Crosshair") || m.name.equals("Sky") || m.name.equals("Fog") || m.name.equals("Glow Players") || m.name.equals("Jump Circles")) m.toggle();
+					if (m.name.equals("Fullbright") || m.name.equals("Tracers") || m.name.equals("Player ESP") || m.name.equals("Fly") || m.name.equals("Crosshair") || m.name.equals("Sky") || m.name.equals("Fog") || m.name.equals("Glow Players") || m.name.equals("Jump Circles") || m.name.equals("Card Particles") || m.name.equals("Filter")) m.toggle();
 				}
 			});
 			context.waitTicks(40);

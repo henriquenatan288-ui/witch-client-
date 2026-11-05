@@ -65,6 +65,8 @@ public final class ModuleManager {
 		MODULES.add(new FogModule());
 		MODULES.add(new GlowPlayersModule());
 		MODULES.add(new JumpCirclesModule());
+		MODULES.add(new CardParticlesModule());
+		MODULES.add(new FilterModule());
 
 		MODULES.removeIf(m -> !com.witch.Edition.allows(m.name));
 
