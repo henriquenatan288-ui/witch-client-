@@ -14,8 +14,10 @@ public class CrosshairModule extends Module {
 
 	private final IntSetting style = add(new IntSetting("Style (1 cross 2 dot 3 ring 4 both)", 1, 4, 1, ""));
 	private final ColorSetting color = add(new ColorSetting("Color", 7));
-	private final IntSetting size = add(new IntSetting("Size", 2, 14, 5, ""));
-	private final IntSetting gap = add(new IntSetting("Gap", 0, 10, 3, ""));
+	private final IntSetting size = add(new IntSetting("Size", 1, 14, 2, ""));
+	private final IntSetting gap = add(new IntSetting("Gap", 0, 10, 2, ""));
+	private final IntSetting opacity = add(new IntSetting("Opacity", 20, 100, 85, "%"));
+	private final IntSetting outline = add(new IntSetting("Outline (0/1)", 0, 1, 1, ""));
 	private final IntSetting thick = add(new IntSetting("Thickness", 1, 3, 1, ""));
 
 	public CrosshairModule() {
@@ -41,8 +43,8 @@ public class CrosshairModule extends Module {
 	}
 
 	/** Barra com contorno escuro pra ler em qualquer fundo. */
-	private static void bar(GuiGraphicsExtractor g, int x, int y, int w, int h, int col) {
-		g.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0x99000000);
+	private void bar(GuiGraphicsExtractor g, int x, int y, int w, int h, int col) {
+		if (outline.get() == 1) g.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0x40000000);
 		g.fill(x, y, x + w, y + h, col);
 	}
 
@@ -51,7 +53,7 @@ public class CrosshairModule extends Module {
 		if (!mc.options.getCameraType().isFirstPerson()) return;
 		int cx = mc.getWindow().getGuiScaledWidth() / 2;
 		int cy = mc.getWindow().getGuiScaledHeight() / 2;
-		int col = color.get();
+		int col = com.witch.gui.RenderUtil.alpha(color.get(), opacity.get() / 100f);
 		int t = thick.get();
 		int s = size.get();
 		int gp = gap.get();
@@ -74,7 +76,7 @@ public class CrosshairModule extends Module {
 				double a = i * Math.PI * 2 / 72;
 				int px = cx + (int) Math.round(Math.cos(a) * r);
 				int py = cy + (int) Math.round(Math.sin(a) * r);
-				g.fill(px - 1, py - 1, px + t + 1, py + t + 1, 0x66000000);
+				if (outline.get() == 1) g.fill(px - 1, py - 1, px + t + 1, py + t + 1, 0x30000000);
 			}
 			for (int i = 0; i < 72; i++) {
 				double a = i * Math.PI * 2 / 72;
