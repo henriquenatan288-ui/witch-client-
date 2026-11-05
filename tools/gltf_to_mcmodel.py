@@ -35,7 +35,7 @@ for e in cubes:
     if "rotation" in e: e["rotation"]["origin"]=[round(e["rotation"]["origin"][i]+sh[i],4) for i in range(3)]
 mdl={"parent":"minecraft:item/handheld","textures":{"0":"witch:item/karambit","particle":"witch:item/karambit"},"elements":cubes,
  "display":{"thirdperson_righthand":{"rotation":[0,-90,55],"translation":[0,2,1],"scale":[0.4,0.4,0.4]},
-  "firstperson_righthand":{"rotation":[0,-90,25],"translation":[1.5,3.0,1.0],"scale":[0.3,0.3,0.3]},
+  "firstperson_righthand":{"rotation":[0,-90,25],"translation":[-1.0,4.0,1.0],"scale":[0.22,0.22,0.22]},
   "gui":{"rotation":[30,225,0],"translation":[0,0,0],"scale":[0.38,0.38,0.38]}}}
 os.makedirs(R+"/assets/witch/models/item",exist_ok=True); os.makedirs(R+"/assets/witch/textures/item",exist_ok=True); os.makedirs(R+"/assets/minecraft/items",exist_ok=True)
 shutil.copy(tex,R+"/assets/witch/textures/item/karambit.png")
