@@ -23,6 +23,9 @@ public class WitchGametest implements FabricClientGameTest {
 			context.runOnClient(mc -> com.witch.module.CardParticlesModule.burst(mc.player.getX(), mc.player.getY() + 1.6, mc.player.getZ() + 2.5, 14));
 			context.waitTicks(8);
 			context.takeScreenshot("04-hud");
+			context.runOnClient(mc -> mc.player.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_SWORD)));
+			context.waitTicks(10);
+			context.takeScreenshot("13-karambit");
 			context.runOnClient(mc -> mc.gui.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)));
 			context.waitTicks(30);
 			context.takeScreenshot("07-inventory");
