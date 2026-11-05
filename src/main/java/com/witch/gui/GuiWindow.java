@@ -48,8 +48,13 @@ public final class GuiWindow {
 		scroll = Mth.clamp(scroll, 0, maxScroll);
 
 		int totalH = HEAD_H + vh + BOT;
-		RenderUtil.roundRect(g, x - 1, y - 1, w + 2, totalH + 2, 7, RenderUtil.alpha(LINE, a));
 		RenderUtil.roundRect(g, x, y, w, totalH, 6, RenderUtil.alpha(0xFF121212, a * gl(0f)));
+		// contorno fino (so a linha; um retangulo cheio por tras deixava a janela cinza e opaca)
+		int bc = RenderUtil.alpha(LINE, a * 0.9f);
+		g.fill(x + 3, y - 1, x + w - 3, y, bc);
+		g.fill(x + 3, y + totalH, x + w - 3, y + totalH + 1, bc);
+		g.fill(x - 1, y + 3, x, y + totalH - 3, bc);
+		g.fill(x + w, y + 3, x + w + 1, y + totalH - 3, bc);
 		RenderUtil.roundRect(g, x, y, w, HEAD_H, 6, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
 		g.fill(x, y + HEAD_H - 6, x + w, y + HEAD_H, RenderUtil.alpha(0xFF232323, a * gl(0.12f)));
 		g.fill(x, y + HEAD_H - 1, x + w, y + HEAD_H, RenderUtil.alpha(LINE, a * 0.8f));
