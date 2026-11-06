@@ -26,6 +26,8 @@ public abstract class LoadingOverlayMixin {
 	@Shadow
 	private float currentProgress;
 
+	private long witch$t0 = 0L;
+
 	@Redirect(method = "extractRenderState",
 			at = @At(value = "INVOKE", target = "Ljava/util/function/IntSupplier;getAsInt()I"), require = 0)
 	private int witch$bg(IntSupplier original) {
@@ -54,9 +56,23 @@ public abstract class LoadingOverlayMixin {
 		int h = mc.getWindow().getGuiScaledHeight();
 		int ai = (int) (a * 255f) << 24;
 		com.witch.gui.WitchLoading.glow(g, w / 2, h / 2 - 10, Math.min(w, 520) / 2, a);
-		int lw = 44;
+		long now = Util.getMillis();
+		if (witch$t0 == 0L) witch$t0 = now;
+		float t = Mth.clamp((now - witch$t0) / 900f, 0f, 1f);
+		float ease = 1f - (1f - t) * (1f - t) * (1f - t);
+		// estrelas finas piscando (fora da area da logo da Mojang)
+		java.util.Random rnd = new java.util.Random(7L);
+		for (int i = 0; i < 70; i++) {
+			float fx = rnd.nextFloat(), fy = rnd.nextFloat(), ph = rnd.nextFloat() * 6.28f, sp = 0.6f + rnd.nextFloat();
+			int sx = (int) (fx * w), sy = (int) (fy * h);
+			if (Math.abs(sy - h / 2) < h * 0.2f && Math.abs(sx - w / 2) < w * 0.28f) continue;
+			float tw = 0.5f + 0.5f * (float) Math.sin(now / 1000.0 * sp + ph);
+			int c = ((int) (a * ease * tw * 110f) << 24) | 0xFFFFFF;
+			g.fill(sx, sy, sx + 1, sy + 1, c);
+		}
+		int lw = Math.round(38 + 6 * ease);
 		int lx = (w - lw) / 2;
-		int ly = (int) (h * 0.88f) - com.witch.gui.WitchLogo.height(lw) / 2;
-		com.witch.gui.WitchLogo.draw(g, lx, ly, lw, a * 0.9f);
+		int ly = (int) (h * 0.88f) - com.witch.gui.WitchLogo.height(lw) / 2 + Math.round((1f - ease) * 5f);
+		com.witch.gui.WitchLogo.draw(g, lx, ly, lw, a * 0.9f * ease);
 	}
 }
