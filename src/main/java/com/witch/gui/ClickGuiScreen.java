@@ -32,8 +32,6 @@ import static com.witch.gui.ClickGuiMetrics.*;
 public class ClickGuiScreen extends Screen {
 	private static final int HEAD = 24;
 	private static final int SIDE = 78;
-	private static final int ROWH = 17;
-	private static final int ROWGAP = 2;
 
 	private static final Set<Module> OPEN = new HashSet<>();
 	private static Category selected = Category.values()[0];
@@ -69,8 +67,8 @@ public class ClickGuiScreen extends Screen {
 	}
 
 	private void layout() {
-		ww = Math.min(this.width - 12, 340);
-		wh = Math.min(this.height - 12, 220);
+		ww = Math.min(this.width - 12, 380);
+		wh = Math.min(this.height - 12, 230);
 		wx = (this.width - ww) / 2;
 		wy = (this.height - wh) / 2;
 	}
@@ -93,13 +91,56 @@ public class ClickGuiScreen extends Screen {
 
 	private int settingsW() { return cw() - 14; }
 
+	private static final int CARD = 18;
+	private static final int GAP2 = 4;
+
+	/** Peca do layout em grade: cartao de modulo (settingsBlock=false) ou bloco de ajustes (true). Coordenadas relativas ao conteudo, sem scroll. */
+	private record Slot(Module m, boolean block, int x, int y, int w, int h) {}
+
+	private int rowW() { return cw() - 6; }
+
+	private List<Slot> slots() {
+		List<Slot> out = new ArrayList<>();
+		int full = rowW();
+		int colW = (full - GAP2) / 2;
+		int y = 0, col = 0;
+		for (Module m : modules()) {
+			boolean open = OPEN.contains(m) && !m.settings().isEmpty();
+			if (open) {
+				if (col == 1) { y += CARD + GAP2; col = 0; }
+				out.add(new Slot(m, false, 0, y, full, CARD));
+				y += CARD + 2;
+				int total = 0;
+				for (Setting st : m.settings()) total += SettingRenderer.height(st, settingsW());
+				out.add(new Slot(m, true, 2, y, full - 4, total));
+				y += total + GAP2;
+			} else {
+				out.add(new Slot(m, false, col == 0 ? 0 : colW + GAP2, y, colW, CARD));
+				if (col == 1) { y += CARD + GAP2; col = 0; } else col = 1;
+			}
+		}
+		return out;
+	}
+
 	private int contentH() {
 		int h = 0;
-		for (Module m : modules()) {
-			h += ROWH + ROWGAP;
-			if (OPEN.contains(m)) for (Setting s : m.settings()) h += SettingRenderer.height(s, settingsW());
-		}
+		for (Slot sl : slots()) h = Math.max(h, sl.y + sl.h + GAP2);
 		return h;
+	}
+
+	private int searchW() { return Math.min(96, Math.max(50, ww - SIDE - 150)); }
+	private int searchX() { return wx + ww - 10 - searchW(); }
+
+	private static String subtitle(Category c) {
+		return switch (c) {
+			case MOVEMENT -> "Movement and mobility";
+			case COMBAT -> "Combat and targeting";
+			case VISUALS -> "Visual and render";
+			case WORLD -> "World and chunks";
+			case UTILITY -> "Utility tools";
+			case HUD -> "On-screen information";
+			case EFFECTS -> "Sounds and effects";
+		};
 	}
 
 	private void clampScroll() {
@@ -126,24 +167,31 @@ public class ClickGuiScreen extends Screen {
 		// cabecalho
 		WitchLogo.draw(g, wx + 9, wy + 5, 26, a * 0.95f);
 		int fh = FontUtil.height();
-		int sx = cx();
-		int sw = Math.min(150, ww - SIDE - 110);
-		RenderUtil.roundRect(g, sx, wy + 5, sw, 14, 7, RenderUtil.alpha(0xFFFFFFFF, a * 0.14f));
+		int sx = searchX();
+		int sw = searchW();
+		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
+		CategoryIcons.draw(g, selected, cx(), wy + 5 + (14 - 7) / 2, RenderUtil.alpha(TXT, a));
+		FontUtil.draw(g, title, cx() + 11, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(TXT, a));
+		int chipX = cx() + 11 + FontUtil.width(title) + 7;
+		String sub = search.isEmpty() ? subtitle(selected) : "All modules";
+		int chipW = FontUtil.width(sub) + 12;
+		if (chipX + chipW < sx - 4) {
+			RenderUtil.roundRect(g, chipX, wy + 5, chipW, 14, 7, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f));
+			FontUtil.draw(g, sub, chipX + 6, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
+		}
+		RenderUtil.roundRect(g, sx, wy + 5, sw, 14, 7, RenderUtil.alpha(0xFFFFFFFF, a * (searchFocused ? 0.30f : 0.14f)));
 		RenderUtil.roundRect(g, sx + 1, wy + 6, sw - 2, 12, 6, RenderUtil.alpha(0xFF0C0C0C, a * 0.9f));
 		String shown;
 		int col;
 		if (search.isEmpty() && !searchFocused) {
-			shown = "Search modules...";
+			shown = "Search";
 			col = 0xFF666666;
 		} else {
 			boolean blink = searchFocused && (System.currentTimeMillis() / 500) % 2 == 0;
 			shown = search + (blink ? "|" : "");
 			col = TXT;
 		}
-		FontUtil.draw(g, shown, sx + 7, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(col, a));
-		String fps = Minecraft.getInstance().getFps() + " FPS";
-		int fx = wx + ww - 10 - FontUtil.width(fps);
-		FontUtil.draw(g, fps, fx, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
+		FontUtil.draw(g, ModuleRow.fit(shown, sw - 12), sx + 6, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(col, a));
 		RenderUtil.roundRect(g, wx + 6, wy + HEAD - 1, ww - 12, 1, 0, RenderUtil.alpha(0xFFFFFFFF, a * 0.10f));
 
 		// menu lateral
@@ -159,47 +207,54 @@ public class ClickGuiScreen extends Screen {
 			FontUtil.draw(g, nm, wx + 25, ry + (17 - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
 		}
 		int ey = wy + wh - 24;
+		String fps = Minecraft.getInstance().getFps() + " FPS";
+		FontUtil.draw(g, fps, wx + 7 + (SIDE - 10 - FontUtil.width(fps)) / 2, ey - fh - 3, RenderUtil.alpha(TXT_DIM, a));
 		boolean eh = RenderUtil.inside(mx, my, wx + 7, ey, SIDE - 10, 17);
 		RenderUtil.roundRect(g, wx + 7, ey, SIDE - 10, 17, 6, RenderUtil.alpha(0xFFFFFFFF, a * (eh ? 0.16f : 0.07f)));
 		String et = "Edit HUD";
 		FontUtil.draw(g, et, wx + 7 + (SIDE - 10 - FontUtil.width(et)) / 2, ey + (17 - fh) / 2, RenderUtil.alpha(eh ? TXT : TXT_DIM, a));
 		RenderUtil.roundRect(g, wx + SIDE, wy + HEAD + 4, 1, wh - HEAD - 10, 0, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f));
 
-		// lista de modulos
+		// lista de modulos (grade de 2 colunas)
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
 		g.enableScissor(cx, cy, cx + cw, cy + ch);
-		int ry = cy - Math.round(scroll);
-		int rowW = cw - 6;
-		for (Module m : modules()) {
-			boolean hover = RenderUtil.inside(mx, my, cx, ry, rowW, ROWH) && my >= cy && my < cy + ch;
-			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
-			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
-			RenderUtil.roundRect(g, cx, ry, rowW, ROWH, 6, RenderUtil.alpha(0xFFFFFFFF, a * (0.045f + 0.06f * m.hoverAnim)));
-			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
-			boolean has = !m.settings().isEmpty();
-			FontUtil.draw(g, ModuleRow.fit(m.name, rowW - 62), cx + 8, ry + (ROWH - fh) / 2, RenderUtil.alpha(tc, a));
-			if (has) {
-				String ar = OPEN.contains(m) ? "-" : "+";
-				FontUtil.draw(g, ar, cx + rowW - 38 - FontUtil.width(ar) / 2, ry + (ROWH - fh) / 2, RenderUtil.alpha(OPEN.contains(m) ? TXT : TXT_DIM, a));
-			}
-			int swx = cx + rowW - 26, swy = ry + (ROWH - 9) / 2;
-			RenderUtil.roundRect(g, swx, swy, 20, 9, 4, RenderUtil.mix(0xFF2C2C2C, 0xFFE8E8E8, m.toggleAnim) & 0xFFFFFF | ((int) (a * 255) << 24));
-			int kx = swx + 1 + Math.round(11 * m.toggleAnim);
-			RenderUtil.roundRect(g, kx, swy + 1, 7, 7, 3, RenderUtil.alpha(RenderUtil.mix(0xFF9A9A9A, 0xFF111111, m.toggleAnim), a));
-			if (hover && my >= cy && my < cy + ch) tipNow = m;
-			ry += ROWH + ROWGAP;
-			if (OPEN.contains(m)) {
-				int sxx = cx + 4, sww = settingsW();
-				int top = ry;
-				int total = 0;
-				for (Setting s : m.settings()) total += SettingRenderer.height(s, sww);
-				RenderUtil.roundRect(g, cx + 2, top - 1, rowW - 4, total + 2, 5, RenderUtil.alpha(0xFF000000, a * 0.35f));
-				for (Setting s : m.settings()) {
-					int sh = SettingRenderer.height(s, sww);
-					SettingRenderer.draw(g, s, sxx, ry, sww - 4, sh, a, 0f);
+		int base = cy - Math.round(scroll);
+		for (Slot sl : slots()) {
+			Module m = sl.m;
+			int sx0 = cx + sl.x, sy0 = base + sl.y;
+			if (sy0 + sl.h < cy || sy0 > cy + ch) continue;
+			if (sl.block) {
+				RenderUtil.roundRect(g, sx0, sy0 - 1, sl.w, sl.h + 2, 6, RenderUtil.alpha(0xFF000000, a * 0.35f));
+				int ry = sy0;
+				for (Setting st : m.settings()) {
+					int sh = SettingRenderer.height(st, settingsW());
+					SettingRenderer.draw(g, st, sx0 + 2, ry, settingsW() - 4, sh, a, 0f);
 					ry += sh;
 				}
+				continue;
 			}
+			boolean hover = RenderUtil.inside(mx, my, sx0, sy0, sl.w, CARD) && my >= cy && my < cy + ch;
+			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
+			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
+			float t = m.toggleAnim;
+			int edge = RenderUtil.mix(0xFFFFFFFF, Theme.GUI_ACCENT, t);
+			RenderUtil.roundRect(g, sx0, sy0, sl.w, CARD, 7, RenderUtil.alpha(edge, a * (0.10f + 0.04f * m.hoverAnim + 0.30f * t)));
+			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 6, RenderUtil.alpha(0xFF0D0D10, a * 0.92f));
+			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 6, RenderUtil.alpha(0xFFFFFFFF, a * (0.035f * m.hoverAnim + 0.07f * t)));
+			int tc = RenderUtil.mix(TXT_DIM, TXT, t);
+			CategoryIcons.draw(g, m.category, sx0 + 6, sy0 + (CARD - 7) / 2, RenderUtil.alpha(tc, a));
+			boolean has = !m.settings().isEmpty();
+			int right = 22 + (has ? 12 : 0);
+			FontUtil.draw(g, ModuleRow.fit(m.name, sl.w - 20 - right), sx0 + 18, sy0 + (CARD - fh) / 2, RenderUtil.alpha(tc, a));
+			if (has) {
+				String ar = OPEN.contains(m) ? "-" : "+";
+				FontUtil.draw(g, ar, sx0 + sl.w - 34 + (10 - FontUtil.width(ar)) / 2, sy0 + (CARD - fh) / 2, RenderUtil.alpha(OPEN.contains(m) ? TXT : TXT_DIM, a));
+			}
+			int swx = sx0 + sl.w - 22, swy = sy0 + (CARD - 8) / 2;
+			RenderUtil.roundRect(g, swx, swy, 16, 8, 4, RenderUtil.alpha(RenderUtil.mix(0xFF2C2C2C, 0xFFE8E8E8, t), a));
+			int kx = swx + 1 + Math.round(8 * t);
+			RenderUtil.roundRect(g, kx, swy + 1, 6, 6, 3, RenderUtil.alpha(RenderUtil.mix(0xFF9A9A9A, 0xFF111111, t), a));
+			if (hover) tipNow = m;
 		}
 		g.disableScissor();
 		int total = contentH();
@@ -231,9 +286,7 @@ public class ClickGuiScreen extends Screen {
 		double mx = click.x(), my = click.y();
 		int button = click.button();
 		int fh = FontUtil.height();
-		int sx = cx();
-		int sw = Math.min(150, ww - SIDE - 110);
-		searchFocused = RenderUtil.inside(mx, my, sx, wy + 5, sw, 14);
+		searchFocused = RenderUtil.inside(mx, my, searchX(), wy + 5, searchW(), 14);
 		if (searchFocused) return true;
 		Category[] cats = Category.values();
 		for (int i = 0; i < cats.length; i++) {
@@ -250,28 +303,18 @@ public class ClickGuiScreen extends Screen {
 		}
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
 		if (!RenderUtil.inside(mx, my, cx, cy, cw, ch)) return super.mouseClicked(click, doubled);
-		int ry = cy - Math.round(scroll);
-		int rowW = cw - 6;
-		for (Module m : modules()) {
-			if (my >= ry && my < ry + ROWH) {
-				boolean has = !m.settings().isEmpty();
-				boolean onArrow = has && mx >= cx + rowW - 48 && mx < cx + rowW - 28;
-				if (has && (button == 1 || onArrow)) {
-					if (!OPEN.remove(m)) OPEN.add(m);
-				} else if (button == 0) {
-					m.toggle();
-					Config.save();
-				}
-				return true;
-			}
-			ry += ROWH + ROWGAP;
-			if (OPEN.contains(m)) {
-				int sxx = cx + 4, sww = settingsW();
-				for (Setting s : m.settings()) {
-					int sh = SettingRenderer.height(s, sww);
-					if (my >= ry && my < ry + sh) {
+		int base = cy - Math.round(scroll);
+		for (Slot sl : slots()) {
+			Module m = sl.m;
+			int sx0 = cx + sl.x, sy0 = base + sl.y;
+			if (sl.block) {
+				int ry = sy0;
+				int sxx = sx0 + 2, sww = settingsW();
+				for (Setting st : m.settings()) {
+					int sh = SettingRenderer.height(st, sww);
+					if (my >= ry && my < ry + sh && mx >= sx0 && mx < sx0 + sl.w) {
 						Runnable[] out = new Runnable[1];
-						IntSetting slid = SettingRenderer.click(s, sxx, ry, sww - 4, sh, mx, my, fh, out);
+						IntSetting slid = SettingRenderer.click(st, sxx, ry, sww - 4, sh, mx, my, fh, out);
 						if (slid != null) {
 							slider = slid;
 							sliderX = sxx + 7;
@@ -282,6 +325,18 @@ public class ClickGuiScreen extends Screen {
 					}
 					ry += sh;
 				}
+				continue;
+			}
+			if (my >= sy0 && my < sy0 + CARD && mx >= sx0 && mx < sx0 + sl.w) {
+				boolean has = !m.settings().isEmpty();
+				boolean onArrow = has && mx >= sx0 + sl.w - 36 && mx < sx0 + sl.w - 22;
+				if (has && (button == 1 || onArrow)) {
+					if (!OPEN.remove(m)) OPEN.add(m);
+				} else if (button == 0) {
+					m.toggle();
+					Config.save();
+				}
+				return true;
 			}
 		}
 		return true;
