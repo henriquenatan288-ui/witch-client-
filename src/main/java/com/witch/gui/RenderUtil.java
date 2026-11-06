@@ -30,6 +30,21 @@ public final class RenderUtil {
 	/** Retangulo arredondado com borda suavizada (pixel de transicao com alfa parcial). */
 	public static void roundRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
 		if (w <= 0 || h <= 0) return;
+		// Resolucao real da tela: com GUI scale 2-4 cada "pixel" do GUI e um bloco de 2-4 pixels,
+		// por isso cantos/bordas ficavam serrilhados. Aqui desenhamos em pixels do dispositivo.
+		int gs = (int) Math.round(net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale());
+		if (gs > 1 && radius > 0) {
+			g.pose().pushMatrix();
+			g.pose().scale(1f / gs, 1f / gs);
+			roundRectRaw(g, x * gs, y * gs, w * gs, h * gs, radius * gs, color);
+			g.pose().popMatrix();
+			return;
+		}
+		roundRectRaw(g, x, y, w, h, radius, color);
+	}
+
+	private static void roundRectRaw(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
+		if (w <= 0 || h <= 0) return;
 		int r = Math.max(0, Math.min(radius, Math.min(w, h) / 2));
 		// O miolo (sem cantos) e um retangulo so: 1 fill em vez de 1 por linha.
 		int midTop = r;
