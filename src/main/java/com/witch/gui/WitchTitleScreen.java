@@ -43,6 +43,7 @@ public class WitchTitleScreen extends Screen {
 	private static final String[] SUBS = {"Your worlds, offline and private", "Servers and LAN games", "Video, audio and controls", "Witch modules and HUD", "Close the game"};
 	private final LeafParticles hats = new LeafParticles();
 	private long last = 0L;
+	private final long born = System.currentTimeMillis();
 	private int menuX, menuY, itemW = 100, itemH = 25;
 	private final float[] hoverAnim = new float[5];
 
@@ -72,8 +73,10 @@ public class WitchTitleScreen extends Screen {
 		}
 		for (int i = 0; i < STARS; i++) {
 			float tw = 0.30f + 0.55f * (float) (0.5 + 0.5 * Math.sin(sec * 1.5 + SP[i]));
-			g.fill(Math.round(SX[i] * w), Math.round(SY[i] * h), Math.round(SX[i] * w) + 1, Math.round(SY[i] * h) + 1, RenderUtil.alpha(0xFFFFFFFF, tw * 0.6f));
+			int px = Math.round(SX[i] * w + (mx - w / 2f) * (0.004f + 0.012f * SP[i] / 6.3f)), py = Math.round(SY[i] * h + (my - h / 2f) * (0.004f + 0.012f * SP[i] / 6.3f));
+			g.fill(px, py, px + 1, py + 1, RenderUtil.alpha(0xFFFFFFFF, tw * 0.6f));
 		}
+		shootingStar(g, w, h, sec);
 		waves(g, w, h, sec);
 
 		// marca no canto
@@ -97,16 +100,34 @@ public class WitchTitleScreen extends Screen {
 			boolean hover = RenderUtil.inside(mx, my, menuX - 8, y, itemW + 16, itemH - 4);
 			hoverAnim[i] += ((hover ? 1f : 0f) - hoverAnim[i]) * Math.min(1f, 0.25f * speed);
 			float ha = hoverAnim[i];
-			int bx = menuX - 8, bw = itemW + 16, bh = itemH - 4;
-			RenderUtil.roundRect(g, bx, y, bw, bh, bh / 2, RenderUtil.alpha(0xFFFFFFFF, 0.12f + 0.30f * ha));
-			RenderUtil.roundRect(g, bx + 1, y + 1, bw - 2, bh - 2, bh / 2 - 1, RenderUtil.alpha(0xFF050505, 0.30f + 0.15f * ha));
+			float ent = Math.max(0f, Math.min(1f, (System.currentTimeMillis() - born - 150L - i * 90L) / 450f));
+			ent = 1f - (1f - ent) * (1f - ent) * (1f - ent);
+			int bx = menuX - 8 - Math.round((1f - ent) * 22f), bw = itemW + 16, bh = itemH - 4;
+			RenderUtil.roundRect(g, bx, y, bw, bh, bh / 2, RenderUtil.alpha(0xFFFFFFFF, (0.12f + 0.30f * ha) * ent));
+			RenderUtil.roundRect(g, bx + 1, y + 1, bw - 2, bh - 2, bh / 2 - 1, RenderUtil.alpha(0xFF050505, (0.30f + 0.15f * ha) * ent));
 			int shift = Math.round(2 * ha);
-			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.mix(0xFFC8C8C8, 0xFFFFFFFF, ha));
+			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.alpha(RenderUtil.mix(0xFFC8C8C8, 0xFFFFFFFF, ha), ent));
 		}
 
 		FontUtil.draw(g, "Witch Client  -  Minecraft 26.2", 8, h - 12, 0xFF666666);
 		String credit = "WITCH CLIENT MADE BY BISTECK";
 		FontUtil.draw(g, "Made by Bisteck", w - FontUtil.width("Made by Bisteck") - 8, h - 12, 0xFF9A9A9A);
+	}
+
+	/** Estrela cadente rara cruzando o ceu (a cada ~8s). */
+	private static void shootingStar(GuiGraphicsExtractor g, int w, int h, double sec) {
+		double cyc = (sec % 8.0) / 1.1;
+		if (cyc >= 1.0) return;
+		long seed = (long) (sec / 8.0);
+		java.util.Random r = new java.util.Random(seed * 7919L);
+		double x0 = w * (0.2 + 0.6 * r.nextDouble()), y0 = h * (0.05 + 0.25 * r.nextDouble());
+		for (int k = 0; k < 14; k++) {
+			double t = cyc - k * 0.012;
+			if (t < 0) continue;
+			int x = (int) (x0 + t * w * 0.35), y = (int) (y0 + t * h * 0.28);
+			float a = (1f - (float) cyc) * (1f - k / 14f);
+			g.fill(x, y, x + 2, y + 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.85f));
+		}
 	}
 
 	/** Tres linhas ondulando devagar no fundo (pontinhos), como o fundo do Real Client. */
