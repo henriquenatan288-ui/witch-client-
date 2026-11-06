@@ -12,13 +12,11 @@ import java.util.List;
 
 /** Ao quebrar um bloco abaixo dos seus pes (por padrao), solta ondas finas que se expandem pelo chao. */
 public class BreakWaveModule extends Module implements EspSource {
-	private static final int COLOR = 0xFFFFFFFF;
-	private static final double DURATION = 1.1; // segundos
-	private static final int SEGMENTS = 48;
-	private static final int MAX_WAVES = 6;
+	private static final double DURATION = 1.3; // segundos
+	private static final int MAX_WAVES = 3;
 
 	private final IntSetting radius = add(new IntSetting("Radius", 2, 10, 4, " blocks"));
-	private final IntSetting rings = add(new IntSetting("Rings", 1, 4, 3, ""));
+	private final IntSetting rings = add(new IntSetting("Rings", 1, 4, 2, ""));
 	private final IntSetting downOnly = add(new IntSetting("Down only (0/1)", 0, 1, 1, ""));
 
 	private final List<double[]> waves = new ArrayList<>(); // {x, y, z, inicioSeg}
@@ -65,6 +63,15 @@ public class BreakWaveModule extends Module implements EspSource {
 		}
 	}
 
+	private static final class RenderColor {
+		static int mix(int a, int b, float t) {
+			int r = Math.round(((a >> 16) & 0xFF) * (1f - t) + ((b >> 16) & 0xFF) * t);
+			int g = Math.round(((a >> 8) & 0xFF) * (1f - t) + ((b >> 8) & 0xFF) * t);
+			int bl = Math.round((a & 0xFF) * (1f - t) + (b & 0xFF) * t);
+			return 0xFF000000 | (r << 16) | (g << 8) | bl;
+		}
+	}
+
 	private static double now() {
 		return System.nanoTime() / 1_000_000_000.0;
 	}
@@ -77,23 +84,26 @@ public class BreakWaveModule extends Module implements EspSource {
 		for (double[] w : waves) {
 			double prog = (t - w[3]) / DURATION;
 			for (int k = 0; k < nRings; k++) {
-				double pr = prog - k * 0.14;
+				double pr = prog - k * 0.18;
 				if (pr <= 0 || pr >= 1) continue;
-				double r = 0.4 + (radius.get() - 0.4) * (1.0 - Math.pow(1.0 - pr, 2.0));
-				float alpha = (float) Math.pow(1.0 - pr, 1.4) * 0.8f;
-				ring(esp, w[0], w[1], w[2], r, alpha);
+				double r = 0.3 + (radius.get() - 0.3) * (1.0 - Math.pow(1.0 - pr, 3.0));
+				float fade = (float) Math.pow(1.0 - pr, 1.6) * (1f - 0.35f * k);
+				float width = (float) (1.05 - 0.55 * pr);
+				int col = RenderColor.mix(0xFFFFFFFF, 0xFF9FD8FF, (float) pr);
+				ring(esp, w[0], w[1] + pr * 0.18, w[2], r, col, fade * 0.85f, width);
 			}
 		}
 	}
 
-	private static void ring(Esp esp, double cx, double cy, double cz, double r, float alpha) {
+	private static void ring(Esp esp, double cx, double cy, double cz, double r, int color, float alpha, float width) {
+		int seg = (int) Math.max(20, Math.min(36, 16 + r * 6));
 		double px = cx + r;
 		double pz = cz;
-		for (int i = 1; i <= SEGMENTS; i++) {
-			double a = i * (Math.PI * 2 / SEGMENTS);
+		for (int i = 1; i <= seg; i++) {
+			double a = i * (Math.PI * 2 / seg);
 			double nx = cx + Math.cos(a) * r;
 			double nz = cz + Math.sin(a) * r;
-			esp.thinLine(px, cy, pz, nx, cy, nz, COLOR, alpha, 0.8f);
+			esp.thinLine(px, cy, pz, nx, cy, nz, color, alpha, width);
 			px = nx;
 			pz = nz;
 		}

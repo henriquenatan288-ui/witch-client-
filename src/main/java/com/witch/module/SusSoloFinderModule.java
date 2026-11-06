@@ -29,7 +29,9 @@ import java.util.Set;
  */
 public class SusSoloFinderModule extends Module implements EspSource {
 	private static final long SCAN_BUDGET_NS = 3_000_000L;
-	private static final int MAX_SCANS_PER_TICK = 12;
+	private static final int MAX_SCANS_PER_TICK = 8;
+	private static final long RESCAN_TICKS = 900L;
+	private final java.util.Map<Long, Long> lastScan = new java.util.HashMap<>();
 	private static final int BELOW = 24;
 	private static final int ABOVE = 40;
 	private static final long ALERT_DISPLAY_MS = 2800L;
@@ -112,6 +114,7 @@ public class SusSoloFinderModule extends Module implements EspSource {
 	}
 
 	private void reset() {
+		lastScan.clear();
 		found.clear();
 		seen.clear();
 		view = List.of();
@@ -172,11 +175,17 @@ public class SusSoloFinderModule extends Module implements EspSource {
 			int cx = pcx + off[0];
 			int cz = pcz + off[1];
 			if (!level.getChunkSource().hasChunk(cx, cz)) continue;
+			long ck = ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
+			Long prev = lastScan.get(ck);
+			long gt = level.getGameTime();
+			if (prev != null && gt - prev < RESCAN_TICKS) continue;
+			lastScan.put(ck, gt);
 			scanChunk(level, cx, cz, player);
 			scanned++;
 			if (scanned >= MAX_SCANS_PER_TICK || System.nanoTime() - t0 > SCAN_BUDGET_NS) break;
 		}
 
+		if (lastScan.size() > 12000) lastScan.clear();
 		found.values().removeIf(v -> Math.abs(v[0] - pcx) > r + 1 || Math.abs(v[1] - pcz) > r + 1);
 		view = new ArrayList<>(found.values());
 	}

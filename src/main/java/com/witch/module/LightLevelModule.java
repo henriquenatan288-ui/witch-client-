@@ -43,7 +43,7 @@ public class LightLevelModule extends Module implements EspSource {
 	@Override
 	public void onTick() {
 		if (--cooldown > 0) return;
-		cooldown = 8;
+		cooldown = 14;
 		Minecraft mc = Minecraft.getInstance();
 		var level = mc.level;
 		var p = mc.player;
@@ -56,8 +56,8 @@ public class LightLevelModule extends Module implements EspSource {
 		List<int[]> out = new ArrayList<>();
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		BlockPos.MutableBlockPos below = new BlockPos.MutableBlockPos();
-		for (int dx = -r; dx <= r && out.size() < 700; dx++) {
-			for (int dz = -r; dz <= r && out.size() < 700; dz++) {
+		for (int dx = -r; dx <= r && out.size() < 400; dx++) {
+			for (int dz = -r; dz <= r && out.size() < 400; dz++) {
 				for (int dy = -3; dy <= 3; dy++) {
 					pos.set(pp.getX() + dx, pp.getY() + dy, pp.getZ() + dz);
 					below.set(pos.getX(), pos.getY() - 1, pos.getZ());
