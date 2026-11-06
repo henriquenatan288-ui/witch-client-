@@ -55,7 +55,7 @@ public final class ModuleDescriptions {
 			case "Sus Hole Finder" -> "Procura buracos suspeitos.";
 			case "Tracers" -> "Linhas da mira ate Player/Farm/Storage ESP (estilo Meteor, bem slim).";
 			case "Trigger Bot" -> "Ataca sozinho quando a mira esta num alvo.";
-			case "X-Ray Hologram" -> "Mostra minerios atraves dos blocos.";
+			case "X-Ray Hologram" -> "Mostra minerios expostos a ar, agua ou lava (opcao Exposed only desliga o filtro). Funciona com os Tracers.";
 			case "Zoom" -> "Aproxima a visao com transicao suave.";
 			case "GUI Settings" -> "Opacidade do ClickGUI e tooltips.";
 			default -> com.witch.module.InfoModules.desc(n);
