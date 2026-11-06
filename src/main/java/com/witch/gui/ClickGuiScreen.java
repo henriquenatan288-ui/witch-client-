@@ -7,6 +7,7 @@ import com.witch.module.ModuleManager;
 import com.witch.setting.IntSetting;
 import com.witch.setting.KeybindSetting;
 import com.witch.setting.Setting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -17,71 +18,48 @@ import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import static com.witch.gui.ClickGuiMetrics.*;
 
 /**
- * ClickGUI estilo Meteor: uma janela arrastável por categoria, módulos em linhas,
- * ajustes abrem dentro da janela. Monocromático.
- * <p>
- * Render e settings delegados a {@link GuiWindow}, {@link ModuleRow}, {@link SettingRenderer}.
- * Comportamento idêntico à versão monolítica anterior.
+ * ClickGUI em janela unica: menu lateral de categorias, busca e FPS no topo,
+ * modulos em lista com switch e ajustes que abrem embaixo do modulo. Preto e branco, bordas arredondadas.
  */
 public class ClickGuiScreen extends Screen {
+	private static final int HEAD = 24;
+	private static final int SIDE = 78;
+	private static final int ROWH = 17;
+	private static final int ROWGAP = 2;
 
-	/** Opacidade do fundo das janelas (ajustável em "GUI Settings"); soma e limitada a 1. */
-	private static float gl(float add) {
-		return Math.min(1f, com.witch.module.GuiSettingsModule.opacity() + add);
-	}
-
-	private Module tipNow = null;
-	private Module tipLast = null;
-	private long tipSince = 0L;
-
-	// posição e rolagem das janelas lembradas entre aberturas
-	private static final Map<Category, int[]> POS = new EnumMap<>(Category.class);
-	private static final Map<Category, float[]> SCR = new EnumMap<>(Category.class);
-	private static final List<Category> ORDER = new ArrayList<>();
 	private static final Set<Module> OPEN = new HashSet<>();
-
-	private Category dragWin = null;
-	private int dragOffX, dragOffY;
-	private Category scrollWin = null;
-	private Category sbWin = null;
-	private double dragAccum = 0;
-	private Runnable pending = null;
-	private IntSetting slider = null;
-	private int sliderX = 0, sliderW = 1;
+	private static Category selected = Category.values()[0];
+	private static float scroll = 0f;
 
 	private String search = "";
 	private boolean searchFocused = false;
 	private float openAnim = 0f;
-	private float openT = 0f;
-	private int curYOff = 0;
-	private int curXOff = 0;
-	private float parX = 0f, parY = 0f;
-
-	private final Map<Category, int[]> drawOff = new EnumMap<>(Category.class);
 	private long lastNanos = 0L;
-	private int winWCache = WIN_W;
-	private static int lastW = -1, lastH = -1;
+	private IntSetting slider = null;
+	private int sliderX = 0, sliderW = 1;
+	private Module tipNow = null, tipLast = null;
+	private long tipSince = 0L;
+
+	private int wx, wy, ww, wh;
 
 	public ClickGuiScreen() {
 		this(null);
 	}
 
-	/** Se 'openSettings' não for nulo, a janela já abre com os ajustes desse módulo expandidos. */
+	/** Se 'openSettings' nao for nulo, abre na categoria dele com os ajustes expandidos. */
 	public ClickGuiScreen(Module openSettings) {
 		super(Component.literal("Witch Client"));
-		if (openSettings != null && !openSettings.settings().isEmpty()) OPEN.add(openSettings);
-		if (ORDER.isEmpty()) {
-			for (Category c : Category.values()) ORDER.add(c);
+		if (openSettings != null) {
+			selected = openSettings.category;
+			if (!openSettings.settings().isEmpty()) OPEN.add(openSettings);
 		}
 	}
 
@@ -90,96 +68,68 @@ public class ClickGuiScreen extends Screen {
 		return false;
 	}
 
-	private int[] at(Category c) {
-		int[] p = pos(c);
-		int[] o = drawOff.get(c);
-		return o == null ? new int[] {p[0], p[1]} : new int[] {p[0] + o[0], p[1] + o[1]};
+	private void layout() {
+		ww = Math.min(this.width - 12, 340);
+		wh = Math.min(this.height - 12, 220);
+		wx = (this.width - ww) / 2;
+		wy = (this.height - wh) / 2;
 	}
 
-	private int[] pos(Category c) {
-		int[] p = POS.get(c);
-		if (p == null) {
-			int n = Category.values().length;
-			int ww = winWCache;
-			int total = ww * n + GAP * (n - 1);
-			int x0 = Math.max(4, (this.width - total) / 2);
-			p = new int[] {x0 + c.ordinal() * (ww + GAP), 26};
-			POS.put(c, p);
-		}
-		return p;
-	}
+	private int cx() { return wx + SIDE + 6; }
+	private int cy() { return wy + HEAD + 2; }
+	private int cw() { return ww - SIDE - 12; }
+	private int ch() { return wh - HEAD - 8; }
 
-	@Override
-	protected void init() {
-		super.init();
-		if (lastW != this.width || lastH != this.height) {
-			POS.clear();
-			lastW = this.width;
-			lastH = this.height;
-		}
-		updateWinW();
-	}
-
-	private int winW() {
-		return winWCache;
-	}
-
-	private void updateWinW() {
-		int n = Category.values().length;
-		int mx = 0;
-		for (Module m : ModuleManager.all()) mx = Math.max(mx, FontUtil.width(m.name));
-		int want = Math.max(WIN_W, mx + 26);
-		int cap = (this.width - 4 - GAP * (n - 1)) / n;
-		winWCache = Math.max(70, Math.min(want, cap));
-	}
-
-	private List<Module> modules(Category c) {
+	private List<Module> modules() {
 		List<Module> out = new ArrayList<>();
 		String q = search.toLowerCase(Locale.ROOT);
-		for (Module m : ModuleManager.byCategory(c)) {
-			if (q.isEmpty() || m.name.toLowerCase(Locale.ROOT).contains(q)) out.add(m);
+		if (q.isEmpty()) {
+			out.addAll(ModuleManager.byCategory(selected));
+		} else {
+			for (Module m : ModuleManager.all()) if (m.name.toLowerCase(Locale.ROOT).contains(q)) out.add(m);
 		}
 		return out;
 	}
 
-	private int contentH(Category c, int w) {
+	private int settingsW() { return cw() - 14; }
+
+	private int contentH() {
 		int h = 0;
-		for (Module m : modules(c)) {
-			h += ROW;
-			if (OPEN.contains(m)) {
-				for (Setting s : m.settings()) h += SettingRenderer.height(s, w);
-			}
+		for (Module m : modules()) {
+			h += ROWH + ROWGAP;
+			if (OPEN.contains(m)) for (Setting s : m.settings()) h += SettingRenderer.height(s, settingsW());
 		}
 		return h;
 	}
 
-	private int viewH(Category c, int w) {
-		int max = Math.max(40, this.height - pos(c)[1] - 6 - HEAD_H);
-		return Math.min(contentH(c, w), max);
+	private void clampScroll() {
+		scroll = Mth.clamp(scroll, 0f, Math.max(0, contentH() - ch()));
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
+		layout();
 		long now = System.nanoTime();
 		float speed = lastNanos == 0 ? 1f : Math.min(3f, (now - lastNanos) / 16_666_667f);
 		lastNanos = now;
-		updateWinW();
 		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
-		openT += speed / 60f;
 		float a = openAnim;
 		tipNow = null;
+		clampScroll();
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x30000000, a));
 
-		// logo WT no canto superior esquerdo
-		int lgw = 34;
-		WitchLogo.draw(g, 8, 4, lgw, a * 0.95f);
+		float op = com.witch.module.GuiSettingsModule.opacity();
+		RenderUtil.roundRect(g, wx, wy, ww, wh, 9, RenderUtil.alpha(0xFFFFFFFF, a * 0.20f));
+		RenderUtil.roundRect(g, wx + 1, wy + 1, ww - 2, wh - 2, 8, RenderUtil.alpha(0xFF0A0A0A, a * Math.min(0.92f, 0.55f + op)));
 
-		// busca no topo
-		int sw = Math.min(150, this.width - 20);
-		int sx = (this.width - sw) / 2;
-		RenderUtil.roundRect(g, sx - 1, 4, sw + 2, 15, 7, RenderUtil.alpha(LINE, a));
-		RenderUtil.roundRect(g, sx, 5, sw, 13, 6, RenderUtil.alpha(0xFF0C0C0C, a * gl(0.1f)));
+		// cabecalho
+		WitchLogo.draw(g, wx + 9, wy + 5, 26, a * 0.95f);
+		int fh = FontUtil.height();
+		int sx = cx();
+		int sw = Math.min(150, ww - SIDE - 110);
+		RenderUtil.roundRect(g, sx, wy + 5, sw, 14, 7, RenderUtil.alpha(0xFFFFFFFF, a * 0.14f));
+		RenderUtil.roundRect(g, sx + 1, wy + 6, sw - 2, 12, 6, RenderUtil.alpha(0xFF0C0C0C, a * 0.9f));
 		String shown;
 		int col;
 		if (search.isEmpty() && !searchFocused) {
@@ -190,171 +140,144 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			col = TXT;
 		}
-		FontUtil.draw(g, shown, sx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(col, a));
+		FontUtil.draw(g, shown, sx + 7, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(col, a));
+		String fps = Minecraft.getInstance().getFps() + " FPS";
+		int fx = wx + ww - 10 - FontUtil.width(fps);
+		FontUtil.draw(g, fps, fx, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
+		RenderUtil.roundRect(g, wx + 6, wy + HEAD - 1, ww - 12, 1, 0, RenderUtil.alpha(0xFFFFFFFF, a * 0.10f));
 
-		// botao de resetar as posicoes das janelas (pilula discreta ao lado da busca)
-		int rw = FontUtil.width("Reset") + 12;
-		int rx = sx + sw + 6;
-		boolean rh = RenderUtil.inside(mx, my, rx, 5, rw, 13);
-		RenderUtil.roundRect(g, rx, 5, rw, 13, 4, RenderUtil.alpha(rh ? 0xFF2A2A2A : 0xFF121212, a * gl(0.15f)));
-		FontUtil.draw(g, "Reset", rx + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(rh ? TXT : TXT_DIM, a));
+		// menu lateral
+		Category[] cats = Category.values();
+		for (int i = 0; i < cats.length; i++) {
+			Category c = cats[i];
+			int ry = wy + HEAD + 6 + i * 19;
+			boolean sel = c == selected && search.isEmpty();
+			boolean hov = RenderUtil.inside(mx, my, wx + 7, ry, SIDE - 10, 17);
+			if (sel || hov) RenderUtil.roundRect(g, wx + 7, ry, SIDE - 10, 17, 6, RenderUtil.alpha(0xFFFFFFFF, a * (sel ? 0.13f : 0.06f)));
+			CategoryIcons.draw(g, c, wx + 13, ry + 5, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
+			String nm = c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
+			FontUtil.draw(g, nm, wx + 25, ry + (17 - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
+		}
+		int ey = wy + wh - 24;
+		boolean eh = RenderUtil.inside(mx, my, wx + 7, ey, SIDE - 10, 17);
+		RenderUtil.roundRect(g, wx + 7, ey, SIDE - 10, 17, 6, RenderUtil.alpha(0xFFFFFFFF, a * (eh ? 0.16f : 0.07f)));
+		String et = "Edit HUD";
+		FontUtil.draw(g, et, wx + 7 + (SIDE - 10 - FontUtil.width(et)) / 2, ey + (17 - fh) / 2, RenderUtil.alpha(eh ? TXT : TXT_DIM, a));
+		RenderUtil.roundRect(g, wx + SIDE, wy + HEAD + 4, 1, wh - HEAD - 10, 0, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f));
 
-		// botao para editar a posicao do HUD
-		int ew = FontUtil.width("Edit HUD") + 12;
-		int ex = rx + rw + 6;
-		boolean eh = RenderUtil.inside(mx, my, ex, 5, ew, 13);
-		RenderUtil.roundRect(g, ex, 5, ew, 13, 4, RenderUtil.alpha(eh ? 0xFF2A2A2A : 0xFF121212, a * gl(0.15f)));
-		FontUtil.draw(g, "Edit HUD", ex + 6, 5 + (13 - FontUtil.height()) / 2, RenderUtil.alpha(eh ? TXT : TXT_DIM, a));
-
-		float tx = (mx - this.width / 2f) / Math.max(1, this.width);
-		float ty = (my - this.height / 2f) / Math.max(1, this.height);
-		parX = Mth.lerp(Math.min(1f, speed * 0.12f), parX, tx);
-		parY = Mth.lerp(Math.min(1f, speed * 0.12f), parY, ty);
-
-		Module[] tipSlot = new Module[1];
-		for (Category c : ORDER) {
-			float k = Mth.clamp((openT - c.ordinal() * 0.09f) / 0.45f, 0f, 1f);
-			float u = k - 1f;
-			float e = 1f + 2.4f * u * u * u + 1.4f * u * u; // easeOutBack
-			curYOff = Math.round((1f - e) * 22f);
-			curXOff = 0;
-
-			int[] p = pos(c);
-			int w = winW();
-			int vh = viewH(c, w);
-			int ch = contentH(c, w);
-			int x = p[0] + curXOff;
-			int y = p[1] + curYOff;
-			drawOff.put(c, new int[] {curXOff, curYOff});
-			float[] sc = SCR.computeIfAbsent(c, key -> new float[] {0f});
-			sc[0] = Mth.clamp(sc[0], 0, Math.max(0, ch - vh));
-
-			tipSlot[0] = null;
-			GuiWindow.render(g, c, x, y, w, vh, ch, sc[0], modules(c), OPEN,
-					dragWin, sbWin, mx, my, speed, a * Math.min(1f, k * 1.6f), tipSlot);
-			if (tipSlot[0] != null) tipNow = tipSlot[0];
+		// lista de modulos
+		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
+		g.enableScissor(cx, cy, cx + cw, cy + ch);
+		int ry = cy - Math.round(scroll);
+		int rowW = cw - 6;
+		for (Module m : modules()) {
+			boolean hover = RenderUtil.inside(mx, my, cx, ry, rowW, ROWH) && my >= cy && my < cy + ch;
+			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
+			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
+			RenderUtil.roundRect(g, cx, ry, rowW, ROWH, 6, RenderUtil.alpha(0xFFFFFFFF, a * (0.045f + 0.06f * m.hoverAnim)));
+			int tc = RenderUtil.mix(TXT_DIM, TXT, m.toggleAnim);
+			boolean has = !m.settings().isEmpty();
+			FontUtil.draw(g, ModuleRow.fit(m.name, rowW - 62), cx + 8, ry + (ROWH - fh) / 2, RenderUtil.alpha(tc, a));
+			if (has) {
+				String ar = OPEN.contains(m) ? "-" : "+";
+				FontUtil.draw(g, ar, cx + rowW - 38 - FontUtil.width(ar) / 2, ry + (ROWH - fh) / 2, RenderUtil.alpha(OPEN.contains(m) ? TXT : TXT_DIM, a));
+			}
+			int swx = cx + rowW - 26, swy = ry + (ROWH - 9) / 2;
+			RenderUtil.roundRect(g, swx, swy, 20, 9, 4, RenderUtil.mix(0xFF2C2C2C, 0xFFE8E8E8, m.toggleAnim) & 0xFFFFFF | ((int) (a * 255) << 24));
+			int kx = swx + 1 + Math.round(11 * m.toggleAnim);
+			RenderUtil.roundRect(g, kx, swy + 1, 7, 7, 3, RenderUtil.alpha(RenderUtil.mix(0xFF9A9A9A, 0xFF111111, m.toggleAnim), a));
+			if (hover && my >= cy && my < cy + ch) tipNow = m;
+			ry += ROWH + ROWGAP;
+			if (OPEN.contains(m)) {
+				int sxx = cx + 4, sww = settingsW();
+				int top = ry;
+				int total = 0;
+				for (Setting s : m.settings()) total += SettingRenderer.height(s, sww);
+				RenderUtil.roundRect(g, cx + 2, top - 1, rowW - 4, total + 2, 5, RenderUtil.alpha(0xFF000000, a * 0.35f));
+				for (Setting s : m.settings()) {
+					int sh = SettingRenderer.height(s, sww);
+					SettingRenderer.draw(g, s, sxx, ry, sww - 4, sh, a, 0f);
+					ry += sh;
+				}
+			}
+		}
+		g.disableScissor();
+		int total = contentH();
+		if (total > ch) {
+			int th = Math.max(14, Math.round(ch * (ch / (float) total)));
+			float f = scroll / Math.max(1, total - ch);
+			RenderUtil.roundRect(g, cx + cw - 3, cy + Math.round((ch - th) * f), 2, th, 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.35f));
 		}
 
-		if (tipNow != tipLast) {
-			tipLast = tipNow;
-			tipSince = System.currentTimeMillis();
-		}
-		if (tipNow != null && com.witch.module.GuiSettingsModule.tooltips() && System.currentTimeMillis() - tipSince > 350) {
+		// tooltip
+		if (tipNow != tipLast) { tipLast = tipNow; tipSince = System.currentTimeMillis(); }
+		if (tipNow != null && System.currentTimeMillis() - tipSince > 450) {
 			String d = ModuleDescriptions.of(tipNow.name);
-			if (!d.isEmpty()) {
-				int tw = FontUtil.width(d) + 8;
-				int th = FontUtil.height() + 6;
-				int tipX = Math.min(this.width - tw - 2, mx + 10);
-				int tipY = Math.min(this.height - th - 2, my + 12);
-				RenderUtil.roundRect(g, tipX - 1, tipY - 1, tw + 2, th + 2, 5, RenderUtil.alpha(LINE, a));
-				RenderUtil.roundRect(g, tipX, tipY, tw, th, 4, RenderUtil.alpha(0xFF0C0C0C, a * 0.95f));
-				FontUtil.draw(g, d, tipX + 4, tipY + 3, RenderUtil.alpha(TXT, a));
+			if (d != null && !d.isEmpty()) {
+				int tw = Math.min(this.width - 12, FontUtil.width(d) + 12);
+				int th = fh + 8;
+				int tx = Mth.clamp(mx + 10, 4, this.width - tw - 4);
+				int ty = Math.min(this.height - th - 4, my + 12);
+				RenderUtil.roundRect(g, tx - 1, ty - 1, tw + 2, th + 2, 5, RenderUtil.alpha(0xFFFFFFFF, a * 0.2f));
+				RenderUtil.roundRect(g, tx, ty, tw, th, 4, RenderUtil.alpha(0xFF0C0C0C, a * 0.96f));
+				FontUtil.draw(g, ModuleRow.fit(d, tw - 10), tx + 6, ty + 4, RenderUtil.alpha(TXT, a));
 			}
 		}
-	}
-
-	/** Linhas brilhantes brancas que sobem balançando dos cantos de baixo. */
-	private void glowLines(GuiGraphicsExtractor g, float a) {
-		if (!com.witch.module.GuiSettingsModule.glow()) return;
-		double t = System.nanoTime() / 1_000_000_000.0;
-		int rise = (int) (this.height * 0.5f);
-		for (int side = 0; side < 2; side++) {
-			boolean left = side == 0;
-			double ph = left ? 0.0 : 1.9;
-			for (int i = 0; i < rise; i += 4) {
-				float f = i / (float) rise;
-				float fade = (1f - f) * (1f - f);
-				double sway = Math.sin(t * 1.3 + i * 0.035 + ph) * (6 + 22 * f);
-				int x = (int) Math.round(left ? 3 + f * 26 + sway : this.width - 3 - f * 26 - sway);
-				int y = this.height - i;
-				g.fill(x - 1, y - 4, x + 2, y, RenderUtil.alpha(Theme.accent(), a * fade * 0.8f));
-			}
-		}
-	}
-
-	private Category winAt(double mx, double my) {
-		for (int i = ORDER.size() - 1; i >= 0; i--) {
-			Category c = ORDER.get(i);
-			int[] p = at(c);
-			int w = winW();
-			if (RenderUtil.inside(mx, my, p[0], p[1], w, HEAD_H + viewH(c, w))) return c;
-		}
-		return null;
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-		double mx = click.x();
-		double my = click.y();
+		layout();
+		double mx = click.x(), my = click.y();
 		int button = click.button();
-		dragAccum = 0;
-		pending = null;
-
-		int sw = Math.min(150, this.width - 20);
-		int sx = (this.width - sw) / 2;
-		if (RenderUtil.inside(mx, my, sx + sw + 6, 5, FontUtil.width("Reset") + 12, 13)) {
-			POS.clear();
-			return true;
-		}
-		int rwid = FontUtil.width("Reset") + 12;
-		if (RenderUtil.inside(mx, my, sx + sw + 6 + rwid + 6, 5, FontUtil.width("Edit HUD") + 12, 13)) {
-			net.minecraft.client.Minecraft.getInstance().gui.setScreen(new HudEditScreen());
-			return true;
-		}
-		searchFocused = RenderUtil.inside(mx, my, sx, 5, sw, 13);
-		if (searchFocused) return true;
-		Category c = winAt(mx, my);
-		if (c == null) return super.mouseClicked(click, doubled);
-		ORDER.remove(c);
-		ORDER.add(c);
-
-		int[] p = at(c);
-		int w = winW();
-		int x = p[0];
-		int y = p[1];
-		if (my < y + HEAD_H && button == 1) {
-			POS.remove(c);
-			return true;
-		}
-		if (my < y + HEAD_H) {
-			dragWin = c;
-			dragOffX = (int) mx - x;
-			dragOffY = (int) my - y;
-			return true;
-		}
-		if (contentH(c, w) > viewH(c, w) && mx >= x + w - SB_HIT && button == 0) {
-			sbWin = c;
-			dragSb(c, my);
-			return true;
-		}
-		scrollWin = c;
-		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
-		int ry = y + HEAD_H - Math.round(sc[0]);
 		int fh = FontUtil.height();
-		for (Module m : modules(c)) {
-			if (my >= ry && my < ry + ROW) {
+		int sx = cx();
+		int sw = Math.min(150, ww - SIDE - 110);
+		searchFocused = RenderUtil.inside(mx, my, sx, wy + 5, sw, 14);
+		if (searchFocused) return true;
+		Category[] cats = Category.values();
+		for (int i = 0; i < cats.length; i++) {
+			if (RenderUtil.inside(mx, my, wx + 7, wy + HEAD + 6 + i * 19, SIDE - 10, 17)) {
+				selected = cats[i];
+				search = "";
+				scroll = 0f;
+				return true;
+			}
+		}
+		if (RenderUtil.inside(mx, my, wx + 7, wy + wh - 24, SIDE - 10, 17)) {
+			Minecraft.getInstance().gui.setScreen(new HudEditScreen());
+			return true;
+		}
+		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
+		if (!RenderUtil.inside(mx, my, cx, cy, cw, ch)) return super.mouseClicked(click, doubled);
+		int ry = cy - Math.round(scroll);
+		int rowW = cw - 6;
+		for (Module m : modules()) {
+			if (my >= ry && my < ry + ROWH) {
 				boolean has = !m.settings().isEmpty();
-				boolean onArrow = has && mx >= x + w - ARROW_W;
+				boolean onArrow = has && mx >= cx + rowW - 48 && mx < cx + rowW - 28;
 				if (has && (button == 1 || onArrow)) {
-					pending = () -> { if (!OPEN.remove(m)) OPEN.add(m); };
+					if (!OPEN.remove(m)) OPEN.add(m);
 				} else if (button == 0) {
-					pending = () -> { m.toggle(); Config.save(); };
+					m.toggle();
+					Config.save();
 				}
 				return true;
 			}
-			ry += ROW;
+			ry += ROWH + ROWGAP;
 			if (OPEN.contains(m)) {
+				int sxx = cx + 4, sww = settingsW();
 				for (Setting s : m.settings()) {
-					int sh = SettingRenderer.height(s, w);
+					int sh = SettingRenderer.height(s, sww);
 					if (my >= ry && my < ry + sh) {
 						Runnable[] out = new Runnable[1];
-						IntSetting slid = SettingRenderer.click(s, x, ry, w, sh, mx, my, fh, out);
+						IntSetting slid = SettingRenderer.click(s, sxx, ry, sww - 4, sh, mx, my, fh, out);
 						if (slid != null) {
 							slider = slid;
-							sliderX = x + 7;
-							sliderW = Math.max(1, w - 14);
+							sliderX = sxx + 7;
+							sliderW = Math.max(1, sww - 4 - 14);
 						}
-						if (out[0] != null) pending = out[0];
+						if (out[0] != null) out[0].run();
 						return true;
 					}
 					ry += sh;
@@ -364,38 +287,10 @@ public class ClickGuiScreen extends Screen {
 		return true;
 	}
 
-	private void dragSb(Category c, double my) {
-		int w = winW();
-		int vh = viewH(c, w);
-		int th = Math.max(16, Math.round(vh * (vh / (float) contentH(c, w))));
-		float span = Math.max(1f, vh - th);
-		float f = Mth.clamp((float) ((my - (at(c)[1] + HEAD_H) - th / 2.0) / span), 0f, 1f);
-		float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
-		sc[0] = f * Math.max(0, contentH(c, w) - vh);
-	}
-
 	@Override
 	public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
-		if (sbWin != null) {
-			dragSb(sbWin, click.y());
-			return true;
-		}
-		if (dragWin != null) {
-			int[] p = pos(dragWin);
-			int[] o = drawOff.getOrDefault(dragWin, new int[] {0, 0});
-			p[0] = Mth.clamp((int) click.x() - dragOffX - o[0], -winW() + 20, this.width - 20);
-			p[1] = Mth.clamp((int) click.y() - dragOffY - o[1], 0, this.height - HEAD_H);
-			dragAccum += 100;
-			return true;
-		}
 		if (slider != null) {
 			slider.setFraction((float) ((click.x() - sliderX) / sliderW));
-			return true;
-		}
-		if (scrollWin != null) {
-			dragAccum += Math.abs(offsetX) + Math.abs(offsetY);
-			float[] sc = SCR.computeIfAbsent(scrollWin, k -> new float[] {0f});
-			sc[0] -= (float) offsetY;
 			return true;
 		}
 		return super.mouseDragged(click, offsetX, offsetY);
@@ -403,25 +298,16 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent click) {
-		boolean was = sbWin != null || dragWin != null || slider != null || scrollWin != null || pending != null;
+		boolean was = slider != null;
 		if (slider != null) Config.save();
-		if (pending != null && dragAccum < 6) pending.run();
-		pending = null;
-		sbWin = null;
-		dragWin = null;
 		slider = null;
-		scrollWin = null;
-		dragAccum = 0;
 		return was || super.mouseReleased(click);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-		Category c = winAt(mouseX, mouseY);
-		if (c != null) {
-			float[] sc = SCR.computeIfAbsent(c, k -> new float[] {0f});
-			sc[0] -= (float) (verticalAmount * 14.0);
-		}
+		scroll -= (float) (verticalAmount * 16.0);
+		clampScroll();
 		return true;
 	}
 
@@ -430,6 +316,7 @@ public class ClickGuiScreen extends Screen {
 		int cp = input.codepoint();
 		if (searchFocused && cp >= 32 && cp != 127 && search.length() < 24) {
 			search += new String(Character.toChars(cp));
+			scroll = 0f;
 			return true;
 		}
 		return super.charTyped(input);
@@ -442,11 +329,8 @@ public class ClickGuiScreen extends Screen {
 			for (Setting st : m.settings()) {
 				if (st instanceof KeybindSetting ks && ks.listening) {
 					ks.listening = false;
-					if (key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE) {
-						ks.setKey(0);
-					} else if (key != GLFW.GLFW_KEY_ESCAPE) {
-						ks.setKey(key);
-					}
+					if (key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE) ks.setKey(0);
+					else if (key != GLFW.GLFW_KEY_ESCAPE) ks.setKey(key);
 					Config.save();
 					return true;
 				}
@@ -461,10 +345,6 @@ public class ClickGuiScreen extends Screen {
 				searchFocused = false;
 				return true;
 			}
-		}
-		if (key == GLFW.GLFW_KEY_HOME) {
-			POS.clear();
-			return true;
 		}
 		if (key == GLFW.GLFW_KEY_RIGHT_SHIFT) {
 			this.onClose();
