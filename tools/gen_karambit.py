@@ -38,7 +38,7 @@ def make(blade_hi, blade_lo, edge, handle, ring):
             edge=any(0<=x+dx<W and 0<=y+dy<W and sp[x+dx,y+dy][3]==0 for dx,dy in((1,0),(-1,0),(0,1),(0,-1)))
             if edge:
                 cr,cg,cb,_=px[x,y]; px[x,y]=(int(cr*0.5),int(cg*0.5),int(cb*0.55),255)
-    return im
+    return im.transpose(Image.TRANSPOSE).transpose(Image.ROTATE_180)
 out=sys.argv[1]
 dia=make((150,245,245,255),(40,170,190,255),(235,255,255,255),(38,38,44,255),(150,150,160,255))
 net=make((235,120,200,255),(90,40,120,255),(255,210,240,255),(30,28,32,255),(150,120,160,255))
