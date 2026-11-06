@@ -67,6 +67,7 @@ public final class ModuleManager {
 		MODULES.add(new JumpCirclesModule());
 		MODULES.add(new CardParticlesModule());
 		MODULES.add(new FilterModule());
+		MODULES.add(new KillEffectModule());
 		MODULES.add(new InfoModules.Fps());
 		MODULES.add(new InfoModules.Ping());
 		MODULES.add(new InfoModules.Cps());

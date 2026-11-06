@@ -81,6 +81,7 @@ public final class InfoModules {
 	static long lastHit = 0L;
 	static int combo = 0;
 	static double lastReach = 0;
+	static LivingEntity lastTarget = null;
 	private static boolean hooked = false;
 
 	static void hook() {
@@ -93,6 +94,7 @@ public final class InfoModules {
 				combo = now - lastHit < 2000 ? combo + 1 : 1;
 				lastHit = now;
 				lastReach = player.distanceTo(entity);
+				lastTarget = (LivingEntity) entity;
 			}
 			return InteractionResult.PASS;
 		});
