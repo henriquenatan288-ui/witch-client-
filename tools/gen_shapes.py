@@ -27,27 +27,44 @@ def money():
     f = ImageFont.truetype(FONT, P(30)); w = d.textlength("$", font=f)
     d.text((P(64) - w / 2, P(64)), "$", font=f, fill=(30, 100, 55, 255), anchor="lm")
     f2 = ImageFont.truetype(FONT, P(13))
-    for (x, y) in ((24, 47), (104, 47), (24, 81), (104, 81)):
+    for (x, y) in ((26, 46), (102, 46), (26, 82), (102, 82)):
         w2 = d.textlength("100", font=f2); d.text((P(x) - w2 / 2, P(y)), "100", font=f2, fill=(30, 100, 55, 255), anchor="lm")
-    for x in (30, 98):
-        d.ellipse([P(x - 5), P(58), P(x + 5), P(70)], outline=(40, 120, 70, 255), width=P(1.6))
+    for y in (58, 64, 70):
+        d.line([P(20), P(y), P(44), P(y)], fill=(70, 150, 90, 255), width=P(1.2))
+        d.line([P(84), P(y), P(108), P(y)], fill=(70, 150, 90, 255), width=P(1.2))
     return finish(im, (120, 255, 150))
+
+def bez(p0, c1, c2, p3, n=36):
+    out = []
+    for k in range(n + 1):
+        t = k / n; u = 1 - t
+        out.append((u**3 * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t**3 * p3[0],
+                    u**3 * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t**3 * p3[1]))
+    return out
 
 def witch():
     im, d = canvas()
-    # aba
-    d.ellipse([P(10), P(88), P(118), P(112)], fill=(46, 20, 78, 255))
-    d.ellipse([P(10), P(84), P(118), P(106)], fill=(86, 44, 140, 255))
-    # cone com ponta dobrada
-    d.polygon([(P(36), P(92)), (P(92), P(92)), (P(84), P(54)), (P(98), P(30)), (P(108), P(34)), (P(94), P(20)), (P(76), P(16)), (P(66), P(40)), (P(52), P(58))], fill=(100, 56, 160, 255))
-    d.polygon([(P(36), P(92)), (P(60), P(92)), (P(60), P(56)), (P(70), P(32)), (P(66), P(40)), (P(52), P(58))], fill=(122, 76, 186, 255))
-    d.ellipse([P(30), P(80), P(98), P(104)], fill=(86, 44, 140, 255))
+    # aba larga
+    d.ellipse([P(6), P(88), P(122), P(114)], fill=(40, 16, 70, 255))
+    d.ellipse([P(6), P(84), P(122), P(108)], fill=(88, 44, 144, 255))
+    # cone curvo e pontudo (curva em S, ponta fina pra direita)
+    left = bez((34, 92), (50, 60), (36, 2), (118, 22))
+    right = bez((118, 22), (78, 22), (92, 60), (94, 92))
+    d.polygon([(P(x), P(y)) for x, y in left + right], fill=(100, 54, 164, 255))
+    # lado iluminado
+    hl = bez((34, 92), (50, 60), (36, 2), (118, 22))
+    inner = bez((52, 92), (62, 62), (56, 22), (110, 24))
+    d.polygon([(P(x), P(y)) for x, y in hl[:30] + inner[:30][::-1]], fill=(128, 80, 196, 255))
+    # sombra do lado direito
+    sh = bez((118, 22), (84, 30), (96, 66), (94, 92))
+    sh2 = bez((110, 26), (88, 40), (88, 66), (84, 92))
+    d.polygon([(P(x), P(y)) for x, y in sh + sh2[::-1]], fill=(72, 36, 120, 255))
+    d.ellipse([P(30), P(80), P(100), P(104)], fill=(88, 44, 144, 255))
     # faixa e fivela
-    d.polygon([(P(34), P(80)), (P(94), P(80)), (P(96), P(92)), (P(32), P(92))], fill=(28, 14, 52, 255))
-    d.rectangle([P(56), P(78), P(72), P(94)], fill=(244, 196, 60, 255))
-    d.rectangle([P(60), P(82), P(68), P(90)], fill=(28, 14, 52, 255))
-    # brilho
-    d.ellipse([P(44), P(66), P(52), P(74)], fill=(255, 255, 255, 60))
+    d.polygon([(P(33), P(80)), (P(96), P(80)), (P(98), P(92)), (P(31), P(92))], fill=(26, 12, 50, 255))
+    d.rectangle([P(56), P(77), P(74), P(95)], fill=(244, 196, 60, 255))
+    d.rectangle([P(61), P(82), P(69), P(90)], fill=(26, 12, 50, 255))
+    d.ellipse([P(44), P(62), P(51), P(69)], fill=(255, 255, 255, 55))
     return finish(im, (190, 120, 255))
 
 def duck():
