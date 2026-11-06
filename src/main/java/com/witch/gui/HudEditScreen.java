@@ -16,8 +16,16 @@ public class HudEditScreen extends Screen {
 	private int grabX, grabY;
 	private int startX, startY, startDx, startDy;
 
+	private final Screen parent;
+
 	public HudEditScreen() {
+		this(null);
+	}
+
+	/** parent: tela para voltar ao terminar (null = ClickGUI). */
+	public HudEditScreen(Screen parent) {
 		super(Component.literal("Edit HUD"));
+		this.parent = parent;
 	}
 
 	@Override
@@ -78,7 +86,7 @@ public class HudEditScreen extends Screen {
 
 	private void back() {
 		HudLayout.save();
-		Minecraft.getInstance().gui.setScreen(new ClickGuiScreen());
+		Minecraft.getInstance().gui.setScreen(parent != null ? parent : new ClickGuiScreen());
 	}
 
 	@Override

@@ -27,6 +27,17 @@ public class WitchClient implements ClientModInitializer {
 		ModuleManager.init();
 		Config.load();
 
+		// botao "Editar HUD (grade)" no menu de pausa
+		net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+			if (screen instanceof net.minecraft.client.gui.screens.PauseScreen) {
+				net.fabricmc.fabric.api.client.screen.v1.Screens.getWidgets(screen).add(
+						net.minecraft.client.gui.components.Button.builder(
+								net.minecraft.network.chat.Component.literal("Editar HUD (grade)"),
+								btn -> client.gui.setScreen(new com.witch.gui.HudEditScreen(screen)))
+							.bounds(w - 128, 6, 122, 20).build());
+			}
+		});
+
 		KeyMapping.Category category = KeyMapping.Category.register(
 				Identifier.fromNamespaceAndPath("witch", "main"));
 
