@@ -133,13 +133,13 @@ public class ClickGuiScreen extends Screen {
 
 	private static String subtitle(Category c) {
 		return switch (c) {
-			case MOVEMENT -> "Movement and mobility";
-			case COMBAT -> "Combat and targeting";
-			case VISUALS -> "Visual and render";
-			case WORLD -> "World and chunks";
-			case UTILITY -> "Utility tools";
-			case HUD -> "On-screen information";
-			case EFFECTS -> "Sounds and effects";
+			case MOVEMENT -> "Mobility";
+			case COMBAT -> "Targeting";
+			case VISUALS -> "Render";
+			case WORLD -> "Chunks";
+			case UTILITY -> "Tools";
+			case HUD -> "Info";
+			case EFFECTS -> "Sounds";
 		};
 	}
 
