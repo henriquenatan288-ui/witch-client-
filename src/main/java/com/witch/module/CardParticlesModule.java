@@ -20,6 +20,7 @@ public class CardParticlesModule extends Module {
 	private final IntSetting onHit = add(new IntSetting("On hit (0/1)", 0, 1, 1, ""));
 	private final IntSetting onJump = add(new IntSetting("On jump (0/1)", 0, 1, 0, ""));
 	private final IntSetting ambient = add(new IntSetting("Ambient (0/1)", 0, 1, 0, ""));
+	private final IntSetting shape = add(new IntSetting("Shape", 1, 4, 1, ""));
 	private final IntSetting amount = add(new IntSetting("Amount", 1, 20, 8, ""));
 	private final IntSetting size = add(new IntSetting("Size", 1, 10, 3, ""));
 
@@ -45,8 +46,14 @@ public class CardParticlesModule extends Module {
 	}
 
 	private static TextureAtlasSprite sprite(String suit) {
+		String name = switch (instance == null ? 1 : instance.shape.get()) {
+			case 2 -> "shape_money";
+			case 3 -> "shape_witchhat";
+			case 4 -> "shape_duck";
+			default -> "card_" + suit;
+		};
 		return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.PARTICLES)
-				.getSprite(Identifier.fromNamespaceAndPath("witch", "card_" + suit));
+				.getSprite(Identifier.fromNamespaceAndPath("witch", name));
 	}
 
 	/** Explosao de cartas em volta de um ponto. */
