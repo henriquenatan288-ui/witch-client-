@@ -26,6 +26,10 @@ public class WitchGametest implements FabricClientGameTest {
 			context.runOnClient(mc -> mc.player.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_SWORD)));
 			context.waitTicks(10);
 			context.takeScreenshot("13-karambit");
+			context.runOnClient(mc -> { var gm = com.witch.module.ModuleManager.byName("Glow Items"); if (gm != null && !gm.isEnabled()) gm.toggle(); });
+			context.waitTicks(10);
+			context.takeScreenshot("14-glowitem");
+			context.runOnClient(mc -> { var gm = com.witch.module.ModuleManager.byName("Glow Items"); if (gm != null && gm.isEnabled()) gm.toggle(); });
 			context.runOnClient(mc -> mc.gui.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)));
 			context.waitTicks(30);
 			context.takeScreenshot("07-inventory");

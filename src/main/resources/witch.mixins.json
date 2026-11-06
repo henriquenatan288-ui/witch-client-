@@ -16,7 +16,8 @@
     "MinecraftGlowMixin",
     "EntityGlowColorMixin",
     "MouseHandlerMixin",
-    "MultiPlayerGameModeMixin"
+    "MultiPlayerGameModeMixin",
+    "ItemInHandRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 0
