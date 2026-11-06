@@ -57,7 +57,7 @@ public final class ModuleDescriptions {
 			case "X-Ray Hologram" -> "Mostra minerios atraves dos blocos.";
 			case "Zoom" -> "Aproxima a visao com transicao suave.";
 			case "GUI Settings" -> "Opacidade do ClickGUI e tooltips.";
-			default -> "";
+			default -> com.witch.module.InfoModules.desc(n);
 		};
 	}
 }

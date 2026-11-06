@@ -67,6 +67,36 @@ public final class ModuleManager {
 		MODULES.add(new JumpCirclesModule());
 		MODULES.add(new CardParticlesModule());
 		MODULES.add(new FilterModule());
+		MODULES.add(new InfoModules.Fps());
+		MODULES.add(new InfoModules.Ping());
+		MODULES.add(new InfoModules.Cps());
+		MODULES.add(new InfoModules.Clock());
+		MODULES.add(new InfoModules.Speed());
+		MODULES.add(new InfoModules.Direction());
+		MODULES.add(new InfoModules.Day());
+		MODULES.add(new InfoModules.Memory());
+		MODULES.add(new InfoModules.Potions());
+		MODULES.add(new InfoModules.NetherCoords());
+		MODULES.add(new InfoModules.ChunkCoords());
+		MODULES.add(new InfoModules.PlayerCount());
+		MODULES.add(new InfoModules.HeldItem());
+		MODULES.add(new InfoModules.ServerIp());
+		MODULES.add(new InfoModules.SprintStatus());
+		MODULES.add(new InfoModules.Health());
+		MODULES.add(new InfoModules.Keystrokes());
+		MODULES.add(new InfoModules.ComboCounter());
+		MODULES.add(new InfoModules.ReachDisplay());
+		MODULES.add(new InfoModules.TargetHud());
+		MODULES.add(new InfoModules.HitMarker());
+		MODULES.add(new InfoModules.LowHealthAlert());
+		MODULES.add(new InfoModules.NearbyPlayers());
+		MODULES.add(new InfoModules.MobCounter());
+		MODULES.add(new InfoModules.WeatherHud());
+		MODULES.add(new InfoModules.InventoryCounter());
+		MODULES.add(new InfoModules.ArmorWarning());
+		MODULES.add(new InfoModules.ItemCount());
+		MODULES.add(new InfoModules.AutoWalk());
+		MODULES.add(new InfoModules.ToggleSneak());
 
 		MODULES.removeIf(m -> !com.witch.Edition.allows(m.name));
 

@@ -12,8 +12,8 @@ import java.util.Map;
 public final class HudLayout {
 	private HudLayout() {}
 
-	public static final String[] IDS = {"modules", "coords", "armor", "waypoints"};
-	public static final String[] LABELS = {"Logo + modulos", "Coordenadas", "Armadura", "Waypoints"};
+	public static final String[] IDS = {"modules", "coords", "armor", "waypoints", "info", "keys"};
+	public static final String[] LABELS = {"Logo + modulos", "Coordenadas", "Armadura", "Waypoints", "Info HUD", "Keystrokes"};
 
 	private static final Map<String, int[]> OFF = new HashMap<>();
 	/** x, y, w, h, dx e dy no momento do desenho. */

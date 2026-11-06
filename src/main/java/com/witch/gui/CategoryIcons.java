@@ -10,6 +10,9 @@ public final class CategoryIcons {
 	private static final String[] MOVEMENT = {"#..#...", ".#..#..", "..#..#.", "...#..#", "..#..#.", ".#..#..", "#..#..."};
 	private static final String[] VISUALS = {".......", "..###..", ".#...#.", "#..#..#", ".#...#.", "..###..", "......."};
 	private static final String[] UTILITY = {"..###..", ".#####.", "###.###", "##...##", "###.###", ".#####.", "..###.."};
+	private static final String[] COMBAT = {"#.....#", ".#...#.", "..#.#..", "...#...", "..#.#..", ".#...#.", "#.....#"};
+	private static final String[] WORLD = {"..###..", ".#.#.#.", "#..#..#", "#######", "#..#..#", ".#.#.#.", "..###.."};
+	private static final String[] HUD = {"#######", "#.....#", "#.###.#", "#.....#", "#.###.#", "#.....#", "#######"};
 	private static final String[] EFFECTS = {"...#...", "...#...", "..###..", "#######", "..###..", "...#...", "...#..."};
 
 	public static void draw(GuiGraphicsExtractor g, Category c, int x, int y, int color) {
@@ -18,6 +21,9 @@ public final class CategoryIcons {
 			case VISUALS -> VISUALS;
 			case UTILITY -> UTILITY;
 			case EFFECTS -> EFFECTS;
+			case COMBAT -> COMBAT;
+			case WORLD -> WORLD;
+			case HUD -> HUD;
 		};
 		for (int r = 0; r < p.length; r++) {
 			for (int q = 0; q < p[r].length(); q++) {

@@ -30,6 +30,10 @@ public final class HudRenderer {
 		com.witch.module.CoordsHudModule.drawHud(g);
 		com.witch.module.ArmorHudModule.drawHud(g);
 		com.witch.module.WaypointsModule.drawHud(g);
+		com.witch.module.InfoModules.drawAll(g);
+		com.witch.module.InfoModules.Keystrokes.drawHud(g);
+		com.witch.module.InfoModules.HitMarker.drawHud(g);
+		com.witch.module.InfoModules.LowHealthAlert.drawHud(g);
 		Toasts.draw(g);
 
 		long now = System.nanoTime();
