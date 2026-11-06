@@ -17,6 +17,31 @@ import static com.witch.gui.ClickGuiMetrics.*;
 public final class SettingRenderer {
 	private SettingRenderer() {}
 
+	private static final int SV_H = 34, HUE_H = 7, PICK_GAP = 4;
+
+	// arraste do seletor de cor (um por vez)
+	private static ColorSetting dragColor;
+	private static int dragMode; // 1 = quadrado SV, 2 = barra de matiz
+	private static int dragX, dragY, dragW;
+
+	public static boolean dragging() { return dragColor != null; }
+
+	public static void drag(double mx, double my) {
+		if (dragColor == null) return;
+		float fx = (float) Math.max(0, Math.min(1, (mx - dragX) / Math.max(1, dragW)));
+		if (dragMode == 1) {
+			float fy = (float) Math.max(0, Math.min(1, (my - dragY) / SV_H));
+			dragColor.setHsv(dragColor.hue, fx, 1f - fy);
+		} else {
+			dragColor.setHsv(fx, dragColor.sat == 0f && dragColor.val == 0f ? 1f : dragColor.sat, dragColor.val == 0f ? 1f : dragColor.val);
+		}
+	}
+
+	public static void release() {
+		if (dragColor != null) Config.save();
+		dragColor = null;
+	}
+
 	/** Opcao de sim/nao (0 ou 1): desenhada como interruptor. */
 	private static boolean isToggle(Setting s) {
 		return s instanceof IntSetting is && is.min == 0 && is.max == 1;
@@ -32,7 +57,7 @@ public final class SettingRenderer {
 		if (s instanceof ColorSetting) {
 			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
 			int rows = (ColorSetting.PALETTE.length + per - 1) / per;
-			return 12 + rows * (SW + SW_GAP) + 3;
+			return 12 + rows * (SW + SW_GAP) + 3 + PICK_GAP + SV_H + PICK_GAP + HUE_H + 4;
 		}
 		return ORE_H;
 	}
@@ -68,6 +93,26 @@ public final class SettingRenderer {
 				if (i == cs.index()) RenderUtil.roundRect(g, sx - 1, sy - 1, SW + 2, SW + 2, 3, RenderUtil.alpha(TXT, a));
 				RenderUtil.roundRect(g, sx, sy, SW, SW, 2, RenderUtil.alpha(ColorSetting.PALETTE[i], a));
 			}
+			int rows = (ColorSetting.PALETTE.length + per - 1) / per;
+			int py = ry + 13 + rows * (SW + SW_GAP) + PICK_GAP - SW_GAP + 1;
+			int px = x + 7, pw = w - 14;
+			RenderUtil.roundRect(g, px - 1, py - 1, pw + 2, SV_H + 2, 3, RenderUtil.alpha(0xFF3A3A3A, a));
+			for (int cxp = 0; cxp < pw; cxp += 2) {
+				int cw2 = Math.min(2, pw - cxp);
+				int top = ColorSetting.hsvToRgb(cs.hue, (cxp + cw2 / 2f) / pw, 1f);
+				g.fillGradient(px + cxp, py, px + cxp + cw2, py + SV_H, RenderUtil.alpha(top, a), RenderUtil.alpha(0xFF000000, a));
+			}
+			int kx = px + Math.round(cs.sat * (pw - 1));
+			int ky = py + Math.round((1f - cs.val) * (SV_H - 1));
+			RenderUtil.roundRect(g, kx - 3, ky - 3, 7, 7, 3, RenderUtil.alpha(0xFFFFFFFF, a));
+			RenderUtil.roundRect(g, kx - 2, ky - 2, 5, 5, 2, RenderUtil.alpha(cs.get(), a));
+			int hy = py + SV_H + PICK_GAP;
+			for (int cxp = 0; cxp < pw; cxp += 2) {
+				int cw2 = Math.min(2, pw - cxp);
+				g.fill(px + cxp, hy, px + cxp + cw2, hy + HUE_H, RenderUtil.alpha(ColorSetting.hsvToRgb((cxp + cw2 / 2f) / pw, 1f, 1f), a));
+			}
+			int hx = px + Math.round(cs.hue * (pw - 1));
+			RenderUtil.roundRect(g, hx - 2, hy - 2, 5, HUE_H + 4, 2, RenderUtil.alpha(0xFFFFFFFF, a));
 		} else if (s instanceof KeybindSetting ks) {
 			FontUtil.draw(g, ks.name, x + 7, ry + (sh - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
 			String lab = ks.listening ? "..." : ks.label();
@@ -117,6 +162,16 @@ public final class SettingRenderer {
 					pendingOut[0] = () -> { cs.setIndex(idx); Config.save(); };
 					return null;
 				}
+			}
+			int rows = (ColorSetting.PALETTE.length + per - 1) / per;
+			int py = ry + 13 + rows * (SW + SW_GAP) + PICK_GAP - SW_GAP + 1;
+			int px = x + 7, pw = w - 14;
+			if (RenderUtil.inside(mx, my, px, py, pw, SV_H)) {
+				dragColor = cs; dragMode = 1; dragX = px; dragY = py; dragW = pw;
+				drag(mx, my);
+			} else if (RenderUtil.inside(mx, my, px, py + SV_H + PICK_GAP - 2, pw, HUE_H + 4)) {
+				dragColor = cs; dragMode = 2; dragX = px; dragY = py; dragW = pw;
+				drag(mx, my);
 			}
 		} else if (s instanceof KeybindSetting ks) {
 			pendingOut[0] = () -> ks.listening = !ks.listening;

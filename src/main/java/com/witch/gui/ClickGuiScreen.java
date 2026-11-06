@@ -344,6 +344,10 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
+		if (SettingRenderer.dragging()) {
+			SettingRenderer.drag(click.x(), click.y());
+			return true;
+		}
 		if (slider != null) {
 			slider.setFraction((float) ((click.x() - sliderX) / sliderW));
 			return true;
@@ -353,7 +357,8 @@ public class ClickGuiScreen extends Screen {
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent click) {
-		boolean was = slider != null;
+		boolean was = slider != null || SettingRenderer.dragging();
+		SettingRenderer.release();
 		if (slider != null) Config.save();
 		slider = null;
 		return was || super.mouseReleased(click);
