@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Player;
 /**
  * Tracers baseados no Tracers.java do Meteor (linhas do centro da tela, alvo cabeca/corpo/pes, stem,
  * cor por distancia, ignore self/invisiveis, max distance). Aqui so desenham para os alvos do
- * Player ESP, Farm ESP e Storage ESP, que precisam estar ligados.
+ * Player ESP, Farm ESP, Storage ESP e X-Ray, que precisam estar ligados.
  */
 public class TracersModule extends Module implements EspSource {
 	/** Alpha padrao das cores do Meteor (127/255). */
@@ -28,6 +28,7 @@ public class TracersModule extends Module implements EspSource {
 	private final OreSetting players = add(new OreSetting("Player ESP", true, 5));
 	private final OreSetting farm = add(new OreSetting("Farm ESP", true, 2));
 	private final OreSetting storage = add(new OreSetting("Storage ESP", true, 3));
+	private final OreSetting xray = add(new OreSetting("X-Ray", true, 1));
 
 	public TracersModule() {
 		super("Tracers", Category.VISUALS);
@@ -99,6 +100,9 @@ public class TracersModule extends Module implements EspSource {
 		}
 		if (storage.enabled() && isOn(StorageEspModule.class)) {
 			blocks(esp, StorageEspModule.blocks(), storage.color(), mx, my, mz);
+		}
+		if (xray.enabled() && isOn(XRayModule.class)) {
+			blocks(esp, XRayModule.blocks(), xray.color(), mx, my, mz);
 		}
 	}
 

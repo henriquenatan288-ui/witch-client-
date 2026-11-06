@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 public class XRayModule extends Module {
-	private static final int MAX_BLOCKS = 64;
+	private static final int MAX_BLOCKS = 96;
 	private static final int SCAN_INTERVAL_TICKS = 20;
 
 	private static XRayModule instance;
@@ -25,6 +25,7 @@ public class XRayModule extends Module {
 
 	private final IntSetting range;
 	private final IntSetting fill;
+	private final IntSetting exposedOnly;
 
 	private int cooldown = 0;
 
@@ -34,6 +35,7 @@ public class XRayModule extends Module {
 
 		range = add(new IntSetting("Range", 8, 24, 16, ""));
 		fill = add(new IntSetting("Fill opacity", 0, 50, 15, "%"));
+		exposedOnly = add(new IntSetting("Exposed only (0/1)", 0, 1, 1, ""));
 
 		// nome, ligado por padrao, cor (indice da paleta), blocos
 		ore("Diamond", true, 1, Blocks.DIAMOND_ORE, Blocks.DEEPSLATE_DIAMOND_ORE);
@@ -78,6 +80,17 @@ public class XRayModule extends Module {
 		blocks = List.of();
 	}
 
+	/** Exposto = algum lado encosta em ar, agua, lava ou outro bloco que nao oculta (vidro, folhas...). */
+	private static boolean exposed(net.minecraft.client.multiplayer.ClientLevel level, BlockPos p) {
+		BlockPos.MutableBlockPos n = new BlockPos.MutableBlockPos();
+		for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
+			n.set(p.getX() + d.getStepX(), p.getY() + d.getStepY(), p.getZ() + d.getStepZ());
+			BlockState s = level.getBlockState(n);
+			if (s.isAir() || !s.getFluidState().isEmpty() || !s.canOcclude()) return true;
+		}
+		return false;
+	}
+
 	@Override
 	public void onTick() {
 		if (--cooldown > 0) return;
@@ -104,7 +117,7 @@ public class XRayModule extends Module {
 					pos.set(cx + dx, cy + dy, cz + dz);
 					BlockState state = level.getBlockState(pos);
 					OreSetting os = byBlock.get(state.getBlock());
-					if (os != null && os.enabled()) {
+					if (os != null && os.enabled() && (exposedOnly.get() == 0 || exposed(level, pos))) {
 						found.add(new int[]{pos.getX(), pos.getY(), pos.getZ(), os.color()});
 					}
 				}
