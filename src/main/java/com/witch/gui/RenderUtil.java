@@ -27,58 +27,37 @@ public final class RenderUtil {
 		roundRect(g, x + 1, y + 1, w - 2, h - 2, Math.max(0, r - 1), alpha(0xFF050505, 0.62f * a));
 	}
 
-	/** Retangulo arredondado com borda suavizada (pixel de transicao com alfa parcial). */
+	private static final net.minecraft.resources.Identifier ROUND =
+			net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/round.png");
+	private static final int RT = 64, RC = 28, RM = RT - 2 * RC;
+
+	/**
+	 * Retangulo arredondado: 9 blits de uma textura branca pre-suavizada (tintada pela cor).
+	 * Antes eram dezenas de fills por retangulo (cada canto linha a linha), o que derrubava o FPS no celular.
+	 */
 	public static void roundRect(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
-		if (w <= 0 || h <= 0) return;
-		// Resolucao real da tela: com GUI scale 2-4 cada "pixel" do GUI e um bloco de 2-4 pixels,
-		// por isso cantos/bordas ficavam serrilhados. Aqui desenhamos em pixels do dispositivo.
-		int gs = (int) Math.round(net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale());
-		if (gs > 1 && radius > 0) {
-			g.pose().pushMatrix();
-			g.pose().scale(1f / gs, 1f / gs);
-			roundRectRaw(g, x * gs, y * gs, w * gs, h * gs, radius * gs, color);
-			g.pose().popMatrix();
+		if (w <= 0 || h <= 0 || ((color >>> 24) & 0xFF) == 0) return;
+		int r = Math.min(radius, Math.min(w, h) / 2);
+		if (r <= 0) {
+			g.fill(x, y, x + w, y + h, color);
 			return;
 		}
-		roundRectRaw(g, x, y, w, h, radius, color);
-	}
-
-	private static void roundRectRaw(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
-		if (w <= 0 || h <= 0) return;
-		int r = Math.max(0, Math.min(radius, Math.min(w, h) / 2));
-		// O miolo (sem cantos) e um retangulo so: 1 fill em vez de 1 por linha.
-		int midTop = r;
-		int midBottom = h - r;
-		if (midBottom > midTop) {
-			g.fill(x, y + midTop, x + w, y + midBottom, color);
+		var P = net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED;
+		int mw = w - 2 * r, mh = h - 2 * r;
+		int x2 = x + w - r, y2 = y + h - r;
+		g.blit(P, ROUND, x, y, 0f, 0f, r, r, RC, RC, RT, RT, color);
+		g.blit(P, ROUND, x2, y, (float) (RT - RC), 0f, r, r, RC, RC, RT, RT, color);
+		g.blit(P, ROUND, x, y2, 0f, (float) (RT - RC), r, r, RC, RC, RT, RT, color);
+		g.blit(P, ROUND, x2, y2, (float) (RT - RC), (float) (RT - RC), r, r, RC, RC, RT, RT, color);
+		if (mw > 0) {
+			g.blit(P, ROUND, x + r, y, (float) RC, 0f, mw, r, RM, RC, RT, RT, color);
+			g.blit(P, ROUND, x + r, y2, (float) RC, (float) (RT - RC), mw, r, RM, RC, RT, RT, color);
 		}
-		for (int i = 0; i < h; i++) {
-			if (i >= midTop && i < midBottom) {
-				i = midBottom - 1;
-				continue;
-			}
-			double edge = 0.0;
-			if (r > 0) {
-				if (i < r) {
-					edge = cornerEdge(r, r - i - 0.5);
-				} else if (i >= h - r) {
-					edge = cornerEdge(r, i + 0.5 - (h - r));
-				}
-			}
-			int full = (int) Math.ceil(edge);
-			g.fill(x + full, y + i, x + w - full, y + i + 1, color);
-			if (full > edge && full >= 1) {
-				float coverage = (float) (full - edge);
-				int c = alpha(color, coverage);
-				g.fill(x + full - 1, y + i, x + full, y + i + 1, c);
-				g.fill(x + w - full, y + i, x + w - full + 1, y + i + 1, c);
-			}
+		if (mh > 0) {
+			g.blit(P, ROUND, x, y + r, 0f, (float) RC, r, mh, RC, RM, RT, RT, color);
+			g.blit(P, ROUND, x2, y + r, (float) (RT - RC), (float) RC, r, mh, RC, RM, RT, RT, color);
+			if (mw > 0) g.blit(P, ROUND, x + r, y + r, (float) RC, (float) RC, mw, mh, RM, RM, RT, RT, color);
 		}
-	}
-
-	private static double cornerEdge(int r, double dy) {
-		double dx = Math.sqrt(Math.max(0.0, (double) r * r - dy * dy));
-		return r - dx;
 	}
 
 	public static boolean inside(double mx, double my, int x, int y, int w, int h) {
