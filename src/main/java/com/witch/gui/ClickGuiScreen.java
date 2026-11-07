@@ -180,8 +180,8 @@ public class ClickGuiScreen extends Screen {
 		// cabecalho
 		int fh = FontUtil.height();
 		int hy = headY();
-		int lw = Math.max(20, (fx(230) - fx(30)) * 4 / 5);
-		WitchLogo.draw(g, fx(32), fy(34) - WitchLogo.height(lw) / 2, lw, a * 0.95f);
+		int lw = Math.max(18, (fx(230) - fx(30)) * 11 / 20);
+		WitchLogo.draw(g, fx(40), fy(38) - WitchLogo.height(lw) / 2, lw, a * 0.95f);
 		int sx = searchX();
 		int sw = searchW();
 		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
@@ -225,7 +225,7 @@ public class ClickGuiScreen extends Screen {
 			}
 			CategoryIcons.draw(g, c, bx + 7, ry + 5, RenderUtil.alpha(sel ? PURPLE : TXT_DIM, a));
 			String nm = c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
-			FontUtil.draw(g, nm, bx + 19, ry + (17 - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
+			FontUtil.draw(g, ModuleRow.fit(nm, bw - 21), bx + 19, ry + (17 - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
 		}
 		int ey = editY();
 		String fps = Minecraft.getInstance().getFps() + " FPS";
