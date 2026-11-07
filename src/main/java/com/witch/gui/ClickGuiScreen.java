@@ -224,7 +224,7 @@ public class ClickGuiScreen extends Screen {
 				RenderUtil.roundRect(g, bx, ry, bw, 17, 5, RenderUtil.alpha(0xFFFFFFFF, a * 0.06f));
 			}
 			CategoryIcons.draw(g, c, bx + 7, ry + 5, RenderUtil.alpha(sel ? PURPLE : TXT_DIM, a));
-			String nm = c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
+			String nm = c == Category.MOVEMENT ? "Move" : c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
 			FontUtil.draw(g, ModuleRow.fit(nm, bw - 21), bx + 19, ry + (17 - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
 		}
 		int ey = editY();
@@ -283,10 +283,10 @@ public class ClickGuiScreen extends Screen {
 		if (tipNow != null && System.currentTimeMillis() - tipSince > 450) {
 			String d = ModuleDescriptions.of(tipNow.name);
 			if (d != null && !d.isEmpty()) {
-				int tw = Math.min(this.width - 12, FontUtil.width(d) + 12);
+				int tw = Math.min(ww - 16, FontUtil.width(d) + 12);
 				int th = fh + 8;
-				int tx = Mth.clamp(mx + 10, 4, this.width - tw - 4);
-				int ty = Math.min(this.height - th - 4, my + 12);
+				int tx = Mth.clamp(mx + 10, wx + 6, wx + ww - tw - 6);
+				int ty = Mth.clamp(my + 12, wy + 6, wy + wh - th - 6);
 				RenderUtil.roundRect(g, tx - 1, ty - 1, tw + 2, th + 2, 5, RenderUtil.alpha(0xFFFFFFFF, a * 0.2f));
 				RenderUtil.roundRect(g, tx, ty, tw, th, 4, RenderUtil.alpha(0xFF0C0C0C, a * 0.96f));
 				FontUtil.draw(g, ModuleRow.fit(d, tw - 10), tx + 6, ty + 4, RenderUtil.alpha(TXT, a));
