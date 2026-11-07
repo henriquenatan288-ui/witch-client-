@@ -65,19 +65,8 @@ public class WitchTitleScreen extends Screen {
 		int w = this.width;
 		int h = this.height;
 
-		// fundo: degrade quase preto com um toque de roxo
-		int bands = 32;
-		for (int i = 0; i < bands; i++) {
-			int c = RenderUtil.mix(0xFF050505, 0xFF1C1C1C, i / (float) (bands - 1));
-			g.fill(0, h * i / bands, w, h * (i + 1) / bands + 1, c);
-		}
-		for (int i = 0; i < STARS; i++) {
-			float tw = 0.30f + 0.55f * (float) (0.5 + 0.5 * Math.sin(sec * 1.5 + SP[i]));
-			int px = Math.round(SX[i] * w + (mx - w / 2f) * (0.004f + 0.012f * SP[i] / 6.3f)), py = Math.round(SY[i] * h + (my - h / 2f) * (0.004f + 0.012f * SP[i] / 6.3f));
-			g.fill(px, py, px + 1, py + 1, RenderUtil.alpha(0xFFFFFFFF, tw * 0.6f));
-		}
-		shootingStar(g, w, h, sec);
-		waves(g, w, h, sec);
+		// fundo: imagem (caldeirao, chapeu e estrelas ja vem desenhados nela)
+		UiTex.titleBg(g, w, h);
 
 		// marca no canto
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
@@ -88,7 +77,7 @@ public class WitchTitleScreen extends Screen {
 		// area do menu
 		menuX = Math.max(18, w / 14);
 		menuY = Math.max(78, h / 2 - itemH * 5 / 2 + 8);
-		spaced(g, "WELCOME BACK", menuX, menuY - 46, 0xFF8A8A8A);
+		spaced(g, "WELCOME BACK", menuX, menuY - 46, 0xFF4DBA5E);
 		String nick = TitleSkin.nick();
 		FontUtil.draw(g, nick, menuX + 1, menuY - 33, 0xFF2A2A2A);
 		FontUtil.draw(g, nick, menuX, menuY - 34, 0xFFFFFFFF);
@@ -103,8 +92,8 @@ public class WitchTitleScreen extends Screen {
 			float ent = Math.max(0f, Math.min(1f, (System.currentTimeMillis() - born - 150L - i * 90L) / 450f));
 			ent = 1f - (1f - ent) * (1f - ent) * (1f - ent);
 			int bx = menuX - 8 - Math.round((1f - ent) * 22f), bw = itemW + 16, bh = itemH - 4;
-			RenderUtil.roundRect(g, bx, y, bw, bh, bh / 2, RenderUtil.alpha(0xFFFFFFFF, (0.12f + 0.30f * ha) * ent));
-			RenderUtil.roundRect(g, bx + 1, y + 1, bw - 2, bh - 2, bh / 2 - 1, RenderUtil.alpha(0xFF050505, (0.30f + 0.15f * ha) * ent));
+			int lv = Math.round(0x90 + 0x6F * ha);
+			UiTex.button(g, bx, y, bw, bh, (lv << 16) | (lv << 8) | lv, 0.95f * ent);
 			int shift = Math.round(2 * ha);
 			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.alpha(RenderUtil.mix(0xFFC8C8C8, 0xFFFFFFFF, ha), ent));
 		}

@@ -14,6 +14,8 @@ public final class UiTex {
 
 	public static final int MW = 1100, MH = 620;
 	public static final int BW = 800, BH = 168;
+	private static final Identifier TBG = Identifier.fromNamespaceAndPath("witch", "textures/gui/title_bg.png");
+	public static final int TBW = 1280, TBH = 576;
 	/** Larguras (em px da textura) das pontas do botao que nao podem esticar (cantos arredondados e brilho). */
 	private static final int CAP_L = 78, CAP_R = 78;
 
@@ -37,5 +39,13 @@ public final class UiTex {
 		int mw = w - lc - rc;
 		if (mw > 0) g.blit(RenderPipelines.GUI_TEXTURED, BTN, x + lc, y, (float) CAP_L, 0f, mw, h, BW - CAP_L - CAP_R, BH, BW, BH, c);
 		g.blit(RenderPipelines.GUI_TEXTURED, BTN, x + w - rc, y, (float) (BW - CAP_R), 0f, rc, h, CAP_R, BH, BW, BH, c);
+	}
+
+	/** Fundo da tela inicial cobrindo a tela inteira (corta o excesso, sem esticar). */
+	public static void titleBg(GuiGraphicsExtractor g, int w, int h) {
+		float sc = Math.max(w / (float) TBW, h / (float) TBH);
+		int vw = Math.min(TBW, Math.round(w / sc)), vh = Math.min(TBH, Math.round(h / sc));
+		int u0 = (TBW - vw) / 2, v0 = (TBH - vh) / 2;
+		g.blit(RenderPipelines.GUI_TEXTURED, TBG, 0, 0, (float) u0, (float) v0, w, h, vw, vh, TBW, TBH, 0xFFFFFFFF);
 	}
 }
