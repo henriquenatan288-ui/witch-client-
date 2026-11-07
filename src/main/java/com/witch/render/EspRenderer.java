@@ -166,12 +166,10 @@ public final class EspRenderer {
 		CameraRenderState crs = context.levelState().cameraRenderState;
 		Vec3 cam = crs.pos;
 
-		// 1) bob matrix (igual GameRenderer 26.2)
-		Matrix4f bobMatrix = buildBobMatrix(crs, mc);
-
-		// 2) origem = centro da tela com projection*bob (Meteor updateScreenCenter adaptado)
-		Vec3 origin = screenCenter(crs, bobMatrix);
-		// origem invalida (matriz singular em algum frame) fazia os tracers saltarem para um ponto errado
+		// origem dos tracers: ponto logo a frente do olho, na direcao da camera (so rotacao da view).
+		// Antes vinha de projection*bob invertida: o bob/precisao fazia a ponta inicial tremer ao andar e virar.
+		Vector3f fwd = new Matrix4f(crs.viewRotationMatrix).invert().transformDirection(0f, 0f, -1f, new Vector3f());
+		Vec3 origin = new Vec3(cam.x + fwd.x * 0.3, cam.y + fwd.y * 0.3, cam.z + fwd.z * 0.3);
 		if (!Double.isFinite(origin.x) || !Double.isFinite(origin.y) || !Double.isFinite(origin.z)) return;
 
 		// 3) camera translate + inverseBob nos vertices (Meteor mul inverseBob no modelview)

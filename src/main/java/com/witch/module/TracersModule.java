@@ -18,6 +18,7 @@ public class TracersModule extends Module implements EspSource {
 	private static final float ALPHA = 127f / 255f;
 
 	private final IntSetting range = add(new IntSetting("Max distance", 16, 256, 256, ""));
+	private final IntSetting maxTargets = add(new IntSetting("Max targets", 10, 300, 80, ""));
 	private final IntSetting height = add(new IntSetting("Height", 0, 100, 50, "%"));
 	private final IntSetting thickness = add(new IntSetting("Thickness", 1, 8, 2, ""));
 	private final IntSetting matchEsp = add(new IntSetting("Match ESP color (0/1)", 0, 1, 1, ""));
@@ -116,10 +117,13 @@ public class TracersModule extends Module implements EspSource {
 	private void blocks(Esp esp, java.util.List<int[]> list, int base, double mx, double my, double mz) {
 		boolean dc = distColor.enabled();
 		boolean match = matchEsp.get() == 1;
+		int shown = 0;
 		for (int[] b : list) {
+			if (shown >= maxTargets.get()) break;
 			double dx = b[0] + 0.5 - mx, dy = b[1] + 0.5 - my, dz = b[2] + 0.5 - mz;
 			double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			if (d > range.get()) continue;
+			shown++;
 			int col = dc ? distanceColor(d) : (match && b.length > 3 ? b[3] : base);
 			esp.tracer(b[0] + 0.5, b[1] + height.get() / 100.0, b[2] + 0.5, col, dc ? 1f : ALPHA, thickness.get() * 1.25f);
 		}
