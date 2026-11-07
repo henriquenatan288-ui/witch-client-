@@ -96,6 +96,8 @@ public class XRayModule extends Module {
 		BlockPos.MutableBlockPos n = new BlockPos.MutableBlockPos();
 		for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
 			n.set(p.getX() + d.getStepX(), p.getY() + d.getStepY(), p.getZ() + d.getStepZ());
+			// vizinho em chunk nao carregado vem como ar: nao pode contar como "exposto" (piscava ao carregar)
+			if (!level.hasChunkAt(n)) continue;
 			BlockState st = level.getBlockState(n);
 			if (st.isAir() || !st.getFluidState().isEmpty() || !st.canOcclude()) return true;
 		}
@@ -174,7 +176,7 @@ public class XRayModule extends Module {
 		}
 
 		if (--cooldown > 0) return;
-		cooldown = 10;
+		cooldown = 5;
 		cache.keySet().removeIf(k -> {
 			int kx = (int) (k >> 32), kz = (int) (long) k;
 			return Math.abs(kx - pcx) > r + 1 || Math.abs(kz - pcz) > r + 1;

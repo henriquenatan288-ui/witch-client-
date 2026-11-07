@@ -171,6 +171,8 @@ public final class EspRenderer {
 
 		// 2) origem = centro da tela com projection*bob (Meteor updateScreenCenter adaptado)
 		Vec3 origin = screenCenter(crs, bobMatrix);
+		// origem invalida (matriz singular em algum frame) fazia os tracers saltarem para um ponto errado
+		if (!Double.isFinite(origin.x) || !Double.isFinite(origin.y) || !Double.isFinite(origin.z)) return;
 
 		// 3) camera translate + inverseBob nos vertices (Meteor mul inverseBob no modelview)
 		pose.pushPose();
