@@ -12,10 +12,10 @@ public final class UiTex {
 	private static final Identifier MENU = Identifier.fromNamespaceAndPath("witch", "textures/gui/menu.png");
 	private static final Identifier BTN = Identifier.fromNamespaceAndPath("witch", "textures/gui/button.png");
 
-	public static final int MW = 1100, MH = 515;
-	public static final int BW = 765, BH = 143;
-	/** Larguras (em px da textura) das pontas do botao que nao podem esticar: canto inclinado e estrela. */
-	private static final int CAP_L = 96, CAP_R = 166;
+	public static final int MW = 1100, MH = 620;
+	public static final int BW = 800, BH = 168;
+	/** Larguras (em px da textura) das pontas do botao que nao podem esticar (cantos arredondados e brilho). */
+	private static final int CAP_L = 78, CAP_R = 78;
 
 	private static int argb(int rgb, float alpha) {
 		return (Mth.clamp((int) (alpha * 255f), 0, 255) << 24) | (rgb & 0xFFFFFF);
