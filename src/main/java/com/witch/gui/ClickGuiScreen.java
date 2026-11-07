@@ -30,8 +30,6 @@ import static com.witch.gui.ClickGuiMetrics.*;
  * modulos em lista com switch e ajustes que abrem embaixo do modulo. Preto e branco, bordas arredondadas.
  */
 public class ClickGuiScreen extends Screen {
-	private static final int HEAD = 24;
-	private static final int SIDE = 78;
 
 	private static final Set<Module> OPEN = new HashSet<>();
 	private static Category selected = Category.values()[0];
@@ -66,17 +64,34 @@ public class ClickGuiScreen extends Screen {
 		return false;
 	}
 
+	/** A moldura e uma imagem 1464x686: todas as posicoes abaixo sao fracoes dela (em px da imagem original). */
+	private static final float IW = 1464f, IH = 686f;
+	private static final int PURPLE = 0xFF8A3FFC;
+
 	private void layout() {
-		ww = Math.min(this.width - 12, 380);
-		wh = Math.min(this.height - 12, 230);
+		ww = Math.min(this.width - 12, 440);
+		wh = Math.round(ww * IH / IW);
+		if (wh > this.height - 12) {
+			wh = this.height - 12;
+			ww = Math.round(wh * IW / IH);
+		}
 		wx = (this.width - ww) / 2;
 		wy = (this.height - wh) / 2;
 	}
 
-	private int cx() { return wx + SIDE + 6; }
-	private int cy() { return wy + HEAD + 2; }
-	private int cw() { return ww - SIDE - 12; }
-	private int ch() { return wh - HEAD - 8; }
+	private int fx(float px) { return wx + Math.round(px / IW * ww); }
+	private int fy(float py) { return wy + Math.round(py / IH * wh); }
+
+	private int cx() { return fx(240) + 4; }
+	private int cy() { return fy(64) + 4; }
+	private int cw() { return fx(1453) - fx(240) - 8; }
+	private int ch() { return fy(669) - fy(64) - 8; }
+
+	private int sideX() { return fx(14); }
+	private int sideW() { return fx(234) - fx(14); }
+	private int catY(int i) { return fy(80) + i * 18; }
+	private int editY() { return fy(660) - 19; }
+	private int headY() { return fy(30) - 7; }
 
 	private List<Module> modules() {
 		List<Module> out = new ArrayList<>();
@@ -128,8 +143,8 @@ public class ClickGuiScreen extends Screen {
 		return h;
 	}
 
-	private int searchW() { return Math.min(96, Math.max(50, ww - SIDE - 150)); }
-	private int searchX() { return wx + ww - 10 - searchW(); }
+	private int searchW() { return Math.min(96, Math.max(50, ww / 6)); }
+	private int searchX() { return fx(1350) - searchW(); }
 
 	private static String subtitle(Category c) {
 		return switch (c) {
@@ -160,27 +175,28 @@ public class ClickGuiScreen extends Screen {
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x30000000, a));
 
-		float op = com.witch.module.GuiSettingsModule.opacity();
-		RenderUtil.roundRect(g, wx, wy, ww, wh, 9, RenderUtil.alpha(0xFFFFFFFF, a * 0.20f));
-		RenderUtil.roundRect(g, wx + 1, wy + 1, ww - 2, wh - 2, 8, RenderUtil.alpha(0xFF0A0A0A, a * Math.min(0.92f, 0.55f + op)));
+		UiTex.menu(g, wx, wy, ww, wh, a);
 
 		// cabecalho
-		WitchLogo.draw(g, wx + 9, wy + 5, 26, a * 0.95f);
 		int fh = FontUtil.height();
+		int hy = headY();
+		int lw = Math.max(20, (fx(230) - fx(30)) * 4 / 5);
+		WitchLogo.draw(g, fx(32), fy(34) - WitchLogo.height(lw) / 2, lw, a * 0.95f);
 		int sx = searchX();
 		int sw = searchW();
 		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
-		CategoryIcons.draw(g, selected, cx(), wy + 5 + (14 - 7) / 2, RenderUtil.alpha(TXT, a));
-		FontUtil.draw(g, title, cx() + 11, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(TXT, a));
-		int chipX = cx() + 11 + FontUtil.width(title) + 7;
+		int tx0 = fx(300);
+		CategoryIcons.draw(g, selected, tx0, hy + (14 - 7) / 2, RenderUtil.alpha(PURPLE, a));
+		FontUtil.draw(g, title, tx0 + 11, hy + (14 - fh) / 2, RenderUtil.alpha(TXT, a));
+		int chipX = tx0 + 11 + FontUtil.width(title) + 7;
 		String sub = search.isEmpty() ? subtitle(selected) : "All modules";
 		int chipW = FontUtil.width(sub) + 12;
 		if (chipX + chipW < sx - 4) {
-			RenderUtil.roundRect(g, chipX, wy + 5, chipW, 14, 7, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f));
-			FontUtil.draw(g, sub, chipX + 6, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
+			RenderUtil.roundRect(g, chipX, hy, chipW, 14, 7, RenderUtil.alpha(PURPLE, a * 0.18f));
+			FontUtil.draw(g, sub, chipX + 6, hy + (14 - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
 		}
-		RenderUtil.roundRect(g, sx, wy + 5, sw, 14, 7, RenderUtil.alpha(0xFFFFFFFF, a * (searchFocused ? 0.30f : 0.14f)));
-		RenderUtil.roundRect(g, sx + 1, wy + 6, sw - 2, 12, 6, RenderUtil.alpha(0xFF0C0C0C, a * 0.9f));
+		RenderUtil.roundRect(g, sx, hy, sw, 14, 7, RenderUtil.alpha(PURPLE, a * (searchFocused ? 0.80f : 0.35f)));
+		RenderUtil.roundRect(g, sx + 1, hy + 1, sw - 2, 12, 6, RenderUtil.alpha(0xFF0C0A12, a * 0.95f));
 		String shown;
 		int col;
 		if (search.isEmpty() && !searchFocused) {
@@ -191,29 +207,33 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			col = TXT;
 		}
-		FontUtil.draw(g, ModuleRow.fit(shown, sw - 12), sx + 6, wy + 5 + (14 - fh) / 2, RenderUtil.alpha(col, a));
-		RenderUtil.roundRect(g, wx + 6, wy + HEAD - 1, ww - 12, 1, 0, RenderUtil.alpha(0xFFFFFFFF, a * 0.10f));
+		FontUtil.draw(g, ModuleRow.fit(shown, sw - 12), sx + 6, hy + (14 - fh) / 2, RenderUtil.alpha(col, a));
 
 		// menu lateral
 		Category[] cats = Category.values();
+		int bx = sideX(), bw = sideW();
 		for (int i = 0; i < cats.length; i++) {
 			Category c = cats[i];
-			int ry = wy + HEAD + 6 + i * 19;
+			int ry = catY(i);
 			boolean sel = c == selected && search.isEmpty();
-			boolean hov = RenderUtil.inside(mx, my, wx + 7, ry, SIDE - 10, 17);
-			if (sel || hov) RenderUtil.roundRect(g, wx + 7, ry, SIDE - 10, 17, 6, RenderUtil.alpha(0xFFFFFFFF, a * (sel ? 0.13f : 0.06f)));
-			CategoryIcons.draw(g, c, wx + 13, ry + 5, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
+			boolean hov = RenderUtil.inside(mx, my, bx, ry, bw, 17);
+			if (sel) {
+				RenderUtil.roundRect(g, bx, ry, bw, 17, 5, RenderUtil.alpha(PURPLE, a * 0.28f));
+				RenderUtil.roundRect(g, bx, ry + 1, 2, 15, 1, RenderUtil.alpha(PURPLE, a));
+			} else if (hov) {
+				RenderUtil.roundRect(g, bx, ry, bw, 17, 5, RenderUtil.alpha(0xFFFFFFFF, a * 0.06f));
+			}
+			CategoryIcons.draw(g, c, bx + 7, ry + 5, RenderUtil.alpha(sel ? PURPLE : TXT_DIM, a));
 			String nm = c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
-			FontUtil.draw(g, nm, wx + 25, ry + (17 - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
+			FontUtil.draw(g, nm, bx + 19, ry + (17 - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
 		}
-		int ey = wy + wh - 24;
+		int ey = editY();
 		String fps = Minecraft.getInstance().getFps() + " FPS";
-		FontUtil.draw(g, fps, wx + 7 + (SIDE - 10 - FontUtil.width(fps)) / 2, ey - fh - 3, RenderUtil.alpha(TXT_DIM, a));
-		boolean eh = RenderUtil.inside(mx, my, wx + 7, ey, SIDE - 10, 17);
-		RenderUtil.roundRect(g, wx + 7, ey, SIDE - 10, 17, 6, RenderUtil.alpha(0xFFFFFFFF, a * (eh ? 0.16f : 0.07f)));
+		FontUtil.draw(g, fps, bx + (bw - FontUtil.width(fps)) / 2, ey - fh - 3, RenderUtil.alpha(TXT_DIM, a));
+		boolean eh = RenderUtil.inside(mx, my, bx, ey, bw, 17);
+		RenderUtil.roundRect(g, bx, ey, bw, 17, 5, RenderUtil.alpha(PURPLE, a * (eh ? 0.35f : 0.16f)));
 		String et = "Edit HUD";
-		FontUtil.draw(g, et, wx + 7 + (SIDE - 10 - FontUtil.width(et)) / 2, ey + (17 - fh) / 2, RenderUtil.alpha(eh ? TXT : TXT_DIM, a));
-		RenderUtil.roundRect(g, wx + SIDE, wy + HEAD + 4, 1, wh - HEAD - 10, 0, RenderUtil.alpha(0xFFFFFFFF, a * 0.08f));
+		FontUtil.draw(g, et, bx + (bw - FontUtil.width(et)) / 2, ey + (17 - fh) / 2, RenderUtil.alpha(eh ? TXT : TXT_DIM, a));
 
 		// lista de modulos (grade de 2 colunas)
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
@@ -237,23 +257,17 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
 			float t = m.toggleAnim;
-			int edge = RenderUtil.mix(0xFFFFFFFF, Theme.GUI_ACCENT, t);
-			RenderUtil.roundRect(g, sx0, sy0, sl.w, CARD, 7, RenderUtil.alpha(edge, a * (0.10f + 0.04f * m.hoverAnim + 0.30f * t)));
-			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 6, RenderUtil.alpha(0xFF0D0D10, a * 0.92f));
-			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 6, RenderUtil.alpha(0xFFFFFFFF, a * (0.035f * m.hoverAnim + 0.07f * t)));
+			int lv = Math.round(0x70 + (0xFF - 0x70) * t + 0x30 * m.hoverAnim * (1f - t));
+			lv = Math.min(255, lv);
+			UiTex.button(g, sx0, sy0, sl.w, CARD, (lv << 16) | (lv << 8) | lv, a);
 			int tc = RenderUtil.mix(TXT_DIM, TXT, t);
-			CategoryIcons.draw(g, m.category, sx0 + 6, sy0 + (CARD - 7) / 2, RenderUtil.alpha(tc, a));
+			CategoryIcons.draw(g, m.category, sx0 + 15, sy0 + (CARD - 7) / 2, RenderUtil.alpha(tc, a));
 			boolean has = !m.settings().isEmpty();
-			int right = 22 + (has ? 12 : 0);
-			FontUtil.draw(g, ModuleRow.fit(m.name, sl.w - 20 - right), sx0 + 18, sy0 + (CARD - fh) / 2, RenderUtil.alpha(tc, a));
+			FontUtil.draw(g, ModuleRow.fit(m.name, sl.w - 28 - 40), sx0 + 26, sy0 + (CARD - fh) / 2, RenderUtil.alpha(tc, a));
 			if (has) {
 				String ar = OPEN.contains(m) ? "-" : "+";
-				FontUtil.draw(g, ar, sx0 + sl.w - 34 + (10 - FontUtil.width(ar)) / 2, sy0 + (CARD - fh) / 2, RenderUtil.alpha(OPEN.contains(m) ? TXT : TXT_DIM, a));
+				FontUtil.draw(g, ar, sx0 + sl.w - 32 + (10 - FontUtil.width(ar)) / 2, sy0 + (CARD - fh) / 2, RenderUtil.alpha(OPEN.contains(m) ? TXT : TXT_DIM, a));
 			}
-			int swx = sx0 + sl.w - 22, swy = sy0 + (CARD - 8) / 2;
-			RenderUtil.roundRect(g, swx, swy, 16, 8, 4, RenderUtil.alpha(RenderUtil.mix(0xFF2C2C2C, 0xFFE8E8E8, t), a));
-			int kx = swx + 1 + Math.round(8 * t);
-			RenderUtil.roundRect(g, kx, swy + 1, 6, 6, 3, RenderUtil.alpha(RenderUtil.mix(0xFF9A9A9A, 0xFF111111, t), a));
 			if (hover) tipNow = m;
 		}
 		g.disableScissor();
@@ -286,18 +300,22 @@ public class ClickGuiScreen extends Screen {
 		double mx = click.x(), my = click.y();
 		int button = click.button();
 		int fh = FontUtil.height();
-		searchFocused = RenderUtil.inside(mx, my, searchX(), wy + 5, searchW(), 14);
+		if (RenderUtil.inside(mx, my, fx(1395), fy(8), fx(1455) - fx(1395), fy(52) - fy(8))) {
+			this.onClose();
+			return true;
+		}
+		searchFocused = RenderUtil.inside(mx, my, searchX(), headY(), searchW(), 14);
 		if (searchFocused) return true;
 		Category[] cats = Category.values();
 		for (int i = 0; i < cats.length; i++) {
-			if (RenderUtil.inside(mx, my, wx + 7, wy + HEAD + 6 + i * 19, SIDE - 10, 17)) {
+			if (RenderUtil.inside(mx, my, sideX(), catY(i), sideW(), 17)) {
 				selected = cats[i];
 				search = "";
 				scroll = 0f;
 				return true;
 			}
 		}
-		if (RenderUtil.inside(mx, my, wx + 7, wy + wh - 24, SIDE - 10, 17)) {
+		if (RenderUtil.inside(mx, my, sideX(), editY(), sideW(), 17)) {
 			Minecraft.getInstance().gui.setScreen(new HudEditScreen());
 			return true;
 		}
@@ -329,7 +347,7 @@ public class ClickGuiScreen extends Screen {
 			}
 			if (my >= sy0 && my < sy0 + CARD && mx >= sx0 && mx < sx0 + sl.w) {
 				boolean has = !m.settings().isEmpty();
-				boolean onArrow = has && mx >= sx0 + sl.w - 36 && mx < sx0 + sl.w - 22;
+				boolean onArrow = has && mx >= sx0 + sl.w - 36 && mx < sx0 + sl.w - 20;
 				if (has && (button == 1 || onArrow)) {
 					if (!OPEN.remove(m)) OPEN.add(m);
 				} else if (button == 0) {
