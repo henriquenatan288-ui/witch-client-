@@ -166,10 +166,14 @@ public final class EspRenderer {
 		CameraRenderState crs = context.levelState().cameraRenderState;
 		Vec3 cam = crs.pos;
 
-		// origem dos tracers: ponto logo a frente do olho, na direcao da camera (so rotacao da view).
-		// Antes vinha de projection*bob invertida: o bob/precisao fazia a ponta inicial tremer ao andar e virar.
-		Vector3f fwd = new Matrix4f(crs.viewRotationMatrix).invert().transformDirection(0f, 0f, -1f, new Vector3f());
-		Vec3 origin = new Vec3(cam.x + fwd.x * 0.3, cam.y + fwd.y * 0.3, cam.z + fwd.z * 0.3);
+		// origem dos tracers = ponto do centro REAL da mira (com bob) a 0,3 bloco do olho.
+		// O frame do mundo usa clip = proj * bob * view * (p - cam); logo o ponto que cai no centro da tela
+		// e p - cam = view^-1 * bob^-1 * (0,0,-d). Conta direta, sem inverter a projecao (era impreciso).
+		// Origem sem bob (versao anterior) fazia o inicio das linhas balancar junto com os passos.
+		Matrix4f bobM = buildBobMatrix(crs, mc);
+		Vector3f vv = new Matrix4f(bobM).invert().transformPosition(0f, 0f, -0.3f, new Vector3f());
+		Vector3f dd = new Matrix4f(crs.viewRotationMatrix).invert().transformPosition(vv);
+		Vec3 origin = new Vec3(cam.x + dd.x, cam.y + dd.y, cam.z + dd.z);
 		if (!Double.isFinite(origin.x) || !Double.isFinite(origin.y) || !Double.isFinite(origin.z)) return;
 
 		// 3) camera translate + inverseBob nos vertices (Meteor mul inverseBob no modelview)

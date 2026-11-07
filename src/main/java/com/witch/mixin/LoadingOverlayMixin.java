@@ -55,7 +55,6 @@ public abstract class LoadingOverlayMixin {
 		int w = mc.getWindow().getGuiScaledWidth();
 		int h = mc.getWindow().getGuiScaledHeight();
 		int ai = (int) (a * 255f) << 24;
-		com.witch.gui.WitchLoading.glow(g, w / 2, h / 2 - 10, Math.min(w, 520) / 2, a);
 		long now = Util.getMillis();
 		if (witch$t0 == 0L) witch$t0 = now;
 		float t = Mth.clamp((now - witch$t0) / 900f, 0f, 1f);
