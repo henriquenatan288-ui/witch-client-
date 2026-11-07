@@ -25,7 +25,7 @@ public final class WitchLoading {
 			int rr = Math.round(r * k);
 			int rh = Math.round(r * k * 0.6f);
 			if (rr < 2 || rh < 2) break;
-			RenderUtil.roundRect(g, cx - rr, cy - rh, rr * 2, rh * 2, rh, RenderUtil.alpha(0xFFFFFFFF, alpha * 0.018f));
+			RenderUtil.roundRect(g, cx - rr, cy - rh, rr * 2, rh * 2, rh, RenderUtil.alpha(0xFF2BE04A, alpha * 0.028f));
 		}
 	}
 
@@ -61,7 +61,7 @@ public final class WitchLoading {
 			if (a <= 0.02f) continue;
 			double ang = i * Math.PI * 2 / n - Math.PI / 2;
 			int x = cx + (int) Math.round(Math.cos(ang) * r), y = cy + (int) Math.round(Math.sin(ang) * r * 0.62);
-			RenderUtil.roundRect(g, x - 1, y - 1, 3, 3, 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.9f));
+			RenderUtil.roundRect(g, x - 1, y - 1, 3, 3, 1, RenderUtil.alpha(0xFF2BE04A, a * 0.9f));
 		}
 	}
 
@@ -73,8 +73,8 @@ public final class WitchLoading {
 		lastMs = nowMs;
 		long elapsed = (nowMs - startMs) / 1000L;
 
-		backdrop(g, w, h, t);
-		stars(g, w, h, t);
+		UiTex.titleBg(g, w, h);
+		g.fill(0, 0, w, h, 0x77000000);
 
 		int cx = w / 2;
 		int cy = h / 2;
@@ -86,8 +86,8 @@ public final class WitchLoading {
 		spinner(g, cx, cy - 38, Math.min(96, w / 3) / 2 + 22, t);
 
 		int dots = (int) (t * 2.5) % 4;
-		FontUtil.draw(g, title, cx - FontUtil.width(title) / 2, cy - 14, 0xFFCFCFCF);
-		FontUtil.draw(g, ".".repeat(dots), cx + FontUtil.width(title) / 2, cy - 14, 0xFFCFCFCF);
+		FontUtil.draw(g, title, cx - FontUtil.width(title) / 2, cy - 14, 0xFFD6F5DC);
+		FontUtil.draw(g, ".".repeat(dots), cx + FontUtil.width(title) / 2, cy - 14, 0xFFD6F5DC);
 
 		// barra
 		int bw = Math.min(180, w - 40);
@@ -96,22 +96,22 @@ public final class WitchLoading {
 		RenderUtil.roundRect(g, bx, by, bw, 3, 1, 0x33FFFFFF);
 		if (progress >= 0f) {
 			int fw = Math.max(3, Math.round(bw * Math.min(1f, progress)));
-			RenderUtil.roundRect(g, bx, by, fw, 3, 1, 0xFFFFFFFF);
+			RenderUtil.roundRect(g, bx, by, fw, 3, 1, 0xFF2BE04A);
 			int sw = Math.min(28, fw);
 			int sx = bx + (int) ((fw - sw) * ((t * 0.8) % 1.0));
 			RenderUtil.roundRect(g, sx, by, sw, 3, 1, 0x66FFFFFF);
 			String pct = Math.round(Math.min(1f, progress) * 100) + "%  -  " + elapsed + "s";
-			FontUtil.draw(g, pct, cx - FontUtil.width(pct) / 2, by + 8, 0xFF8E8E8E);
+			FontUtil.draw(g, pct, cx - FontUtil.width(pct) / 2, by + 8, 0xFF6FA67A);
 		} else {
 			int seg = bw / 4;
 			double p = (t * 0.9) % 1.0;
 			int sx = bx + (int) ((bw + seg) * p) - seg;
 			int x0 = Math.max(bx, sx), x1 = Math.min(bx + bw, sx + seg);
-			if (x1 - x0 > 2) RenderUtil.roundRect(g, x0, by, x1 - x0, 3, 1, 0xFFFFFFFF);
+			if (x1 - x0 > 2) RenderUtil.roundRect(g, x0, by, x1 - x0, 3, 1, 0xFF2BE04A);
 		}
 
 		if (sub != null && !sub.isEmpty()) {
-			FontUtil.draw(g, sub, cx - FontUtil.width(sub) / 2, by + 22, 0xFF8E8E8E);
+			FontUtil.draw(g, sub, cx - FontUtil.width(sub) / 2, by + 22, 0xFF6FA67A);
 		}
 		if (hint == null || hint.isEmpty()) {
 			hint = "Dica: " + TIPS[(int) ((nowMs / 6000L) % TIPS.length)];
@@ -119,9 +119,9 @@ public final class WitchLoading {
 		if (hint != null && !hint.isEmpty()) {
 			long ph = nowMs % 6000L;
 			float fa = Math.min(1f, Math.min(ph, 6000L - ph) / 600f);
-			FontUtil.draw(g, hint, cx - FontUtil.width(hint) / 2, h - 28, RenderUtil.alpha(0xFF8A8A8A, fa));
+			FontUtil.draw(g, hint, cx - FontUtil.width(hint) / 2, h - 28, RenderUtil.alpha(0xFF5E8F68, fa));
 		}
 		String credit = "WITCH CLIENT MADE BY BISTECK";
-		FontUtil.draw(g, credit, w - FontUtil.width(credit) - 8, h - FontUtil.height() - 6, 0xFF555555);
+		FontUtil.draw(g, credit, w - FontUtil.width(credit) - 8, h - FontUtil.height() - 6, 0xFF2F5A3A);
 	}
 }

@@ -31,7 +31,7 @@ public abstract class LoadingOverlayMixin {
 	@Redirect(method = "extractRenderState",
 			at = @At(value = "INVOKE", target = "Ljava/util/function/IntSupplier;getAsInt()I"), require = 0)
 	private int witch$bg(IntSupplier original) {
-		return com.witch.Edition.visuals() ? 0xFF0B0D10 : original.getAsInt();
+		return com.witch.Edition.visuals() ? 0xFF050A06 : original.getAsInt();
 	}
 
 	@Inject(method = "extractProgressBar", at = @At("HEAD"), cancellable = true, require = 0)
@@ -67,7 +67,7 @@ public abstract class LoadingOverlayMixin {
 			int sx = (int) (fx * w), sy = (int) (fy * h);
 			if (Math.abs(sy - h / 2) < h * 0.2f && Math.abs(sx - w / 2) < w * 0.28f) continue;
 			float tw = 0.5f + 0.5f * (float) Math.sin(now / 1000.0 * sp + ph);
-			int c = ((int) (a * ease * tw * 110f) << 24) | 0xFFFFFF;
+			int c = ((int) (a * ease * tw * 110f) << 24) | 0x2BE04A;
 			g.fill(sx, sy, sx + 1, sy + 1, c);
 		}
 		int lw = Math.round(38 + 6 * ease);
