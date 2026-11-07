@@ -171,6 +171,19 @@ public class ClickGuiScreen extends Screen {
 	private int searchW() { return Math.min(80, Math.max(44, ww / 7)); }
 	private int searchX() { return fx(1340) - searchW(); }
 
+	/** Nome curto para caber na vaga estreita da sidebar (o cabecalho mostra o nome inteiro). */
+	private static String shortName(Category c) {
+		return switch (c) {
+			case MOVEMENT -> "Move";
+			case COMBAT -> "Fight";
+			case VISUALS -> "View";
+			case WORLD -> "World";
+			case UTILITY -> "Tools";
+			case HUD -> "HUD";
+			case EFFECTS -> "FX";
+		};
+	}
+
 	private static String subtitle(Category c) {
 		return switch (c) {
 			case MOVEMENT -> "Mobility";
@@ -253,7 +266,7 @@ public class ClickGuiScreen extends Screen {
 				RenderUtil.roundRect(g, bx + 1, ry + 1, bw - 2, bh - 2, 6, RenderUtil.alpha(PURPLE, a * 0.12f));
 			}
 			CategoryIcons.draw(g, c, bx + 6, ry + (bh - 7) / 2, RenderUtil.alpha(sel ? PURPLE : TXT_DIM, a));
-			String nm = c == Category.MOVEMENT ? "Move" : c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
+			String nm = shortName(c);
 			FontUtil.draw(g, ModuleRow.fit(nm, bw - 21), bx + 19, ry + (bh - fh) / 2, RenderUtil.alpha(sel ? TXT : TXT_DIM, a));
 		}
 
