@@ -46,6 +46,27 @@ public class ClickGuiScreen extends Screen {
 
 	private int wx, wy, ww, wh;
 
+	// rolagem por arrasto (toque) e pela barra; clique em cartao/ajuste so vale ao soltar se nao arrastou
+	private Runnable deferred;
+	private double pressY;
+	private float scrollStart;
+	private boolean scrollDrag, barDrag, moved;
+
+	private void startPress(double my) {
+		pressY = my;
+		scrollStart = scroll;
+		scrollDrag = true;
+		moved = false;
+	}
+
+	private void barTo(double my) {
+		int total = contentH(), ch = ch();
+		if (total <= ch) return;
+		int th = Math.max(14, Math.round(ch * (ch / (float) total)));
+		float f = (float) ((my - cy() - th / 2.0) / Math.max(1, ch - th));
+		scroll = Mth.clamp(f, 0f, 1f) * (total - ch);
+	}
+
 	public ClickGuiScreen() {
 		this(null);
 	}
@@ -275,7 +296,7 @@ public class ClickGuiScreen extends Screen {
 		if (total > ch) {
 			int th = Math.max(14, Math.round(ch * (ch / (float) total)));
 			float f = scroll / Math.max(1, total - ch);
-			RenderUtil.roundRect(g, cx + cw - 3, cy + Math.round((ch - th) * f), 2, th, 1, RenderUtil.alpha(0xFFFFFFFF, a * 0.35f));
+			RenderUtil.roundRect(g, cx + cw - 4, cy + Math.round((ch - th) * f), 3, th, 1, RenderUtil.alpha(PURPLE, a * (barDrag ? 0.95f : 0.65f)));
 		}
 
 		// tooltip
@@ -321,6 +342,14 @@ public class ClickGuiScreen extends Screen {
 		}
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
 		if (!RenderUtil.inside(mx, my, cx, cy, cw, ch)) return super.mouseClicked(click, doubled);
+		deferred = null;
+		scrollDrag = false;
+		barDrag = false;
+		if (contentH() > ch && mx >= cx + cw - 10) {
+			barDrag = true;
+			barTo(my);
+			return true;
+		}
 		int base = cy - Math.round(scroll);
 		for (Slot sl : slots()) {
 			Module m = sl.m;
@@ -338,7 +367,10 @@ public class ClickGuiScreen extends Screen {
 							sliderX = sxx + 7;
 							sliderW = Math.max(1, sww - 4 - 14);
 						}
-						if (out[0] != null) out[0].run();
+						if (slid == null && !SettingRenderer.dragging()) {
+							deferred = out[0];
+							startPress(my);
+						}
 						return true;
 					}
 					ry += sh;
@@ -349,14 +381,15 @@ public class ClickGuiScreen extends Screen {
 				boolean has = !m.settings().isEmpty();
 				boolean onArrow = has && mx >= sx0 + sl.w - 36 && mx < sx0 + sl.w - 20;
 				if (has && (button == 1 || onArrow)) {
-					if (!OPEN.remove(m)) OPEN.add(m);
+					deferred = () -> { if (!OPEN.remove(m)) OPEN.add(m); };
 				} else if (button == 0) {
-					m.toggle();
-					Config.save();
+					deferred = () -> { m.toggle(); Config.save(); };
 				}
+				startPress(my);
 				return true;
 			}
 		}
+		startPress(my);
 		return true;
 	}
 
@@ -370,12 +403,30 @@ public class ClickGuiScreen extends Screen {
 			slider.setFraction((float) ((click.x() - sliderX) / sliderW));
 			return true;
 		}
+		if (barDrag) {
+			barTo(click.y());
+			return true;
+		}
+		if (scrollDrag) {
+			double dy = click.y() - pressY;
+			if (moved || Math.abs(dy) > 3) {
+				moved = true;
+				deferred = null;
+				scroll = scrollStart - (float) dy;
+				clampScroll();
+			}
+			return true;
+		}
 		return super.mouseDragged(click, offsetX, offsetY);
 	}
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent click) {
-		boolean was = slider != null || SettingRenderer.dragging();
+		boolean was = slider != null || SettingRenderer.dragging() || barDrag || scrollDrag;
+		if (deferred != null && !moved) deferred.run();
+		deferred = null;
+		scrollDrag = false;
+		barDrag = false;
 		SettingRenderer.release();
 		if (slider != null) Config.save();
 		slider = null;
