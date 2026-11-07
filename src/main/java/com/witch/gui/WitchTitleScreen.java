@@ -137,11 +137,11 @@ public class WitchTitleScreen extends Screen {
 			double amp = h * (0.05 + 0.015 * k);
 			double freq = 0.012 + 0.004 * k;
 			int c = RenderUtil.alpha(0xFFCCCCCC, 0.10f + 0.05f * k);
-			for (int x = 0; x < w; x += 3) {
+			for (int x = 0; x < w; x += 6) {
 				double y = base + Math.sin(x * freq + sec * (0.5 + 0.15 * k) + k * 2.0) * amp
 						+ Math.sin(x * freq * 2.3 - sec * 0.4) * amp * 0.35;
 				int yy = (int) y;
-				g.fill(x, yy, x + 2, yy + 1, c);
+				g.fill(x, yy, x + 3, yy + 1, c);
 			}
 		}
 	}
