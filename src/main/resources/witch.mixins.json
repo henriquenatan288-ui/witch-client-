@@ -17,7 +17,9 @@
     "EntityGlowColorMixin",
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin",
-    "ItemInHandRendererMixin"
+    "ItemInHandRendererMixin",
+    "EntityKnockbackMixin",
+    "EntityRendererNametagMixin"
   ],
   "injectors": {
     "defaultRequire": 0

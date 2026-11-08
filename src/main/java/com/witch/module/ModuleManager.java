@@ -32,6 +32,10 @@ public final class ModuleManager {
 		MODULES.add(new AutoCrystalModule());
 		MODULES.add(new AutoAnchorModule());
 		MODULES.add(new AutoMaceModule());
+		MODULES.add(new SurroundModule());
+		MODULES.add(new VelocityModule());
+		MODULES.add(new NametagsModule());
+		MODULES.add(new AutoArmorModule());
 		MODULES.add(new FullbrightModule());
 		MODULES.add(new FreecamModule());
 		MODULES.add(new FreeLookModule());
