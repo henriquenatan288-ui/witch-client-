@@ -52,6 +52,7 @@ public final class ModuleManager {
 		MODULES.add(new GlowItemsModule());
 		MODULES.add(new BoatFlyModule());
 		MODULES.add(new GuiSettingsModule());
+		MODULES.add(new GuiAnimationModule());
 		MODULES.add(new NoHurtCamModule());
 		MODULES.add(new AutoTotemModule());
 		MODULES.add(new MoodFilterModule());

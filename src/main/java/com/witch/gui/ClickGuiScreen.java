@@ -203,10 +203,34 @@ public class ClickGuiScreen extends Screen {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
 		layout();
+		float e = Mth.clamp(openAnim, 0f, 1f);
+		float inv = 1f - e;
+		float cx = wx + ww / 2f, cy = wy + wh / 2f;
+		float tx = 0f, ty = 0f, sc = 1f;
+		switch (com.witch.module.GuiAnimationModule.style()) {
+			case 1 -> sc = 0.75f + 0.25f * e;
+			case 2 -> ty = inv * 40f;
+			case 3 -> ty = -inv * 40f;
+			case 4 -> tx = -inv * 60f;
+			case 5 -> sc = 0.6f + 0.4f * e + 0.10f * (float) Math.sin(Math.PI * e);
+			default -> { }
+		}
+		boolean moved = tx != 0f || ty != 0f || sc != 1f;
+		if (moved) {
+			g.pose().pushMatrix();
+			g.pose().translate(cx + tx, cy + ty);
+			g.pose().scale(sc, sc);
+			g.pose().translate(-cx, -cy);
+		}
+		body(g, mx, my);
+		if (moved) g.pose().popMatrix();
+	}
+
+	private void body(GuiGraphicsExtractor g, int mx, int my) {
 		long now = System.nanoTime();
 		float speed = lastNanos == 0 ? 1f : Math.min(3f, (now - lastNanos) / 16_666_667f);
 		lastNanos = now;
-		openAnim = Mth.lerp(Math.min(1f, speed * 0.2f), openAnim, 1f);
+		openAnim = Mth.lerp(Math.min(1f, speed * com.witch.module.GuiAnimationModule.rate()), openAnim, 1f);
 		float a = openAnim;
 		tipNow = null;
 		clampScroll();
