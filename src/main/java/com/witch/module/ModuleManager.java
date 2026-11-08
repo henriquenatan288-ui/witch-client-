@@ -29,6 +29,8 @@ public final class ModuleManager {
 		MODULES.add(new BreakDelayModule());
 		MODULES.add(new AncientFinderModule());
 		MODULES.add(new TriggerBotModule());
+		MODULES.add(new AutoCrystalModule());
+		MODULES.add(new AutoAnchorModule());
 		MODULES.add(new FullbrightModule());
 		MODULES.add(new FreecamModule());
 		MODULES.add(new FreeLookModule());
