@@ -29,6 +29,9 @@ public final class Config {
 	public static void save() {
 		JsonObject root = new JsonObject();
 		root.addProperty("_font", com.witch.gui.FontUtil.isCustom());
+		com.google.gson.JsonArray dang = new com.google.gson.JsonArray();
+		for (String n : com.witch.module.AntiVanishModule.dangerousNames()) dang.add(n);
+		root.add("_dangerous", dang);
 		for (Module m : ModuleManager.all()) {
 			JsonObject o = new JsonObject();
 			o.addProperty("enabled", m.isEnabled());
@@ -54,6 +57,11 @@ public final class Config {
 			if (parsed == null || !parsed.isJsonObject()) return;
 			if (parsed.getAsJsonObject().has("_font")) {
 				com.witch.gui.FontUtil.setCustom(parsed.getAsJsonObject().get("_font").getAsBoolean());
+			}
+			if (parsed.getAsJsonObject().has("_dangerous") && parsed.getAsJsonObject().get("_dangerous").isJsonArray()) {
+				java.util.List<String> l = new java.util.ArrayList<>();
+				for (JsonElement d : parsed.getAsJsonObject().getAsJsonArray("_dangerous")) l.add(d.getAsString());
+				com.witch.module.AntiVanishModule.setDangerous(l);
 			}
 			for (Map.Entry<String, JsonElement> e : parsed.getAsJsonObject().entrySet()) {
 				if (e.getKey().startsWith("_")) continue;

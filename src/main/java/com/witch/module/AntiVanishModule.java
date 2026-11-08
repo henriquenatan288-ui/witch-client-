@@ -4,7 +4,6 @@ import com.witch.gui.FontUtil;
 import com.witch.gui.RenderUtil;
 import com.witch.gui.Theme;
 import com.witch.setting.IntSetting;
-import com.witch.setting.OreSetting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerFaceExtractor;
@@ -34,12 +33,11 @@ public class AntiVanishModule extends Module {
 	/** nome do player -> cargo (atualizado junto com ranks). */
 	private static volatile Map<String, String> playerRank = new LinkedHashMap<>();
 
-	private final IntSetting rankFocus = add(new IntSetting("Rank", 0, 30, 0, ""));
-	/** Liga = adiciona o Rank focado aos alertas; desliga = remove. */
-	private final OreSetting alertThis = add(new OreSetting("Alert this rank", false, 5));
+	/** Botao (toggle 0/1): ao ligar abre a lista de jogadores e volta a 0. */
+	private final IntSetting pick = add(new IntSetting("Select players (0/1)", 0, 1, 0, ""));
 
-	private final Set<String> alertRanks = new HashSet<>();
-	private boolean lastAlertThis = false;
+	/** Nomes (minusculos) dos jogadores marcados como perigosos. */
+	private static final Set<String> DANGEROUS = java.util.Collections.synchronizedSet(new HashSet<>());
 	private int cooldown = 0;
 
 	/** Alerta ativo: quem esta perto. */
@@ -66,17 +64,9 @@ public class AntiVanishModule extends Module {
 	public void onTick() {
 		Minecraft mc = Minecraft.getInstance();
 
-		// sincroniza selecao de cargo de alerta (edge do toggle)
-		boolean on = alertThis.enabled();
-		if (on != lastAlertThis) {
-			lastAlertThis = on;
-			List<String> keys = new ArrayList<>(ranks.keySet());
-			int f = rankFocus.get();
-			if (f >= 1 && f <= keys.size()) {
-				String r = keys.get(f - 1);
-				if (on) alertRanks.add(r);
-				else alertRanks.remove(r);
-			}
+		if (pick.get() == 1) {
+			pick.set(0);
+			if (mc.player != null) mc.gui.setScreen(new com.witch.gui.AntiVanishScreen(mc.gui.screen()));
 		}
 
 		if (--cooldown <= 0) {
@@ -87,7 +77,7 @@ public class AntiVanishModule extends Module {
 		// players com cargo selecionado dentro de 20 blocos
 		var level = mc.level;
 		var me = mc.player;
-		if (level == null || me == null || alertRanks.isEmpty()) {
+		if (level == null || me == null || DANGEROUS.isEmpty()) {
 			if (System.currentTimeMillis() > alertUntil) {
 				alertName = null;
 				alertPlayer = null;
@@ -101,8 +91,7 @@ public class AntiVanishModule extends Module {
 		for (Player p : level.players()) {
 			if (p == me || p.isSpectator() || !(p instanceof AbstractClientPlayer acp)) continue;
 			String name = p.getGameProfile().name();
-			String rank = playerRank.get(name);
-			if (rank == null || !alertRanks.contains(rank)) continue;
+			if (!DANGEROUS.contains(name.toLowerCase(java.util.Locale.ROOT))) continue;
 			double dx = p.getX() - me.getX();
 			double dy = p.getY() - me.getY();
 			double dz = p.getZ() - me.getZ();
@@ -154,6 +143,35 @@ public class AntiVanishModule extends Module {
 		playerRank = pr;
 	}
 
+	public static boolean isDangerous(String name) {
+		return DANGEROUS.contains(name.toLowerCase(java.util.Locale.ROOT));
+	}
+
+	public static void toggleDangerous(String name) {
+		String k = name.toLowerCase(java.util.Locale.ROOT);
+		if (!DANGEROUS.remove(k)) DANGEROUS.add(k);
+		com.witch.config.Config.save();
+	}
+
+	public static List<String> dangerousNames() {
+		synchronized (DANGEROUS) { return new ArrayList<>(DANGEROUS); }
+	}
+
+	public static void setDangerous(java.util.Collection<String> names) {
+		DANGEROUS.clear();
+		for (String n : names) DANGEROUS.add(n.toLowerCase(java.util.Locale.ROOT));
+	}
+
+	/** Cargo (prefixo da tab) de um jogador online; "Sem cargo" se nao tiver. Funciona mesmo com o modulo parado. */
+	public static String rankOf(net.minecraft.client.multiplayer.PlayerInfo info) {
+		String name = info.getProfile().name();
+		var disp = info.getTabListDisplayName();
+		String full = disp != null ? strip(disp.getString()) : name;
+		int idx = full.indexOf(name);
+		String r = idx > 0 ? full.substring(0, idx).trim() : "Sem cargo";
+		return r.isEmpty() ? "Sem cargo" : r;
+	}
+
 	private static String strip(String s) {
 		return s.replaceAll("§.", "");
 	}
@@ -168,7 +186,7 @@ public class AntiVanishModule extends Module {
 	private static void drawRankPanel(GuiGraphicsExtractor g) {
 		if (ranks.isEmpty()) return;
 		Minecraft mc = Minecraft.getInstance();
-		int focus = instance.rankFocus.get();
+		int focus = 0;
 		List<String> keys = new ArrayList<>(ranks.keySet());
 		int lh = FontUtil.height() + 2;
 		int lines = 1 + keys.size();
@@ -191,7 +209,8 @@ public class AntiVanishModule extends Module {
 		for (int i = 0; i < keys.size(); i++) {
 			String key = keys.get(i);
 			boolean focused = (i + 1) == focus;
-			boolean alert = instance.alertRanks.contains(key);
+			boolean alert = false;
+			for (String n : ranks.get(key)) if (DANGEROUS.contains(n.toLowerCase(java.util.Locale.ROOT))) alert = true;
 			String mark = alert ? "[!]	" : "    ";
 			String line = mark + (i + 1) + ". " + key + " (" + ranks.get(key).size() + ")";
 			int col = alert ? 0xFFFF6B6B : (focused ? 0xFFFFFFFF : 0xFFB9A8D8);
