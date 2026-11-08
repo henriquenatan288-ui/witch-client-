@@ -41,27 +41,16 @@ public class FilterModule extends Module {
 		int i = instance.preset.get() - 1;
 		float s = instance.strength.get() / 100f;
 		if (s > 0f) {
-			int bands = 16;
-			for (int b = 0; b < bands; b++) {
-				int col = mix(TOP[i], BOTTOM[i], (b + 0.5f) / bands);
-				g.fill(0, h * b / bands, w, h * (b + 1) / bands + 1, argb(BASE_A[i] * s, col));
-			}
+			// um unico degrade vertical: sem faixas sobrepostas (as bandas antigas deixavam linhas na tela)
+			g.fillGradient(0, 0, w, h, argb(BASE_A[i] * s, TOP[i]), argb(BASE_A[i] * s, BOTTOM[i]));
 		}
 		float v = instance.vignette.get() / 100f;
 		if (v > 0f) {
 			int vc = mix(BOTTOM[i], 0x000000, 0.7f);
-			int layers = 12;
-			int depth = Math.min(w, h) / 3;
-			for (int l = 0; l < layers; l++) {
-				float k = 1f - l / (float) layers;
-				int in0 = depth * l / layers;
-				int in1 = depth * (l + 1) / layers;
-				int c = argb(v * 0.28f * k * k, vc);
-				g.fill(in0, in0, w - in0, in1, c);
-				g.fill(in0, h - in1, w - in0, h - in0, c);
-				g.fill(in0, in1, in1, h - in1, c);
-				g.fill(w - in1, in1, w - in0, h - in1, c);
-			}
+			int depth = h / 3;
+			int c = argb(v * 0.28f, vc);
+			g.fillGradient(0, 0, w, depth, c, argb(0f, vc));
+			g.fillGradient(0, h - depth, w, h, argb(0f, vc), c);
 		}
 	}
 }

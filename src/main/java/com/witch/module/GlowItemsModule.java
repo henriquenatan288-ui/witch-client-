@@ -12,6 +12,15 @@ public class GlowItemsModule extends Module {
 		instance = this;
 	}
 
+	/** Itens jogados no chao brilham (contorno do jogo, igual mob brilhando) com a cor escolhida. */
+	public static boolean wants(net.minecraft.world.entity.Entity e) {
+		return instance != null && instance.isEnabled() && e instanceof net.minecraft.world.entity.item.ItemEntity;
+	}
+
+	public static int rgb() {
+		return instance == null ? 0xFFFFFF : instance.color.get() & 0xFFFFFF;
+	}
+
 	/** Cor ARGB do contorno, ou 0 (sem contorno) se o modulo estiver desligado. */
 	public static int outline() {
 		if (instance == null || !instance.isEnabled()) return 0;
