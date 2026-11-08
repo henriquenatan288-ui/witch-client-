@@ -159,35 +159,54 @@ public class WitchTitleScreen extends Screen {
 	private static long walkStart = 0L;
 	private float userYaw = 0f;
 
-	private java.util.List<net.minecraft.client.model.geom.ModelPart> armParts = null;
+	private java.util.Map<String, java.util.List<net.minecraft.client.model.geom.ModelPart>> dancers = null;
 
-	/** Acena com o braco direito por ~2.5s depois que o boneco chega (se o jogo deixar mexer na pose). */
+	private java.util.List<net.minecraft.client.model.geom.ModelPart> dp(String n) {
+		return dancers.getOrDefault(n, java.util.List.of());
+	}
+
+	/** Rebola (dancinha de emote) por ~6s depois que o boneco chega: quadril balanca, pernas e bracos acompanham. */
 	private void wave(double t, boolean arrived) {
 		try {
-			if (armParts == null) {
-				armParts = new java.util.ArrayList<>();
+			if (dancers == null) {
+				dancers = new java.util.HashMap<>();
+				String[] names = {"body", "jacket", "left_leg", "left_pants", "right_leg", "right_pants",
+						"left_arm", "left_sleeve", "right_arm", "right_sleeve", "head", "hat"};
 				for (java.lang.reflect.Field f : PlayerSkinWidget.class.getDeclaredFields()) {
 					if (!net.minecraft.client.model.Model.class.isAssignableFrom(f.getType())) continue;
 					f.setAccessible(true);
 					Object o = f.get(skinWidget);
 					if (!(o instanceof net.minecraft.client.model.Model mdl)) continue;
-					for (String n : new String[] {"right_arm", "right_sleeve"}) {
-						try { armParts.add(mdl.root().getChild(n)); } catch (Throwable ignored) { }
+					for (String n : names) {
+						try { dancers.computeIfAbsent(n, k -> new java.util.ArrayList<>()).add(mdl.root().getChild(n)); }
+						catch (Throwable ignored) { }
 					}
 				}
 			}
 			double wt = t - 1.8;
-			boolean on = arrived && wt >= 0 && wt < 2.6;
-			for (net.minecraft.client.model.geom.ModelPart part : armParts) {
-				if (on) {
-					part.xRot = 0f;
-					part.zRot = (float) (2.35 + Math.sin(wt * 9.0) * 0.22);
-				} else {
-					part.resetPose();
-				}
+			boolean on = arrived && wt >= 0 && wt < 6.0;
+			if (!on) {
+				for (var l : dancers.values()) for (var part : l) part.resetPose();
+				return;
 			}
+			float ph = (float) (wt * 11.0);
+			float hip = (float) Math.sin(ph);
+			float hip2 = (float) Math.sin(ph + 1.2);
+			for (var part : dp("body")) { part.yRot = hip * 0.45f; part.zRot = hip2 * 0.10f; part.xRot = 0.18f; }
+			for (var part : dp("jacket")) { part.yRot = hip * 0.45f; part.zRot = hip2 * 0.10f; part.xRot = 0.18f; }
+			for (var part : dp("left_leg")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = -0.25f; }
+			for (var part : dp("left_pants")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = -0.25f; }
+			for (var part : dp("right_leg")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = 0.25f; }
+			for (var part : dp("right_pants")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = 0.25f; }
+			float arm = (float) Math.sin(ph + 0.6);
+			for (var part : dp("left_arm")) { part.xRot = -0.6f + arm * 0.5f; part.zRot = -0.35f - hip * 0.15f; }
+			for (var part : dp("left_sleeve")) { part.xRot = -0.6f + arm * 0.5f; part.zRot = -0.35f - hip * 0.15f; }
+			for (var part : dp("right_arm")) { part.xRot = -0.6f - arm * 0.5f; part.zRot = 0.35f - hip * 0.15f; }
+			for (var part : dp("right_sleeve")) { part.xRot = -0.6f - arm * 0.5f; part.zRot = 0.35f - hip * 0.15f; }
+			for (var part : dp("head")) { part.zRot = -hip * 0.12f; part.yRot = hip * 0.15f; }
+			for (var part : dp("hat")) { part.zRot = -hip * 0.12f; part.yRot = hip * 0.15f; }
 		} catch (Throwable ignored) {
-			armParts = new java.util.ArrayList<>();
+			dancers = new java.util.HashMap<>();
 		}
 	}
 
