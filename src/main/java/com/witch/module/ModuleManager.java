@@ -31,6 +31,7 @@ public final class ModuleManager {
 		MODULES.add(new TriggerBotModule());
 		MODULES.add(new AutoCrystalModule());
 		MODULES.add(new AutoAnchorModule());
+		MODULES.add(new AutoMaceModule());
 		MODULES.add(new FullbrightModule());
 		MODULES.add(new FreecamModule());
 		MODULES.add(new FreeLookModule());
