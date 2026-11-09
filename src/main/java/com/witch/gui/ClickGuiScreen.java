@@ -237,7 +237,8 @@ public class ClickGuiScreen extends Screen {
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x30000000, a));
 
-		UiTex.menu(g, wx, wy, ww, wh, a);
+		float bg = a * com.witch.module.GuiSettingsModule.menuOpacity();
+		UiTex.menu(g, wx, wy, ww, wh, bg);
 
 		// cabecalho (faixa fina entre o chapeu e o X)
 		int fh = FontUtil.height();
@@ -318,7 +319,7 @@ public class ClickGuiScreen extends Screen {
 			float t = m.toggleAnim;
 			int lv = Math.round(0x70 + (0xFF - 0x70) * t + 0x30 * m.hoverAnim * (1f - t));
 			lv = Math.min(255, lv);
-			UiTex.button(g, sx0, sy0, sl.w, CARD, (lv << 16) | (lv << 8) | lv, a);
+			UiTex.button(g, sx0, sy0, sl.w, CARD, (lv << 16) | (lv << 8) | lv, bg);
 			int tc = RenderUtil.mix(TXT_DIM, TXT, t);
 			CategoryIcons.draw(g, m.category, sx0 + 9, sy0 + (CARD - 7) / 2, RenderUtil.alpha(tc, a));
 			boolean has = !m.settings().isEmpty();
