@@ -5,7 +5,7 @@
   "name": "Witch Gametest",
   "environment": "client",
   "entrypoints": {
-    "fabric-client-gametest": ["com.witch.test.MiscTest"]
+    "fabric-client-gametest": ["com.witch.test.ShotTest"]
   },
   "depends": { "witch": "*" }
 }
