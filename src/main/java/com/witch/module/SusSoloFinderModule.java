@@ -23,7 +23,7 @@ import java.util.Set;
 
 /**
  * Sus Solo Finder: feito pra usar voando. Escaneia a faixa perto da superficie de cada chunk (nao depende da sua altura),
- * apita ao achar uma suspeita e desenha um holograma no solo da chunk (placa + coluna) pra voce ver de longe.
+ * apita ao achar uma suspeita e desenha uma placa neon no solo da chunk pra voce ver de longe.
  * Cor = "chance de base" estimada pela pontuacao dos blocos: vermelho 25%, amarelo 50%, verde 75%, branco 81%+.
  * A chance e uma heuristica (peso dos blocos), nao uma probabilidade real.
  */
@@ -38,9 +38,9 @@ public class SusSoloFinderModule extends Module implements EspSource {
 	/** score/(score+K): K=40 -> 25% ~ 13 pts, 50% = 40, 75% = 120, 81% ~ 170. */
 	private static final double K = 40.0;
 
-	private static final int RED = 0xFFEF4444;
-	private static final int YELLOW = 0xFFFACC15;
-	private static final int GREEN = 0xFF22C55E;
+	private static final int RED = 0xFFFF1F4B;
+	private static final int YELLOW = 0xFFFFF01F;
+	private static final int GREEN = 0xFF39FF14;
 	private static final int WHITE = 0xFFFFFFFF;
 
 	private static SusSoloFinderModule instance;
@@ -94,9 +94,6 @@ public class SusSoloFinderModule extends Module implements EspSource {
 			int argb = colorFor(v[3]);
 			// placa no solo cobrindo a chunk
 			esp.box(x0, gy, z0, x0 + 16, gy + 0.25, z0 + 16, argb, fa);
-			// coluna central, mais alta quanto maior a chance
-			double h = 10 + v[3] * 0.4;
-			esp.box(x0 + 7.5, gy, z0 + 7.5, x0 + 8.5, gy + h, z0 + 8.5, argb, fa + 0.15f);
 		}
 	}
 
