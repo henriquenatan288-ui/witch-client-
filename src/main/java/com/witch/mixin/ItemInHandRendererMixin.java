@@ -1,18 +1,21 @@
 package com.witch.mixin;
 
-import com.witch.module.GlowItemsModule;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.witch.render.HeldItemGlow;
 import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
-	/** Glow Items: o ultimo argumento do submit() e a cor do contorno (0 = sem contorno). */
-	@ModifyArg(method = "renderItem", index = 4, require = 0,
+	/** Glow Items: antes de desenhar o item da mao, desenha o halo atras dele. */
+	@Redirect(method = "renderItem", require = 0,
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState;submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;III)V"))
-	private int witch$glowItem(int outline) {
-		int c = GlowItemsModule.outline();
-		return c != 0 ? c : outline;
+	private void witch$glowItem(ItemStackRenderState state, PoseStack pose, SubmitNodeCollector collector, int light, int overlay, int outline) {
+		HeldItemGlow.draw(state, pose, collector);
+		state.submit(pose, collector, light, overlay, outline);
 	}
 }
