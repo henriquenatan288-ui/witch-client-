@@ -87,7 +87,7 @@ public class ClickGuiScreen extends Screen {
 
 	/** A moldura e uma imagem 1452x819: todas as posicoes abaixo sao fracoes dela (em px da imagem original). */
 	private static final float IW = 1452f, IH = 819f;
-	private static final int PURPLE = 0xFF2BE04A; // verde neon da moldura
+	private static final int PURPLE = 0xFF8B7FD6; // cor da moldura (violeta suave)
 	private static final int HH = 11;
 
 	private void layout() {

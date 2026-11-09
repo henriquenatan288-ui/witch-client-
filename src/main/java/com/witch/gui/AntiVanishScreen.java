@@ -20,7 +20,7 @@ import java.util.Locale;
 /** Lista de jogadores online (cabeca, nome, cargo). Os marcados viram os "perigosos" do Anti Vanish. */
 public class AntiVanishScreen extends Screen {
 	private static final int ROW = 20;
-	private static final int GREEN = 0xFF2BE04A;
+	private static final int GREEN = 0xFF8B7FD6;
 
 	private final Screen parent;
 	private float scroll = 0f;
@@ -112,7 +112,7 @@ public class AntiVanishScreen extends Screen {
 		// botao Pronto
 		int dw = 70, dx = bx() + (bw() - dw) / 2, dy = by() + bh() - 18;
 		boolean dh = RenderUtil.inside(mx, my, dx, dy, dw, 14);
-		RenderUtil.roundRect(g, dx, dy, dw, 14, 5, dh ? 0xFF2BE04A : 0xFF1D9A33);
+		RenderUtil.roundRect(g, dx, dy, dw, 14, 5, dh ? 0xFF8B7FD6 : 0xFF6B5FB0);
 		String d = "Pronto";
 		FontUtil.draw(g, d, dx + (dw - FontUtil.width(d)) / 2, dy + (14 - fh) / 2, 0xFF04120A);
 	}
