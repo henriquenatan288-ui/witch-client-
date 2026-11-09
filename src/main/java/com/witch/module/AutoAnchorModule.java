@@ -16,6 +16,7 @@ public class AutoAnchorModule extends Module {
 	private final IntSetting range = add(new IntSetting("Range", 3, 6, 5, " blocks"));
 	private final IntSetting delay = add(new IntSetting("Delay", 0, 10, 2, " ticks"));
 	private final IntSetting minHp = add(new IntSetting("Min HP", 0, 20, 10, ""));
+	private final IntSetting charges = add(new IntSetting("Charges", 1, 4, 4, ""));
 	private final IntSetting selfDist = add(new IntSetting("Min dist self", 2, 6, 4, " blocks"));
 
 	private int wait;
@@ -52,10 +53,14 @@ public class AutoAnchorModule extends Module {
 
 		if (anchor != null) {
 			int charge = mc.level.getBlockState(anchor).getValue(RespawnAnchorBlock.CHARGE);
-			if (charge == 0) {
+			if (charge < charges.get()) {
+				// carrega com glowstone ate o alvo de cargas
 				if (CombatUtil.select(p, Items.GLOWSTONE) && CombatUtil.useOn(mc, anchor, Direction.UP)) wait = delay.get();
+			} else if (charge >= 4 && CombatUtil.select(p, Items.GLOWSTONE)) {
+				// 5a glowstone: cheia (4), a ancora nao aceita mais e, fora do Nether, explode
+				if (CombatUtil.useOn(mc, anchor, Direction.UP)) wait = delay.get();
 			} else {
-				// detona com item que nao seja glowstone na mao
+				// detona com qualquer item que nao seja glowstone na mao
 				CombatUtil.selectOther(p, Items.GLOWSTONE);
 				if (!p.getOffhandItem().is(Items.GLOWSTONE) && CombatUtil.useOn(mc, anchor, Direction.UP)) wait = delay.get();
 			}
