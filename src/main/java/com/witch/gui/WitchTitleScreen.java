@@ -159,13 +159,17 @@ public class WitchTitleScreen extends Screen {
 	private static long walkStart = 0L;
 	private float userYaw = 0f;
 
+	private static final float DAB_HEAD_X = 0.55f, DAB_HEAD_Y = -0.6f;
+	private static final float DAB_R_X = -1.5f, DAB_R_Y = 0.9f, DAB_R_Z = 0.1f;
+	private static final float DAB_L_X = -0.2f, DAB_L_Y = 0f, DAB_L_Z = -2.2f;
+
 	private java.util.Map<String, java.util.List<net.minecraft.client.model.geom.ModelPart>> dancers = null;
 
 	private java.util.List<net.minecraft.client.model.geom.ModelPart> dp(String n) {
 		return dancers.getOrDefault(n, java.util.List.of());
 	}
 
-	/** Rebola (dancinha de emote) por ~6s depois que o boneco chega: quadril balanca, pernas e bracos acompanham. */
+	/** Anda ate a posicao (pernas/bracos balancando) e depois faz um Dab. */
 	private void wave(double t, boolean arrived) {
 		try {
 			if (dancers == null) {
@@ -183,28 +187,41 @@ public class WitchTitleScreen extends Screen {
 					}
 				}
 			}
-			double wt = t - 1.8;
-			boolean on = arrived && wt >= 0 && wt < 6.0;
-			if (!on) {
-				for (var l : dancers.values()) for (var part : l) part.resetPose();
+			for (var l : dancers.values()) for (var part : l) part.resetPose();
+			if (!arrived) {
+				// andando: pernas e bracos balancam em oposicao
+				if (t <= 0) return;
+				float ph = (float) (t * 11.0), sw = (float) Math.sin(ph) * 0.8f;
+				for (var q : dp("right_leg")) q.xRot = sw;
+				for (var q : dp("right_pants")) q.xRot = sw;
+				for (var q : dp("left_leg")) q.xRot = -sw;
+				for (var q : dp("left_pants")) q.xRot = -sw;
+				for (var q : dp("right_arm")) q.xRot = -sw * 0.8f;
+				for (var q : dp("right_sleeve")) q.xRot = -sw * 0.8f;
+				for (var q : dp("left_arm")) q.xRot = sw * 0.8f;
+				for (var q : dp("left_sleeve")) q.xRot = sw * 0.8f;
 				return;
 			}
-			float ph = (float) (wt * 11.0);
-			float hip = (float) Math.sin(ph);
-			float hip2 = (float) Math.sin(ph + 1.2);
-			for (var part : dp("body")) { part.yRot = hip * 0.45f; part.zRot = hip2 * 0.10f; part.xRot = 0.18f; }
-			for (var part : dp("jacket")) { part.yRot = hip * 0.45f; part.zRot = hip2 * 0.10f; part.xRot = 0.18f; }
-			for (var part : dp("left_leg")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = -0.25f; }
-			for (var part : dp("left_pants")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = -0.25f; }
-			for (var part : dp("right_leg")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = 0.25f; }
-			for (var part : dp("right_pants")) { part.zRot = -hip * 0.12f; part.yRot = -hip * 0.20f; part.xRot = 0.25f; }
-			float arm = (float) Math.sin(ph + 0.6);
-			for (var part : dp("left_arm")) { part.xRot = -0.6f + arm * 0.5f; part.zRot = -0.35f - hip * 0.15f; }
-			for (var part : dp("left_sleeve")) { part.xRot = -0.6f + arm * 0.5f; part.zRot = -0.35f - hip * 0.15f; }
-			for (var part : dp("right_arm")) { part.xRot = -0.6f - arm * 0.5f; part.zRot = 0.35f - hip * 0.15f; }
-			for (var part : dp("right_sleeve")) { part.xRot = -0.6f - arm * 0.5f; part.zRot = 0.35f - hip * 0.15f; }
-			for (var part : dp("head")) { part.zRot = -hip * 0.12f; part.yRot = hip * 0.15f; }
-			for (var part : dp("hat")) { part.zRot = -hip * 0.12f; part.yRot = hip * 0.15f; }
+			// Dab (2019): entra rapido, segura ~3.5s, solta
+			double wt = t - 2.0;
+			if (wt < 0 || wt > 4.2) return;
+			float in = (float) Math.min(1.0, wt / 0.18), out = (float) Math.min(1.0, (4.2 - wt) / 0.25);
+			float b = Math.min(in, out);
+			b = b * b * (3 - 2 * b);
+			float pop = (float) (Math.sin(Math.min(wt, 0.3) / 0.3 * Math.PI) * 0.08);
+			float hx = DAB_HEAD_X * b, hy = DAB_HEAD_Y * b;
+			for (var q : dp("head")) { q.xRot = hx; q.yRot = hy; q.zRot = 0.12f * b; }
+			for (var q : dp("hat")) { q.xRot = hx; q.yRot = hy; q.zRot = 0.12f * b; }
+			for (var q : dp("body")) { q.yRot = -0.25f * b; q.xRot = 0.08f * b + pop; }
+			for (var q : dp("jacket")) { q.yRot = -0.25f * b; q.xRot = 0.08f * b + pop; }
+			for (var q : dp("right_arm")) { q.xRot = DAB_R_X * b; q.yRot = DAB_R_Y * b; q.zRot = DAB_R_Z * b; }
+			for (var q : dp("right_sleeve")) { q.xRot = DAB_R_X * b; q.yRot = DAB_R_Y * b; q.zRot = DAB_R_Z * b; }
+			for (var q : dp("left_arm")) { q.xRot = DAB_L_X * b; q.yRot = DAB_L_Y * b; q.zRot = DAB_L_Z * b; }
+			for (var q : dp("left_sleeve")) { q.xRot = DAB_L_X * b; q.yRot = DAB_L_Y * b; q.zRot = DAB_L_Z * b; }
+			for (var q : dp("left_leg")) { q.zRot = -0.08f * b; }
+			for (var q : dp("left_pants")) { q.zRot = -0.08f * b; }
+			for (var q : dp("right_leg")) { q.zRot = 0.08f * b; }
+			for (var q : dp("right_pants")) { q.zRot = 0.08f * b; }
 		} catch (Throwable ignored) {
 			dancers = new java.util.HashMap<>();
 		}
@@ -227,7 +244,7 @@ public class WitchTitleScreen extends Screen {
 			if (walkStart == 0L) walkStart = System.nanoTime();
 			double t = (System.nanoTime() - walkStart) / 1_000_000_000.0;
 			double k = Math.min(1.0, t / 1.6);
-			double ease = 1.0 - Math.pow(1.0 - k, 3);
+			double ease = 1.0 - Math.pow(1.0 - k, 2);
 			int stopX = (int) (w * 0.68) - mw / 2;
 			int x = (int) (w + (stopX - w) * ease);
 			int y = h - 24 - mh;
