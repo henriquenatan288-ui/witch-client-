@@ -13,6 +13,5 @@ public abstract class EntityGlowColorMixin {
 	private void witch$glowColor(CallbackInfoReturnable<Integer> cir) {
 		Entity self = (Entity) (Object) this;
 		if (GlowPlayersModule.wants(self)) cir.setReturnValue(GlowPlayersModule.rgb());
-		else if (com.witch.module.GlowItemsModule.wants(self)) cir.setReturnValue(com.witch.module.GlowItemsModule.rgb());
 	}
 }

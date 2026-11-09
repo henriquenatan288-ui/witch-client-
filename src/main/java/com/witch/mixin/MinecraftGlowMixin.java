@@ -12,6 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class MinecraftGlowMixin {
 	@Inject(method = "shouldEntityAppearGlowing", at = @At("RETURN"), cancellable = true, require = 0)
 	private void witch$glow(Entity entity, CallbackInfoReturnable<Boolean> cir) {
-		if (GlowPlayersModule.wants(entity) || com.witch.module.GlowItemsModule.wants(entity)) cir.setReturnValue(true);
+		if (GlowPlayersModule.wants(entity)) cir.setReturnValue(true);
 	}
 }

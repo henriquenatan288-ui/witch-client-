@@ -17,7 +17,6 @@
     "EntityGlowColorMixin",
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin",
-    "ItemInHandRendererMixin",
     "EntityKnockbackMixin",
     "EntityRendererNametagMixin"
   ],
