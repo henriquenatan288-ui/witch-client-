@@ -139,6 +139,36 @@ public final class ModuleManager {
 		MODULES.add(new InfoModules.ItemCount());
 		MODULES.add(new InfoModules.AutoWalk());
 		MODULES.add(new InfoModules.ToggleSneak());
+		MODULES.add(new MiscModules.AutoClicker());
+		MODULES.add(new MiscModules.AutoBlock());
+		MODULES.add(new MiscModules.AutoLog());
+		MODULES.add(new MiscModules.AutoGap());
+		MODULES.add(new MiscModules.WTap());
+		MODULES.add(new MiscModules.CooldownGuard());
+		MODULES.add(new MiscModules.TargetStrafe());
+		MODULES.add(new MiscModules.AutoJump());
+		MODULES.add(new MiscModules.IceSpeed());
+		MODULES.add(new MiscModules.WaterSpeed());
+		MODULES.add(new MiscModules.EdgeJump());
+		MODULES.add(new MiscModules.LavaEscape());
+		MODULES.add(new MiscModules.SneakSpam());
+		MODULES.add(new MiscModules.AntiAfk());
+		MODULES.add(new MiscModules.AutoRespawn());
+		MODULES.add(new MiscModules.AutoReplenish());
+		MODULES.add(new MiscModules.AutoMine());
+		MODULES.add(new MiscModules.AutoUse());
+		MODULES.add(new MiscModules.AutoTorch());
+		MODULES.add(new MiscModules.YawLock());
+		MODULES.add(new MiscModules.PitchLock());
+		MODULES.add(new MiscModules.HotbarLock());
+		MODULES.add(new MiscModules.HotbarCycle());
+		MODULES.add(new MiscModules.ItemDropper());
+		MODULES.add(new MiscModules.Spinner());
+		MODULES.add(new MiscModules.FovChanger());
+		MODULES.add(new MiscModules.RenderDistance());
+		MODULES.add(new MiscModules.NoBob());
+		MODULES.add(new MiscModules.EntityDistance());
+		MODULES.add(new MiscModules.MouseSens());
 
 		MODULES.removeIf(m -> !com.witch.Edition.allows(m.name));
 
