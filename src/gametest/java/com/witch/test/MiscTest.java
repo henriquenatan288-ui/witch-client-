@@ -65,14 +65,14 @@ public class MiscTest implements FabricClientGameTest {
 			c.runOnClient(mc -> log("HotbarCycle slot " + s0[0] + " -> " + mc.player.getInventory().getSelectedSlot()));
 
 			srv.runCommand("clear @p");
-			srv.runCommand("give @p minecraft:cobblestone 3");
+			c.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+			srv.runCommand("item replace entity @p hotbar.0 with minecraft:cobblestone 3");
 			c.waitTicks(5);
 			mod(c, "Item Dropper", true); set(c, "Item Dropper", "Delay", 2); c.waitTicks(12); mod(c, "Item Dropper", false);
 			c.runOnClient(mc -> log("ItemDropper itens no inv=" + countItems(mc)));
 
 			srv.runCommand("clear @p");
-			srv.runCommand("give @p minecraft:cobblestone 64");
-			srv.runCommand("give @p minecraft:cobblestone 64");
+			srv.runCommand("item replace entity @p inventory.1 with minecraft:cobblestone 64");
 			c.runOnClient(mc -> { mc.player.getInventory().setSelectedSlot(0); });
 			srv.runCommand("item replace entity @p hotbar.0 with minecraft:cobblestone 3");
 			c.waitTicks(5);
