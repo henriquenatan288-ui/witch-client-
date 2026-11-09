@@ -218,7 +218,7 @@ public class AntiVanishModule extends Module {
 			ty += lh;
 		}
 		if (focus >= 1 && focus <= keys.size()) {
-			FontUtil.draw(g, "-- " + keys.get(focus - 1), x + 8, ty, 0xFF7CFC5A);
+			FontUtil.draw(g, "-- " + keys.get(focus - 1), x + 8, ty, 0xFFB7ACF0);
 			ty += lh;
 			for (String n : ranks.get(keys.get(focus - 1))) {
 				FontUtil.draw(g, n, x + 14, ty, 0xFFFFFFFF);

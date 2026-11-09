@@ -77,7 +77,7 @@ public class WitchTitleScreen extends Screen {
 		// area do menu
 		menuX = Math.max(18, w / 14);
 		menuY = Math.max(78, h / 2 - itemH * 5 / 2 + 8);
-		spaced(g, "WELCOME BACK", menuX, menuY - 46, 0xFF4DBA5E);
+		spaced(g, "WELCOME BACK", menuX, menuY - 46, 0xFFA89BE8);
 		String nick = TitleSkin.nick();
 		FontUtil.draw(g, nick, menuX + 1, menuY - 33, 0xFF2A2A2A);
 		FontUtil.draw(g, nick, menuX, menuY - 34, 0xFFFFFFFF);
