@@ -99,22 +99,15 @@ public class StorageEspModule extends Module implements EspSource {
 		int cy = center.getY();
 		int cz = center.getZ();
 
-		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		List<int[]> found = new ArrayList<>();
-		for (int dx = -r; dx <= r; dx++) {
-			for (int dy = -vr; dy <= vr; dy++) {
-				for (int dz = -r; dz <= r; dz++) {
-					pos.set(cx + dx, cy + dy, cz + dz);
-					BlockState state = level.getBlockState(pos);
-					Block blk = state.getBlock();
+		SectionScan.scan(level, cx, cy, cz, r, vr,
+				st -> st.getBlock() instanceof ShulkerBoxBlock || byBlock.containsKey(st.getBlock()),
+				(x, y, z, st) -> {
+					Block blk = st.getBlock();
 					OreSetting os = byBlock.get(blk);
 					if (os == null && blk instanceof ShulkerBoxBlock) os = shulkers;
-					if (os != null && os.enabled()) {
-						found.add(new int[]{pos.getX(), pos.getY(), pos.getZ(), os.color()});
-					}
-				}
-			}
-		}
+					if (os != null && os.enabled()) found.add(new int[]{x, y, z, os.color()});
+				});
 
 		found.sort(Comparator.comparingLong(b -> {
 			long ddx = b[0] - cx;

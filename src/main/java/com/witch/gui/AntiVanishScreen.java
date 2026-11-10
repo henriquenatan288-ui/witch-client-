@@ -20,7 +20,7 @@ import java.util.Locale;
 /** Lista de jogadores online (cabeca, nome, cargo). Os marcados viram os "perigosos" do Anti Vanish. */
 public class AntiVanishScreen extends Screen {
 	private static final int ROW = 20;
-	private static final int GREEN = 0xFF8B7FD6;
+	private static final int GREEN = 0xFF2F7BFF;
 
 	private final Screen parent;
 	private float scroll = 0f;
@@ -80,7 +80,7 @@ public class AntiVanishScreen extends Screen {
 		RenderUtil.roundRect(g, bx(), by(), 3, bh(), 1, GREEN);
 		int fh = FontUtil.height();
 		FontUtil.draw(g, "Anti Vanish - marque os perigosos", bx() + 10, by() + 8, 0xFFFFFFFF);
-		FontUtil.draw(g, AntiVanishModule.dangerousNames().size() + " marcado(s) | toque para marcar", bx() + 10, by() + 8 + fh + 2, 0xFF8A9A8C);
+		FontUtil.draw(g, AntiVanishModule.dangerousNames().size() + " marcado(s) | toque para marcar", bx() + 10, by() + 8 + fh + 2, 0xFF8A93A8);
 
 		int top = listTop(), bot = listBottom();
 		g.enableScissor(bx(), top, bx() + bw(), bot);
@@ -97,7 +97,7 @@ public class AntiVanishScreen extends Screen {
 				FontUtil.draw(g, r.name, tx, y + (ROW - 2 - fh) / 2, r.danger ? 0xFFFF8A8A : 0xFFFFFFFF);
 				String rk = ModuleRow.fit(r.rank, bw() / 3);
 				int rw = FontUtil.width(rk);
-				FontUtil.draw(g, rk, bx() + bw() - 34 - rw, y + (ROW - 2 - fh) / 2, 0xFF8A9A8C);
+				FontUtil.draw(g, rk, bx() + bw() - 34 - rw, y + (ROW - 2 - fh) / 2, 0xFF8A93A8);
 				// caixa de marcacao
 				int cx = bx() + bw() - 24, cy = y + (ROW - 2 - 10) / 2;
 				RenderUtil.roundRect(g, cx, cy, 10, 10, 3, 0xFF3A3A3A);
@@ -107,12 +107,12 @@ public class AntiVanishScreen extends Screen {
 			y += ROW;
 		}
 		g.disableScissor();
-		if (rows.isEmpty()) FontUtil.draw(g, "Nenhum jogador online", bx() + 10, top + 6, 0xFF8A9A8C);
+		if (rows.isEmpty()) FontUtil.draw(g, "Nenhum jogador online", bx() + 10, top + 6, 0xFF8A93A8);
 
 		// botao Pronto
 		int dw = 70, dx = bx() + (bw() - dw) / 2, dy = by() + bh() - 18;
 		boolean dh = RenderUtil.inside(mx, my, dx, dy, dw, 14);
-		RenderUtil.roundRect(g, dx, dy, dw, 14, 5, dh ? 0xFF8B7FD6 : 0xFF6B5FB0);
+		RenderUtil.roundRect(g, dx, dy, dw, 14, 5, dh ? 0xFF2F7BFF : 0xFF1E56C8);
 		String d = "Pronto";
 		FontUtil.draw(g, d, dx + (dw - FontUtil.width(d)) / 2, dy + (14 - fh) / 2, 0xFF04120A);
 	}

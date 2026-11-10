@@ -93,7 +93,7 @@ public class WitchTitleScreen extends Screen {
 			ent = 1f - (1f - ent) * (1f - ent) * (1f - ent);
 			int bx = menuX - 8 - Math.round((1f - ent) * 22f), bw = itemW + 16, bh = itemH - 4;
 			int lv = Math.round(0x90 + 0x6F * ha);
-			UiTex.button(g, bx, y, bw, bh, (lv << 16) | (lv << 8) | lv, 0.95f * ent);
+			UiTex.titleButton(g, bx, y, bw, bh, (lv << 16) | (lv << 8) | lv, 0.95f * ent);
 			int shift = Math.round(2 * ha);
 			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.alpha(RenderUtil.mix(0xFFC8C8C8, 0xFFFFFFFF, ha), ent));
 		}

@@ -96,20 +96,11 @@ public class FarmEspModule extends Module implements EspSource {
 		int cy = center.getY();
 		int cz = center.getZ();
 
-		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		List<int[]> found = new ArrayList<>();
-		for (int dx = -r; dx <= r; dx++) {
-			for (int dy = -vr; dy <= vr; dy++) {
-				for (int dz = -r; dz <= r; dz++) {
-					pos.set(cx + dx, cy + dy, cz + dz);
-					BlockState state = level.getBlockState(pos);
-					OreSetting os = byBlock.get(state.getBlock());
-					if (os != null && os.enabled()) {
-						found.add(new int[]{pos.getX(), pos.getY(), pos.getZ(), os.color()});
-					}
-				}
-			}
-		}
+		SectionScan.scan(level, cx, cy, cz, r, vr, st -> byBlock.containsKey(st.getBlock()), (x, y, z, st) -> {
+			OreSetting os = byBlock.get(st.getBlock());
+			if (os != null && os.enabled()) found.add(new int[]{x, y, z, os.color()});
+		});
 
 		found.sort(Comparator.comparingLong(b -> {
 			long ddx = b[0] - cx;
