@@ -98,7 +98,7 @@ public final class MusicPlayer {
 	public static float position() {
 		if (!active) return 0f;
 		try {
-			return AL10.alGetSourcef(source, AL10.AL_SEC_OFFSET);
+			return AL10.alGetSourcef(source, org.lwjgl.openal.AL11.AL_SEC_OFFSET);
 		} catch (Throwable t) {
 			return 0f;
 		}
@@ -175,7 +175,7 @@ public final class MusicPlayer {
 
 	public static void seek(float fraction) {
 		if (!active || duration <= 0f) return;
-		try { AL10.alSourcef(source, AL10.AL_SEC_OFFSET, Math.max(0f, Math.min(0.999f, fraction)) * duration); } catch (Throwable ignored) { }
+		try { AL10.alSourcef(source, org.lwjgl.openal.AL11.AL_SEC_OFFSET, Math.max(0f, Math.min(0.999f, fraction)) * duration); } catch (Throwable ignored) { }
 	}
 
 	/** Chamar todo tick do cliente (thread principal). */
