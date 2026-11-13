@@ -5,7 +5,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.libc.LibCStdlib;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -252,16 +251,23 @@ public final class MusicPlayer {
 		ByteBuffer mem = BufferUtils.createByteBuffer(d.length);
 		mem.put(d).flip();
 		try (MemoryStack st = MemoryStack.stackPush()) {
-			IntBuffer ch = st.mallocInt(1), rate = st.mallocInt(1);
-			ShortBuffer sb = STBVorbis.stb_vorbis_decode_memory(mem, ch, rate);
-			if (sb == null) throw new IOException("OGG invalido");
+			IntBuffer err = st.mallocInt(1);
+			long vb = STBVorbis.stb_vorbis_open_memory(mem, err, null);
+			if (vb == 0L) throw new IOException("OGG invalido (erro " + err.get(0) + ")");
 			try {
-				if (sb.remaining() > MAX_SHORTS) throw new IOException("musica muito longa");
-				short[] out = new short[sb.remaining()];
-				sb.get(out);
-				return new Pcm(out, ch.get(0), rate.get(0));
+				org.lwjgl.stb.STBVorbisInfo info = org.lwjgl.stb.STBVorbisInfo.malloc(st);
+				STBVorbis.stb_vorbis_get_info(vb, info);
+				int ch = info.channels(), rate = info.sample_rate();
+				int total = STBVorbis.stb_vorbis_stream_length_in_samples(vb);
+				if (ch < 1 || total <= 0 || (long) total * ch > MAX_SHORTS) throw new IOException("OGG vazio ou muito longo");
+				ShortBuffer pcm = BufferUtils.createShortBuffer(total * ch);
+				int got = STBVorbis.stb_vorbis_get_samples_short_interleaved(vb, ch, pcm);
+				short[] out = new short[got * ch];
+				pcm.limit(got * ch);
+				pcm.get(out);
+				return new Pcm(out, ch, rate);
 			} finally {
-				LibCStdlib.free(sb);
+				STBVorbis.stb_vorbis_close(vb);
 			}
 		}
 	}
