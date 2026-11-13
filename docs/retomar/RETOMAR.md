@@ -19,3 +19,34 @@ Fluxo git: commit em work46 -> push HEAD:work46 -> esperar CI verde -> merge-bas
 - Contorno 3D do item na mao nao funcionou (precisa shader). Nao prometer silhueta/chams.
 - API 26.x: mc.gui.screen()/setScreen, GuiGraphicsExtractor.extractRenderState, g.fill int, g.pose() Matrix3x2fStack, MouseButtonEvent.
 - Lambdas: variaveis efetivamente final.
+
+
+---
+# ATUALIZACAO 2026-11-13 06:10 (retomar as 12:59 ou 13:20 - usuario so tem limite depois disso)
+
+Estado: main = work46 = 81409a5 (ClickGUI com janela PNG + cartoes PNG, tela WitchEnterScreen, titulo com logo centralizado).
+Primeiro passo na proxima sessao: ler este arquivo, `git fetch origin main`, trabalhar em work46 (merge de main antes de empurrar).
+NAO rodar simulacao. 1 build por rodada. Responder em PT, curto, direto.
+
+## Feedback do usuario (ja testou no celular) - fazer nesta ordem
+1. BRILHO COM FAIXAS: `WitchLoading.glow(...)` desenha aneis concentricos visiveis ("camadas se juntando"), tanto na tela de entrada
+   quanto no titulo (logo no topo). Trocar por brilho suave: textura radial pre-suavizada (gerar com Pillow, PNG branco com alpha gaussiano)
+   desenhada com blit tintado; nunca empilhar muitos fills. Vale tambem para as outras telas que chamam glow.
+2. SKIN/BONECO DO TITULO ("boneco vindo", WitchTitleScreen.walker/wave/model3d/TitleSkin): ele anda de costas (moonwalk), nao chega na posicao,
+   e depois fica ~2s travado olhando para baixo. Corrigir: movimento de entrada com a perna/passo sincronizado com a direcao, parar ao chegar
+   e voltar a pose normal (cabeca reta) sem travar. Conferir `wave(t, arrived)` e a rotacao da cabeca (pitch) ao chegar.
+3. CLICKGUI - CARTOES: os recortes PNG dos cartoes (ui_card_off/on, 235x42 reduzidos) ficaram ruins (borrados, borda grossa).
+   VOLTAR a desenhar os cartoes por codigo (roundRect), mais finos e nitidos como na referencia (borda 1px, switch pequeno, chevron fino);
+   manter a janela PNG (ui_menu.png). Texto esta grande demais para a tela do celular: usar fonte menor/escala menor nos cartoes e na lista.
+   Barra de busca: texto cortado ("arch modul.."): usar placeholder curto ou ajustar largura. (Os overlays UI/FREE/XRAY/VOICE/FPS/E nas capturas
+   sao dos controles do launcher do celular, nao do client.)
+4. LOGO WT: `textures/gui/logo.png` parece mal recortada/serrilhada (cauda do T cortada). Regenerar a textura com Pillow a partir da fonte/maior
+   resolucao com antialias e margem transparente; testar com blit em escalas pequenas. Se a imagem original nao existir no repo, pedir ao usuario.
+5. FUNDO DO LARP: recriar POR CODIGO (nao copiar arquivo): fundo preto-grafite com faixas verticais onduladas cinza escuras que se movem devagar,
+   pontinhos/circulos pequenos espalhados, fade in quando o logo chega. Usar no WitchTitleScreen no lugar/em cima de `UiTex.titleBg`
+   (e na WitchEnterScreen so depois do arrasto). Ondas: varias colunas com offset senoidal, alpha baixo, desenhadas com poucos blits/fills.
+6. Arrasto do logo na WitchEnterScreen: usuario gostou ("ficou bom"). Nao mexer.
+
+## Referencias
+- Video do Larp Client (sequencia): preto -> logo+nome+"Press to enter" -> arrasto com esticar -> fundo de ondas -> menu centralizado -> skin gira a direita.
+- Cartoes e janela da GUI: docs/retomar/ref-gui-*.png (cartoes devem ser desenhados por codigo, janela usa ui_menu.png).
