@@ -207,8 +207,7 @@ public class WitchTitleScreen extends Screen {
 			for (var l : dancers.values()) for (var part : l) part.resetPose();
 			if (!arrived) {
 				// andando: pernas e bracos balancam em oposicao
-				if (t <= 0) return;
-				float ph = (float) (t * 11.0), sw = (float) Math.sin(ph) * 0.8f;
+				float ph = (float) ph0, sw = (float) Math.sin(ph) * 0.8f * (float) amp;
 				for (var q : dp("right_leg")) q.xRot = sw;
 				for (var q : dp("right_pants")) q.xRot = sw;
 				for (var q : dp("left_leg")) q.xRot = -sw;
@@ -219,7 +218,8 @@ public class WitchTitleScreen extends Screen {
 				for (var q : dp("left_sleeve")) q.xRot = sw * 0.8f;
 				return;
 			}
-			// Dab (2019): entra rapido, segura ~3.5s, solta
+			if (!DAB) return;
+			double t = ph0;
 			double wt = t - 2.0;
 			if (wt < 0 || wt > 4.2) return;
 			float in = (float) Math.min(1.0, wt / 0.18), out = (float) Math.min(1.0, (4.2 - wt) / 0.25);
