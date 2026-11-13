@@ -102,7 +102,6 @@ public class WitchEnterScreen extends Screen {
 		g.pose().scale(1f - 0.22f * k, 1f + 0.45f * k);
 		g.pose().translate((float) -cx, -cy);
 		int iw = Math.round(lw);
-		WitchLoading.glow(g, cx, Math.round(cy), iw * 2, (0.5f + 0.5f * pulse) * fadeIn);
 		WitchLogo.draw(g, cx - iw / 2, Math.round(cy) - WitchLogo.height(iw) / 2, iw, fadeIn);
 		g.pose().popMatrix();
 

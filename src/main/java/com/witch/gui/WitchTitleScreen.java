@@ -66,7 +66,7 @@ public class WitchTitleScreen extends Screen {
 		int h = this.height;
 
 		// fundo: imagem (caldeirao, chapeu e estrelas ja vem desenhados nela)
-		UiTex.titleBg(g, w, h);
+		WaveBackdrop.draw(g, w, h, sec);
 
 		// vindo da tela de entrada: sai do preto (o logo ja esta no topo, centralizado)
 		if (WitchEnterScreen.handoffMs != 0L) {
@@ -78,7 +78,6 @@ public class WitchTitleScreen extends Screen {
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
 		int lw = 58;
 		int lx = w / 2 - lw / 2;
-		WitchLoading.glow(g, lx + lw / 2, 6 + WitchLogo.height(lw) / 2, lw * 2, 0.5f + 0.5f * pulse);
 		WitchLogo.draw(g, lx, 6, lw, 0.85f + 0.15f * pulse);
 
 		// area do menu
@@ -177,7 +176,18 @@ public class WitchTitleScreen extends Screen {
 	}
 
 	/** Anda ate a posicao (pernas/bracos balancando) e depois faz um Dab. */
-	private void wave(double t, boolean arrived) {
+	private static final boolean DAB = false; // o Dab parecia travado olhando pra baixo
+	private static final float WALK_YAW = -85f, FRONT_YAW = 20f;
+	private static java.lang.reflect.Field rotY;
+
+	private void setYaw(float deg) {
+		try {
+			if (rotY == null) { rotY = PlayerSkinWidget.class.getDeclaredField("rotationY"); rotY.setAccessible(true); }
+			rotY.setFloat(skinWidget, deg);
+		} catch (Throwable ignored) { }
+	}
+
+	private void wave(double ph0, double amp, boolean arrived) {
 		try {
 			if (dancers == null) {
 				dancers = new java.util.HashMap<>();
@@ -263,7 +273,12 @@ public class WitchTitleScreen extends Screen {
 			g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF1E1E1E, 0.7f));
 			int cx = x + mw / 2;
 			RenderUtil.roundRect(g, cx - mw / 2, groundY - 2, mw, 4, 2, RenderUtil.alpha(0xFF000000, 0.45f));
-			wave(t, k >= 1.0);
+			double travel = Math.max(1, w - stopX);
+				double cycles = Math.max(2.0, travel / (mw * 0.5));
+				wave(ease * cycles * Math.PI * 2.0, k >= 1.0 ? 0.0 : Math.min(1.0, (1.0 - k) / 0.15), k >= 1.0);
+				float turn = (float) Math.max(0.0, Math.min(1.0, (k - 0.62) / 0.38));
+				turn = turn * turn * (3 - 2 * turn);
+				setYaw(WALK_YAW + (FRONT_YAW - WALK_YAW) * turn);
 			skinWidget.extractRenderState(g, mx, my, 0f);
 			if (k >= 1.0) {
 				float na = (float) Math.min(1.0, Math.max(0.0, (t - 1.8) / 0.4));

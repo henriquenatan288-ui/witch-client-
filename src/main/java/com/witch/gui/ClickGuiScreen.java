@@ -253,7 +253,7 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			scol = TXT;
 		}
-		FontUtil.draw(g, ModuleRow.fit(shown, sw - fx(120) + fx(0)), fx(1500), sy + (sbh - fh) / 2, RenderUtil.alpha(scol, a));
+		FontUtil.draw(g, ModuleRow.fit(shown, fx(1940) - fx(1500) - 6), fx(1500), sy + (sbh - fh) / 2, RenderUtil.alpha(scol, a));
 
 		// FPS no rodape (RSHIFT toggle GUI ja vem na imagem)
 		String fps = Minecraft.getInstance().getFps() + " FPS";
@@ -282,9 +282,10 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
 			float t = m.toggleAnim;
-			RenderUtil.nine(g, TEX_CARD_OFF, sx0, sy0, sl.w, CARD, 6, 235, 42, 10, RenderUtil.alpha(0xFFFFFFFF, a));
-			if (m.hoverAnim > 0.01f) RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 5, RenderUtil.alpha(0x14FFFFFF, a * m.hoverAnim * (1f - t)));
-			RenderUtil.nine(g, TEX_CARD_ON, sx0, sy0, sl.w, CARD, 6, 235, 42, 10, RenderUtil.alpha(0xFFFFFFFF, a * t));
+			int border = RenderUtil.mix(RenderUtil.mix(0xFF262A31, 0xFF3A3F47, m.hoverAnim), 0xFFE2E4E8, t);
+			int fill = RenderUtil.mix(RenderUtil.mix(0xFF16191E, 0xFF1B1F25, m.hoverAnim), 0xFF1D2025, t);
+			RenderUtil.roundRect(g, sx0, sy0, sl.w, CARD, 5, RenderUtil.alpha(border, a));
+			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 4, RenderUtil.alpha(fill, a));
 			boolean has = !m.settings().isEmpty();
 			boolean open = OPEN.contains(m);
 			int right = sx0 + sl.w - 6;
