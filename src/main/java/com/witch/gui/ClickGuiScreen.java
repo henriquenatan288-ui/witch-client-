@@ -241,8 +241,8 @@ public class ClickGuiScreen extends Screen {
 		// titulo do cabecalho e texto da busca
 		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
 		FontUtil.draw(g, title, fx(778), fy(71) - fh / 2, RenderUtil.alpha(TXT, a));
-		int sx = searchX(), sy = searchY(), sw = searchW(), sh = searchH();
-		if (searchFocused) RenderUtil.roundRect(g, sx, sy, sw, sh, 5, RenderUtil.alpha(0x30FFFFFF, a));
+		int sx = searchX(), sy = searchY(), sw = searchW(), sbh = searchH();
+		if (searchFocused) RenderUtil.roundRect(g, sx, sy, sw, sbh, 5, RenderUtil.alpha(0x30FFFFFF, a));
 		String shown;
 		int scol;
 		if (search.isEmpty() && !searchFocused) {
@@ -253,7 +253,7 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			scol = TXT;
 		}
-		FontUtil.draw(g, ModuleRow.fit(shown, sw - fx(120) + fx(0)), fx(1500), sy + (sh - fh) / 2, RenderUtil.alpha(scol, a));
+		FontUtil.draw(g, ModuleRow.fit(shown, sw - fx(120) + fx(0)), fx(1500), sy + (sbh - fh) / 2, RenderUtil.alpha(scol, a));
 
 		// FPS no rodape (RSHIFT toggle GUI ja vem na imagem)
 		String fps = Minecraft.getInstance().getFps() + " FPS";
