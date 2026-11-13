@@ -87,6 +87,9 @@ public class ClickGuiScreen extends Screen {
 	}
 
 	private static final int ACC = 0xFFFFFFFF; // destaque (branco, como a referencia); troque aqui para mudar a cor
+	private static final net.minecraft.resources.Identifier TEX_WINDOW = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_window.png");
+	private static final net.minecraft.resources.Identifier TEX_CARD_OFF = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_card_off.png");
+	private static final net.minecraft.resources.Identifier TEX_CARD_ON = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_card_on.png");
 	private static final int LINE_C = 0xFF21252B;
 	private static final int HEAD_SEARCH_H = 14;
 
@@ -214,8 +217,7 @@ public class ClickGuiScreen extends Screen {
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x50000000, a));
 
 		float bg = a * Math.max(0.85f, com.witch.module.GuiSettingsModule.menuOpacity());
-		RenderUtil.roundRect(g, wx, wy, ww, wh, 8, RenderUtil.alpha(0xFF2A2E35, bg));
-		RenderUtil.roundRect(g, wx + 1, wy + 1, ww - 2, wh - 2, 7, RenderUtil.alpha(0xFF0A0C0F, bg));
+		RenderUtil.nine(g, TEX_WINDOW, wx, wy, ww, wh, 10, 998, 598, 22, RenderUtil.alpha(0xFFFFFFFF, bg));
 		int sw0 = sideW();
 		g.fill(wx + sw0, wy + 1, wx + sw0 + 1, wy + wh - 1, RenderUtil.alpha(LINE_C, a));
 		g.fill(wx + sw0 + 1, wy + headH(), wx + ww - 1, wy + headH() + 1, RenderUtil.alpha(LINE_C, a));
@@ -305,10 +307,9 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
 			float t = m.toggleAnim;
-			int border = RenderUtil.mix(RenderUtil.mix(0xFF262A31, 0xFF3A3F47, m.hoverAnim), 0xFFE2E4E8, t);
-			int fill = RenderUtil.mix(RenderUtil.mix(0xFF16191E, 0xFF1B1F25, m.hoverAnim), 0xFF1D2025, t);
-			RenderUtil.roundRect(g, sx0, sy0, sl.w, CARD, 6, RenderUtil.alpha(border, a));
-			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 5, RenderUtil.alpha(fill, a));
+			RenderUtil.nine(g, TEX_CARD_OFF, sx0, sy0, sl.w, CARD, 6, 235, 42, 10, RenderUtil.alpha(0xFFFFFFFF, a));
+			if (m.hoverAnim > 0.01f) RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 5, RenderUtil.alpha(0x14FFFFFF, a * m.hoverAnim * (1f - t)));
+			RenderUtil.nine(g, TEX_CARD_ON, sx0, sy0, sl.w, CARD, 6, 235, 42, 10, RenderUtil.alpha(0xFFFFFFFF, a * t));
 			boolean has = !m.settings().isEmpty();
 			boolean open = OPEN.contains(m);
 			int right = sx0 + sl.w - 6;

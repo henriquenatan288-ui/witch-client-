@@ -60,6 +60,29 @@ public final class RenderUtil {
 		}
 	}
 
+	/** Nove blits (9-slice) de uma textura propria: b = borda na tela, tb = borda na textura. */
+	public static void nine(GuiGraphicsExtractor g, net.minecraft.resources.Identifier id, int x, int y, int w, int h,
+			int b, int tw, int th, int tb, int color) {
+		if (w <= 0 || h <= 0 || ((color >>> 24) & 0xFF) == 0) return;
+		b = Math.min(b, Math.min(w, h) / 2);
+		var P = net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED;
+		int mw = w - 2 * b, mh = h - 2 * b, x2 = x + w - b, y2 = y + h - b;
+		int mtw = tw - 2 * tb, mth = th - 2 * tb;
+		g.blit(P, id, x, y, 0f, 0f, b, b, tb, tb, tw, th, color);
+		g.blit(P, id, x2, y, (float) (tw - tb), 0f, b, b, tb, tb, tw, th, color);
+		g.blit(P, id, x, y2, 0f, (float) (th - tb), b, b, tb, tb, tw, th, color);
+		g.blit(P, id, x2, y2, (float) (tw - tb), (float) (th - tb), b, b, tb, tb, tw, th, color);
+		if (mw > 0) {
+			g.blit(P, id, x + b, y, (float) tb, 0f, mw, b, mtw, tb, tw, th, color);
+			g.blit(P, id, x + b, y2, (float) tb, (float) (th - tb), mw, b, mtw, tb, tw, th, color);
+		}
+		if (mh > 0) {
+			g.blit(P, id, x, y + b, 0f, (float) tb, b, mh, tb, mth, tw, th, color);
+			g.blit(P, id, x2, y + b, (float) (tw - tb), (float) tb, b, mh, tb, mth, tw, th, color);
+			if (mw > 0) g.blit(P, id, x + b, y + b, (float) tb, (float) tb, mw, mh, mtw, mth, tw, th, color);
+		}
+	}
+
 	public static boolean inside(double mx, double my, int x, int y, int w, int h) {
 		return mx >= x && mx < x + w && my >= y && my < y + h;
 	}
