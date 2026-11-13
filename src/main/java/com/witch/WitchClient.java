@@ -80,8 +80,9 @@ public class WitchClient implements ClientModInitializer {
 			if (client.player != null) {
 				ModuleManager.pollKeys(client);
 				ModuleManager.tick();
-				com.witch.music.MusicPlayer.tick();
 			}
+			// a musica toca tambem no menu (sem mundo carregado)
+			com.witch.music.MusicPlayer.tick();
 		});
 
 		HudElementRegistry.attachElementBefore(
