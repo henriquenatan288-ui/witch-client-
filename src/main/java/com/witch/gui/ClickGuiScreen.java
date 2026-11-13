@@ -234,6 +234,11 @@ public class ClickGuiScreen extends Screen {
 			String nm = c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
 			FontUtil.draw(g, nm, bx + Math.max(16, bw / 5), ry + (bh - fh) / 2, RenderUtil.alpha(col, a));
 		}
+		// Music (8o item da lista)
+		int my8 = catY(cats.length);
+		boolean mh = RenderUtil.inside(mx, my, bx, my8, bw, bh);
+		if (mh) RenderUtil.roundRect(g, bx, my8, bw, bh, 5, RenderUtil.alpha(0xFF14171B, a));
+		FontUtil.draw(g, "Music", bx + Math.max(16, bw / 5), my8 + (bh - fh) / 2, RenderUtil.alpha(mh ? 0xFFC4C8CE : 0xFF8E939B, a));
 		// "Edit HUD" no lugar do "Settings" (icone ja vem na imagem)
 		boolean eh = RenderUtil.inside(mx, my, bx, editY(), bw, bh);
 		FontUtil.draw(g, "Edit HUD", bx + Math.max(16, bw / 5), editY() + (bh - fh) / 2, RenderUtil.alpha(eh ? TXT : 0xFF9AA0A8, a));
@@ -352,6 +357,10 @@ public class ClickGuiScreen extends Screen {
 				scroll = 0f;
 				return true;
 			}
+		}
+		if (RenderUtil.inside(mx, my, sideX(), catY(Category.values().length), sideItemW(), catH())) {
+			Minecraft.getInstance().gui.setScreen(new MusicScreen());
+			return true;
 		}
 		if (RenderUtil.inside(mx, my, sideX(), editY(), sideItemW(), catH())) {
 			Minecraft.getInstance().gui.setScreen(new HudEditScreen());
