@@ -86,38 +86,42 @@ public class ClickGuiScreen extends Screen {
 		return false;
 	}
 
-	/** A moldura e uma imagem 1409x784: todas as posicoes abaixo sao fracoes dela (em px da imagem original). */
-	private static final float IW = 1409f, IH = 784f;
-	private static final int PURPLE = 0xFF2F7BFF; // azul da moldura (nome antigo mantido)
-	private static final int HH = 11;
+	private static final int ACC = 0xFFFFFFFF; // destaque (branco, como a referencia); troque aqui para mudar a cor
+	private static final int LINE_C = 0xFF21252B;
+	private static final int HEAD_SEARCH_H = 14;
 
 	private void layout() {
 		ww = Math.min(this.width - 12, 460);
-		wh = Math.round(ww * IH / IW);
+		wh = Math.round(ww * 0.60f);
 		if (wh > this.height - 12) {
 			wh = this.height - 12;
-			ww = Math.round(wh * IW / IH);
+			ww = Math.round(wh / 0.60f);
 		}
 		wx = (this.width - ww) / 2;
 		wy = (this.height - wh) / 2;
 	}
 
-	private int fx(float px) { return wx + Math.round(px / IW * ww); }
-	private int fy(float py) { return wy + Math.round(py / IH * wh); }
+	private int sideW() { return Math.round(ww * 0.22f); }
+	private int headH() { return Math.max(22, Math.round(wh * 0.13f)); }
+	private int footH() { return 16; }
+	private int pad() { return 6; }
+	private int cx() { return wx + sideW() + pad(); }
+	private int cy() { return wy + headH() + pad(); }
+	private int cw() { return ww - sideW() - 2 * pad(); }
+	private int ch() { return wh - headH() - footH() - 2 * pad(); }
 
-	private int cx() { return fx(150) + 4; }
-	private int cy() { return fy(92) + 4; }
-	private int cw() { return fx(1398) - fx(150) - 8; }
-	private int ch() { return fy(768) - fy(92) - 8; }
-
-	// 7 vagas da sidebar desenhadas na propria imagem
-	private int sideX() { return fx(20); }
-	private int sideW() { return fx(128) - fx(20); }
-	private int catY(int i) { return fy(163 + 84.7f * i - 38); }
-	private int catH() { return fy(76) - fy(0); }
-	private int headY() { return fy(47) - HH / 2; }
-	private int editW() { return FontUtil.width("Edit HUD") + 12; }
-	private int editX() { return searchX() - 6 - editW(); }
+	private int itemH() {
+		int avail = wh - headH() - 16 - 22 - 20;
+		return Mth.clamp(avail / Category.values().length - 2, 11, 17);
+	}
+	private int sideX() { return wx + 6; }
+	private int sideItemW() { return sideW() - 12; }
+	private int catY(int i) { return wy + headH() + 16 + i * (itemH() + 2); }
+	private int catH() { return itemH(); }
+	private int editY() { return wy + wh - itemH() - 5; }
+	private int searchW() { return Mth.clamp(Math.round(ww * 0.30f), 60, 120); }
+	private int searchX() { return wx + ww - pad() - searchW(); }
+	private int searchY() { return wy + (headH() - HEAD_SEARCH_H) / 2; }
 
 	private List<Module> modules() {
 		List<Module> out = new ArrayList<>();
@@ -132,7 +136,7 @@ public class ClickGuiScreen extends Screen {
 
 	private int settingsW() { return cw() - 14; }
 
-	private static final int CARD = 18;
+	private static final int CARD = 20;
 	private static final int GAP2 = 4;
 
 	/** Peca do layout em grade: cartao de modulo (settingsBlock=false) ou bloco de ajustes (true). Coordenadas relativas ao conteudo, sem scroll. */
@@ -143,21 +147,18 @@ public class ClickGuiScreen extends Screen {
 	private List<Slot> slots() {
 		List<Slot> out = new ArrayList<>();
 		int full = rowW();
-		int colW = (full - GAP2) / 2;
-		int y = 0, col = 0;
+		int y = 0;
 		for (Module m : modules()) {
 			boolean open = OPEN.contains(m) && !m.settings().isEmpty();
+			out.add(new Slot(m, false, 0, y, full, CARD));
 			if (open) {
-				if (col == 1) { y += CARD + GAP2; col = 0; }
-				out.add(new Slot(m, false, 0, y, full, CARD));
 				y += CARD + 2;
 				int total = 0;
 				for (Setting st : m.settings()) total += SettingRenderer.height(st, settingsW());
 				out.add(new Slot(m, true, 2, y, full - 4, total));
 				y += total + GAP2;
 			} else {
-				out.add(new Slot(m, false, col == 0 ? 0 : colW + GAP2, y, colW, CARD));
-				if (col == 1) { y += CARD + GAP2; col = 0; } else col = 1;
+				y += CARD + GAP2;
 			}
 		}
 		return out;
@@ -169,33 +170,6 @@ public class ClickGuiScreen extends Screen {
 		return h;
 	}
 
-	private int searchW() { return Math.min(80, Math.max(44, ww / 7)); }
-	private int searchX() { return fx(1100) - searchW(); }
-
-	/** Nome curto para caber na vaga estreita da sidebar (o cabecalho mostra o nome inteiro). */
-	private static String shortName(Category c) {
-		return switch (c) {
-			case MOVEMENT -> "Move";
-			case COMBAT -> "Fight";
-			case VISUALS -> "View";
-			case WORLD -> "World";
-			case UTILITY -> "Tools";
-			case HUD -> "HUD";
-			case EFFECTS -> "FX";
-		};
-	}
-
-	private static String subtitle(Category c) {
-		return switch (c) {
-			case MOVEMENT -> "Mobility";
-			case COMBAT -> "Targeting";
-			case VISUALS -> "Render";
-			case WORLD -> "Chunks";
-			case UTILITY -> "Tools";
-			case HUD -> "Info";
-			case EFFECTS -> "Sounds";
-		};
-	}
 
 	private void clampScroll() {
 		scroll = Mth.clamp(scroll, 0f, Math.max(0, contentH() - ch()));
@@ -234,69 +208,81 @@ public class ClickGuiScreen extends Screen {
 		openAnim = Mth.lerp(Math.min(1f, speed * com.witch.module.GuiAnimationModule.rate()), openAnim, 1f);
 		float a = openAnim;
 		tipNow = null;
-		catTip = null;
 		clampScroll();
-
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x30000000, a));
-
-		float bg = a * com.witch.module.GuiSettingsModule.menuOpacity();
-		UiTex.menu(g, wx, wy, ww, wh, bg);
-
-		// cabecalho (faixa fina entre o chapeu e o X)
 		int fh = FontUtil.height();
-		int hy = headY();
-		int sx = searchX();
-		int sw = searchW();
-		int ex = editX(), ew = editW();
-		String fps = Minecraft.getInstance().getFps() + " FPS";
-		int fpsX = ex - 8 - FontUtil.width(fps);
-		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
-		int tx0 = fx(450);
-		CategoryIcons.draw(g, selected, tx0, hy + (HH - 7) / 2, RenderUtil.alpha(PURPLE, a));
-		FontUtil.draw(g, title, tx0 + 11, hy + (HH - fh) / 2, RenderUtil.alpha(TXT, a));
-		int chipX = tx0 + 11 + FontUtil.width(title) + 7;
-		String sub = search.isEmpty() ? subtitle(selected) : "All modules";
-		int chipW = FontUtil.width(sub) + 12;
-		if (chipX + chipW < fpsX - 4) {
-			RenderUtil.roundRect(g, chipX, hy, chipW, HH, 5, RenderUtil.alpha(PURPLE, a * 0.18f));
-			FontUtil.draw(g, sub, chipX + 6, hy + (HH - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
-		}
-		if (fpsX > chipX) FontUtil.draw(g, fps, fpsX, hy + (HH - fh) / 2, RenderUtil.alpha(TXT_DIM, a));
-		boolean eh = RenderUtil.inside(mx, my, ex, hy, ew, HH);
-		RenderUtil.roundRect(g, ex, hy, ew, HH, 5, RenderUtil.alpha(PURPLE, a * (eh ? 0.55f : 0.30f)));
-		FontUtil.draw(g, "Edit HUD", ex + 6, hy + (HH - fh) / 2, RenderUtil.alpha(eh ? TXT : TXT_DIM, a));
-		RenderUtil.roundRect(g, sx, hy, sw, HH, 5, RenderUtil.alpha(PURPLE, a * (searchFocused ? 0.85f : 0.35f)));
-		RenderUtil.roundRect(g, sx + 1, hy + 1, sw - 2, HH - 2, 4, RenderUtil.alpha(0xFF05070D, a * 0.95f));
-		String shown;
-		int col;
-		if (search.isEmpty() && !searchFocused) {
-			shown = "Search";
-			col = 0xFF667088;
-		} else {
-			boolean blink = searchFocused && (System.currentTimeMillis() / 500) % 2 == 0;
-			shown = search + (blink ? "|" : "");
-			col = TXT;
-		}
-		FontUtil.draw(g, ModuleRow.fit(shown, sw - 10), sx + 5, hy + (HH - fh) / 2, RenderUtil.alpha(col, a));
 
-		// menu lateral: uma categoria por vaga da imagem
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x50000000, a));
+
+		float bg = a * Math.max(0.85f, com.witch.module.GuiSettingsModule.menuOpacity());
+		RenderUtil.roundRect(g, wx, wy, ww, wh, 8, RenderUtil.alpha(0xFF2A2E35, bg));
+		RenderUtil.roundRect(g, wx + 1, wy + 1, ww - 2, wh - 2, 7, RenderUtil.alpha(0xFF0A0C0F, bg));
+		int sw0 = sideW();
+		g.fill(wx + sw0, wy + 1, wx + sw0 + 1, wy + wh - 1, RenderUtil.alpha(LINE_C, a));
+		g.fill(wx + sw0 + 1, wy + headH(), wx + ww - 1, wy + headH() + 1, RenderUtil.alpha(LINE_C, a));
+		g.fill(wx + sw0 + 1, wy + wh - footH(), wx + ww - 1, wy + wh - footH() + 1, RenderUtil.alpha(LINE_C, a));
+
+		// logo
+		int ls = 12, lx = wx + 9, ly = wy + (headH() - ls) / 2;
+		RenderUtil.roundRect(g, lx, ly, ls, ls, 3, RenderUtil.alpha(ACC, a * 0.9f));
+		RenderUtil.roundRect(g, lx + 1, ly + 1, ls - 2, ls - 2, 2, RenderUtil.alpha(0xFF0A0C0F, a));
+		RenderUtil.roundRect(g, lx + ls / 2 - 1, ly + ls / 2 - 1, 3, 3, 1, RenderUtil.alpha(ACC, a));
+		FontUtil.draw(g, "WITCH", lx + ls + 6, wy + (headH() - fh) / 2, RenderUtil.alpha(TXT, a));
+
+		// categorias
+		FontUtil.draw(g, "CATEGORIES", sideX() + 2, wy + headH() + 4, RenderUtil.alpha(0xFF6B7078, a));
 		Category[] cats = Category.values();
-		int bx = sideX(), bw = sideW(), bh = catH();
+		int bx = sideX(), bw = sideItemW(), bh = catH();
 		for (int i = 0; i < cats.length; i++) {
 			Category c = cats[i];
 			int ry = catY(i);
 			boolean sel = c == selected && search.isEmpty();
 			boolean hov = RenderUtil.inside(mx, my, bx, ry, bw, bh);
 			if (sel) {
-				RenderUtil.roundRect(g, bx + 2, ry + 2, bw - 4, bh - 4, 6, RenderUtil.alpha(PURPLE, a * 0.22f));
-				RenderUtil.roundRect(g, wx, ry + bh / 4, Math.max(2, ww / 300), bh / 2, 1, RenderUtil.alpha(PURPLE, a));
+				RenderUtil.roundRect(g, bx, ry, bw, bh, 4, RenderUtil.alpha(0xFF1D2025, a));
+				g.fill(bx - 3, ry + 3, bx - 1, ry + bh - 3, RenderUtil.alpha(ACC, a));
 			} else if (hov) {
-				RenderUtil.roundRect(g, bx + 2, ry + 2, bw - 4, bh - 4, 6, RenderUtil.alpha(PURPLE, a * 0.10f));
+				RenderUtil.roundRect(g, bx, ry, bw, bh, 4, RenderUtil.alpha(0xFF14171B, a));
 			}
-			if (hov) catTip = shortName(c);
+			int col = sel ? TXT : (hov ? 0xFFC4C8CE : 0xFF8E939B);
+			CategoryIcons.draw(g, c, bx + 5, ry + (bh - 7) / 2, RenderUtil.alpha(col, a));
+			String nm = c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
+			FontUtil.draw(g, nm, bx + 18, ry + (bh - fh) / 2, RenderUtil.alpha(col, a));
 		}
+		// Edit HUD (onde a referencia tem Settings)
+		g.fill(bx, editY() - 4, bx + bw, editY() - 3, RenderUtil.alpha(LINE_C, a));
+		boolean eh = RenderUtil.inside(mx, my, bx, editY(), bw, bh);
+		if (eh) RenderUtil.roundRect(g, bx, editY(), bw, bh, 4, RenderUtil.alpha(0xFF14171B, a));
+		FontUtil.draw(g, "Edit HUD", bx + 18, editY() + (bh - fh) / 2, RenderUtil.alpha(eh ? 0xFFC4C8CE : 0xFF8E939B, a));
 
-		// lista de modulos (grade de 2 colunas)
+		// cabecalho: titulo + busca
+		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
+		FontUtil.draw(g, title, wx + sw0 + 10, wy + (headH() - fh) / 2, RenderUtil.alpha(TXT, a));
+		int sx = searchX(), sy = searchY(), sw = searchW();
+		RenderUtil.roundRect(g, sx, sy, sw, HEAD_SEARCH_H, 5, RenderUtil.alpha(searchFocused ? 0xFFD0D3D8 : 0xFF2A2E35, a));
+		RenderUtil.roundRect(g, sx + 1, sy + 1, sw - 2, HEAD_SEARCH_H - 2, 4, RenderUtil.alpha(0xFF111317, a));
+		String shown;
+		int scol;
+		if (search.isEmpty() && !searchFocused) {
+			shown = "Search modules";
+			scol = 0xFF7A7F87;
+		} else {
+			boolean blink = searchFocused && (System.currentTimeMillis() / 500) % 2 == 0;
+			shown = search + (blink ? "|" : "");
+			scol = TXT;
+		}
+		FontUtil.draw(g, ModuleRow.fit(shown, sw - 10), sx + 5, sy + (HEAD_SEARCH_H - fh) / 2, RenderUtil.alpha(scol, a));
+
+		// rodape
+		int fy0 = wy + wh - footH();
+		int chipW = FontUtil.width("RSHIFT") + 8;
+		RenderUtil.roundRect(g, cx(), fy0 + 2, chipW, footH() - 4, 3, RenderUtil.alpha(0xFF2A2E35, a));
+		RenderUtil.roundRect(g, cx() + 1, fy0 + 3, chipW - 2, footH() - 6, 2, RenderUtil.alpha(0xFF0A0C0F, a));
+		FontUtil.draw(g, "RSHIFT", cx() + 4, fy0 + (footH() - fh) / 2, RenderUtil.alpha(0xFFB5B9C0, a));
+		FontUtil.draw(g, "toggle GUI", cx() + chipW + 6, fy0 + (footH() - fh) / 2, RenderUtil.alpha(0xFF6B7078, a));
+		String fps = Minecraft.getInstance().getFps() + " FPS";
+		FontUtil.draw(g, fps, wx + ww - 8 - FontUtil.width(fps), fy0 + (footH() - fh) / 2, RenderUtil.alpha(0xFF6B7078, a));
+
+		// lista de modulos (uma coluna)
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
 		g.enableScissor(cx, cy, cx + cw, cy + ch);
 		int base = cy - Math.round(scroll);
@@ -305,7 +291,8 @@ public class ClickGuiScreen extends Screen {
 			int sx0 = cx + sl.x, sy0 = base + sl.y;
 			if (sy0 + sl.h < cy || sy0 > cy + ch) continue;
 			if (sl.block) {
-				RenderUtil.roundRect(g, sx0, sy0 - 1, sl.w, sl.h + 2, 6, RenderUtil.alpha(0xFF000000, a * 0.35f));
+				RenderUtil.roundRect(g, sx0, sy0 - 1, sl.w, sl.h + 2, 5, RenderUtil.alpha(0xFF23272D, a));
+				RenderUtil.roundRect(g, sx0 + 1, sy0, sl.w - 2, sl.h, 4, RenderUtil.alpha(0xFF14171B, a));
 				int ry = sy0;
 				for (Setting st : m.settings()) {
 					int sh = SettingRenderer.height(st, settingsW());
@@ -318,20 +305,34 @@ public class ClickGuiScreen extends Screen {
 			m.toggleAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.toggleAnim, m.isEnabled() ? 1f : 0f);
 			m.hoverAnim = Mth.lerp(Math.min(1f, speed * 0.3f), m.hoverAnim, hover ? 1f : 0f);
 			float t = m.toggleAnim;
-			int lv = Math.round(0x70 + (0xFF - 0x70) * t + 0x30 * m.hoverAnim * (1f - t));
-			lv = Math.min(255, lv);
-			UiTex.button(g, sx0, sy0, sl.w, CARD, (lv << 16) | (lv << 8) | lv, bg);
-			int tc = RenderUtil.mix(TXT_DIM, TXT, t);
+			int border = RenderUtil.mix(RenderUtil.mix(0xFF262A31, 0xFF3A3F47, m.hoverAnim), 0xFFE2E4E8, t);
+			int fill = RenderUtil.mix(RenderUtil.mix(0xFF16191E, 0xFF1B1F25, m.hoverAnim), 0xFF1D2025, t);
+			RenderUtil.roundRect(g, sx0, sy0, sl.w, CARD, 6, RenderUtil.alpha(border, a));
+			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 5, RenderUtil.alpha(fill, a));
 			boolean has = !m.settings().isEmpty();
-			FontUtil.draw(g, ModuleRow.fit(m.name, sl.w - 28 - 46), sx0 + 28, sy0 + (CARD - fh) / 2, RenderUtil.alpha(tc, a));
+			boolean open = OPEN.contains(m);
+			int right = sx0 + sl.w - 6;
 			if (has) {
-				String ar = OPEN.contains(m) ? "-" : "+";
-				FontUtil.draw(g, ar, sx0 + sl.w - 33 + (10 - FontUtil.width(ar)) / 2, sy0 + (CARD - fh) / 2, RenderUtil.alpha(OPEN.contains(m) ? TXT : TXT_DIM, a));
+				String ar = open ? "^" : "v";
+				FontUtil.draw(g, ar, right - FontUtil.width(ar), sy0 + (CARD - fh) / 2, RenderUtil.alpha(open ? TXT : 0xFF8E939B, a));
+				right -= 14;
 			}
-			int swx = sx0 + sl.w - 22, swy = sy0 + (CARD - 8) / 2;
-			RenderUtil.roundRect(g, swx, swy, 16, 8, 4, RenderUtil.alpha(RenderUtil.mix(0xFF1B2538, PURPLE, t), a));
-			int kx = swx + 1 + Math.round(8 * t);
-			RenderUtil.roundRect(g, kx, swy + 1, 6, 6, 3, RenderUtil.alpha(RenderUtil.mix(0xFF7A869A, 0xFFFFFFFF, t), a));
+			int swx = right - 20, swy = sy0 + (CARD - 10) / 2;
+			RenderUtil.roundRect(g, swx, swy, 20, 10, 5, RenderUtil.alpha(RenderUtil.mix(0xFF3A3E45, ACC, t), a));
+			int kx = swx + 1 + Math.round(10 * t);
+			RenderUtil.roundRect(g, kx, swy + 1, 8, 8, 4, RenderUtil.alpha(RenderUtil.mix(0xFF8A8F97, 0xFF0A0C0F, t), a));
+			int nameMax = swx - (sx0 + 8) - 6;
+			if (m.keybind.key() != 0) {
+				String kl = m.keybind.label();
+				int kw = FontUtil.width(kl) + 8;
+				int kxx = swx - 6 - kw;
+				RenderUtil.roundRect(g, kxx, sy0 + 4, kw, CARD - 8, 3, RenderUtil.alpha(0xFF3A3F47, a));
+				RenderUtil.roundRect(g, kxx + 1, sy0 + 5, kw - 2, CARD - 10, 2, RenderUtil.alpha(0xFF0F1114, a));
+				FontUtil.draw(g, kl, kxx + 4, sy0 + (CARD - fh) / 2, RenderUtil.alpha(0xFFB5B9C0, a));
+				nameMax = kxx - (sx0 + 8) - 6;
+			}
+			int tc = RenderUtil.mix(0xFFB5B9C0, TXT, t);
+			FontUtil.draw(g, ModuleRow.fit(m.name, Math.max(20, nameMax)), sx0 + 8, sy0 + (CARD - fh) / 2, RenderUtil.alpha(tc, a));
 			if (hover) tipNow = m;
 		}
 		g.disableScissor();
@@ -339,14 +340,7 @@ public class ClickGuiScreen extends Screen {
 		if (total > ch) {
 			int th = Math.max(14, Math.round(ch * (ch / (float) total)));
 			float f = scroll / Math.max(1, total - ch);
-			RenderUtil.roundRect(g, cx + cw - 4, cy + Math.round((ch - th) * f), 3, th, 1, RenderUtil.alpha(PURPLE, a * (barDrag ? 0.95f : 0.65f)));
-		}
-
-		if (catTip != null) {
-			int tw = FontUtil.width(catTip) + 10, th = fh + 6;
-			int tx = mx + 10, ty = my + 8;
-			RenderUtil.roundRect(g, tx, ty, tw, th, 3, RenderUtil.alpha(0xFF0A0F1C, a * 0.95f));
-			FontUtil.draw(g, catTip, tx + 5, ty + 3, RenderUtil.alpha(TXT, a));
+			RenderUtil.roundRect(g, cx + cw - 3, cy + Math.round((ch - th) * f), 2, th, 1, RenderUtil.alpha(0xFFB5B9C0, a * (barDrag ? 0.95f : 0.55f)));
 		}
 
 		// tooltip
@@ -358,8 +352,8 @@ public class ClickGuiScreen extends Screen {
 				int th = fh + 8;
 				int tx = Mth.clamp(mx + 10, wx + 6, wx + ww - tw - 6);
 				int ty = Mth.clamp(my + 12, wy + 6, wy + wh - th - 6);
-				RenderUtil.roundRect(g, tx - 1, ty - 1, tw + 2, th + 2, 5, RenderUtil.alpha(0xFFFFFFFF, a * 0.2f));
-				RenderUtil.roundRect(g, tx, ty, tw, th, 4, RenderUtil.alpha(0xFF0C0C0C, a * 0.96f));
+				RenderUtil.roundRect(g, tx - 1, ty - 1, tw + 2, th + 2, 5, RenderUtil.alpha(0xFF3A3F47, a));
+				RenderUtil.roundRect(g, tx, ty, tw, th, 4, RenderUtil.alpha(0xFF0C0E11, a * 0.97f));
 				FontUtil.draw(g, ModuleRow.fit(d, tw - 10), tx + 6, ty + 4, RenderUtil.alpha(TXT, a));
 			}
 		}
@@ -371,22 +365,18 @@ public class ClickGuiScreen extends Screen {
 		double mx = click.x(), my = click.y();
 		int button = click.button();
 		int fh = FontUtil.height();
-		if (RenderUtil.inside(mx, my, fx(1315), fy(12), fx(1385) - fx(1315), fy(82) - fy(12))) {
-			this.onClose();
-			return true;
-		}
-		searchFocused = RenderUtil.inside(mx, my, searchX(), headY(), searchW(), HH);
+		searchFocused = RenderUtil.inside(mx, my, searchX(), searchY(), searchW(), HEAD_SEARCH_H);
 		if (searchFocused) return true;
 		Category[] cats = Category.values();
 		for (int i = 0; i < cats.length; i++) {
-			if (RenderUtil.inside(mx, my, sideX(), catY(i), sideW(), catH())) {
+			if (RenderUtil.inside(mx, my, sideX(), catY(i), sideItemW(), catH())) {
 				selected = cats[i];
 				search = "";
 				scroll = 0f;
 				return true;
 			}
 		}
-		if (RenderUtil.inside(mx, my, editX(), headY(), editW(), HH)) {
+		if (RenderUtil.inside(mx, my, sideX(), editY(), sideItemW(), catH())) {
 			Minecraft.getInstance().gui.setScreen(new HudEditScreen());
 			return true;
 		}
@@ -429,7 +419,7 @@ public class ClickGuiScreen extends Screen {
 			}
 			if (my >= sy0 && my < sy0 + CARD && mx >= sx0 && mx < sx0 + sl.w) {
 				boolean has = !m.settings().isEmpty();
-				boolean onArrow = has && mx >= sx0 + sl.w - 37 && mx < sx0 + sl.w - 23;
+				boolean onArrow = has && mx >= sx0 + sl.w - 20;
 				if (has && (button == 1 || onArrow)) {
 					deferred = () -> { if (!OPEN.remove(m)) OPEN.add(m); };
 				} else if (button == 0) {
