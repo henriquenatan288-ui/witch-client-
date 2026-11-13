@@ -68,11 +68,18 @@ public class WitchTitleScreen extends Screen {
 		// fundo: imagem (caldeirao, chapeu e estrelas ja vem desenhados nela)
 		UiTex.titleBg(g, w, h);
 
-		// marca no canto
+		// vindo da tela de entrada: sai do preto (o logo ja esta no topo, centralizado)
+		if (WitchEnterScreen.handoffMs != 0L) {
+			float p = Math.min(1f, (System.currentTimeMillis() - WitchEnterScreen.handoffMs) / 500f);
+			if (p < 1f) g.fill(0, 0, w, h, RenderUtil.alpha(0xFF000000, 1f - p));
+		}
+
+		// marca no centro do topo
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
 		int lw = 58;
-		WitchLoading.glow(g, 12 + lw / 2, 6 + WitchLogo.height(lw) / 2, lw * 2, 0.5f + 0.5f * pulse);
-		WitchLogo.draw(g, 12, 6, lw, 0.85f + 0.15f * pulse);
+		int lx = w / 2 - lw / 2;
+		WitchLoading.glow(g, lx + lw / 2, 6 + WitchLogo.height(lw) / 2, lw * 2, 0.5f + 0.5f * pulse);
+		WitchLogo.draw(g, lx, 6, lw, 0.85f + 0.15f * pulse);
 
 		// area do menu
 		menuX = Math.max(18, w / 14);
