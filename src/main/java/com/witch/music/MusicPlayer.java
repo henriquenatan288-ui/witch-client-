@@ -46,6 +46,8 @@ public final class MusicPlayer {
 	private static volatile int loadToken = 0;
 	public static volatile boolean loading = false;
 	public static volatile String error = "";
+	/** Ultimo arquivo decodificado (canais/taxa/duracao); serve para diagnostico e testes. */
+	public static volatile String info = "";
 
 	private static List<Path> tracks = List.of();
 	public static int current = -1;
@@ -116,6 +118,7 @@ public final class MusicPlayer {
 		POOL.submit(() -> {
 			try {
 				Pcm pcm = decode(p);
+				info = "ch=" + pcm.channels() + " rate=" + pcm.rate() + " sec=" + (pcm.data().length / (float) Math.max(1, pcm.channels() * pcm.rate()));
 				if (token == loadToken) pending = pcm;
 			} catch (Throwable t) {
 				if (token == loadToken) {
