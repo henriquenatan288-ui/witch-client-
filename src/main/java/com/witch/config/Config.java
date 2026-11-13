@@ -42,9 +42,19 @@ public final class Config {
 			o.add("settings", s);
 			root.add(m.name, o);
 		}
-		try (Writer w = Files.newBufferedWriter(file())) {
-			GSON.toJson(root, w);
-		} catch (IOException e) {
+		// escreve num arquivo temporario e troca no fim: um crash no meio nunca deixa o witch.json pela metade
+		Path target = file();
+		Path tmp = target.resolveSibling("witch.json.tmp");
+		try {
+			try (Writer w = Files.newBufferedWriter(tmp)) {
+				GSON.toJson(root, w);
+			}
+			try {
+				Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+			} catch (java.nio.file.AtomicMoveNotSupportedException e) {
+				Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			}
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -67,19 +77,27 @@ public final class Config {
 				if (e.getKey().startsWith("_")) continue;
 				Module m = ModuleManager.byName(e.getKey());
 				if (m == null) continue;
-				JsonElement el = e.getValue();
-				if (el.isJsonPrimitive()) {
-					// formato antigo: so true/false
-					m.setEnabled(el.getAsBoolean());
-				} else if (el.isJsonObject()) {
-					JsonObject o = el.getAsJsonObject();
-					if (o.has("enabled")) m.setEnabled(o.get("enabled").getAsBoolean());
-					if (o.has("settings") && o.get("settings").isJsonObject()) {
-						JsonObject s = o.getAsJsonObject("settings");
-						for (Setting st : m.settings()) {
-							if (s.has(st.name)) st.fromNumber(s.get(st.name).getAsDouble());
+				try {
+					JsonElement el = e.getValue();
+					if (el.isJsonPrimitive()) {
+						// formato antigo: so true/false
+						m.setEnabled(el.getAsBoolean());
+					} else if (el.isJsonObject()) {
+						JsonObject o = el.getAsJsonObject();
+						if (o.has("settings") && o.get("settings").isJsonObject()) {
+							JsonObject s = o.getAsJsonObject("settings");
+							for (Setting st : m.settings()) {
+								try {
+									if (s.has(st.name)) st.fromNumber(s.get(st.name).getAsDouble());
+								} catch (Exception bad) {
+									System.err.println("[Witch] ajuste invalido ignorado: " + m.name + "/" + st.name);
+								}
+							}
 						}
+						if (o.has("enabled")) m.setEnabled(o.get("enabled").getAsBoolean());
 					}
+				} catch (Throwable bad) {
+					System.err.println("[Witch] config de '" + m.name + "' ignorada: " + bad);
 				}
 				m.toggleAnim = m.isEnabled() ? 1f : 0f;
 			}

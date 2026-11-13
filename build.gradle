@@ -15,6 +15,9 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	// decodificador de MP3 (puro Java), embutido no jar
+	implementation "com.googlecode.soundlibs:jlayer:1.0.1.4"
+	include "com.googlecode.soundlibs:jlayer:1.0.1.4"
 }
 
 loom {
