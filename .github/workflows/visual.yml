@@ -23,12 +23,13 @@ jobs:
       - name: Install software GL
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libgl1-mesa-dri libglx-mesa0 libegl1 mesa-vulkan-drivers libxrandr2 libxinerama1 libxcursor1 libxi6
+          sudo apt-get install -y ffmpeg xvfb libgl1-mesa-dri libglx-mesa0 libegl1 mesa-vulkan-drivers libxrandr2 libxinerama1 libxcursor1 libxi6
       - name: Run client gametest
         shell: bash
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALSOFT_DRIVERS: "null"
           MESA_GL_VERSION_OVERRIDE: "4.6"
           MESA_GLSL_VERSION_OVERRIDE: "460"
         run: |
@@ -38,7 +39,7 @@ jobs:
           find . -path ./out -prune -o -type d -name screenshots -print | head
           find . -name "*.png" -path "*screenshots*" -exec cp {} out/ \; || true
           cp visual.log out/ || true
-          grep -n -E "What went wrong|FAILURE|Exception|Caused by|error:|Error|gametest|screenshot|Screenshot" visual.log | head -40 | while IFS= read -r l; do echo "::notice::$l"; done
+          grep -n -E "MUSICTEST|GUARDTEST|CONFIGTEST|What went wrong|FAILURE|Exception|Caused by|error:|Error|gametest|screenshot|Screenshot" visual.log | head -40 | while IFS= read -r l; do echo "::notice::$l"; done
           tail -2000 visual.log > out/visual-tail.log; rm -f out/visual.log
           rm -rf /tmp/shots-repo; mkdir -p /tmp/shots-repo; cp -r out/* /tmp/shots-repo/ || true
           cd /tmp/shots-repo
