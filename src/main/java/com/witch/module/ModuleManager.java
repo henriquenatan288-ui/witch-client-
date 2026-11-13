@@ -220,7 +220,22 @@ public final class ModuleManager {
 
 	public static void tick() {
 		for (Module m : MODULES) {
-			if (m.isEnabled()) m.onTick();
+			if (m.isEnabled()) guarded(m, m::onTick);
+		}
+	}
+
+	/** Um modulo com erro nao derruba o jogo: ele e desligado, o erro vai pro log e o resto segue. */
+	public static void guarded(Module m, Runnable r) {
+		try {
+			r.run();
+		} catch (Throwable t) {
+			System.err.println("[Witch] modulo '" + m.name + "' falhou e foi desligado: " + t);
+			t.printStackTrace();
+			try {
+				m.setEnabled(false);
+			} catch (Throwable ignored) {
+				// o proprio onDisable falhou; o modulo fica marcado como desligado mesmo assim
+			}
 		}
 	}
 }
