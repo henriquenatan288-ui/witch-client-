@@ -86,45 +86,41 @@ public class ClickGuiScreen extends Screen {
 		return false;
 	}
 
-	private static final int ACC = 0xFFFFFFFF; // destaque (branco, como a referencia); troque aqui para mudar a cor
-	private static final net.minecraft.resources.Identifier TEX_WINDOW = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_window.png");
+	private static final net.minecraft.resources.Identifier TEX_MENU = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_menu.png");
 	private static final net.minecraft.resources.Identifier TEX_CARD_OFF = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_card_off.png");
 	private static final net.minecraft.resources.Identifier TEX_CARD_ON = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_card_on.png");
-	private static final int LINE_C = 0xFF21252B;
-	private static final int HEAD_SEARCH_H = 14;
+	private static final int ACC = 0xFFFFFFFF; // destaque (branco, como a referencia)
+	private static final float IW = 1996f, IH = 1196f; // tamanho da imagem da janela
 
 	private void layout() {
 		ww = Math.min(this.width - 12, 460);
-		wh = Math.round(ww * 0.60f);
+		wh = Math.round(ww * IH / IW);
 		if (wh > this.height - 12) {
 			wh = this.height - 12;
-			ww = Math.round(wh / 0.60f);
+			ww = Math.round(wh * IW / IH);
 		}
 		wx = (this.width - ww) / 2;
 		wy = (this.height - wh) / 2;
 	}
 
-	private int sideW() { return Math.round(ww * 0.22f); }
-	private int headH() { return Math.max(22, Math.round(wh * 0.13f)); }
-	private int footH() { return 16; }
-	private int pad() { return 6; }
-	private int cx() { return wx + sideW() + pad(); }
-	private int cy() { return wy + headH() + pad(); }
-	private int cw() { return ww - sideW() - 2 * pad(); }
-	private int ch() { return wh - headH() - footH() - 2 * pad(); }
+	/** px = posicao na imagem original (relativa a janela). */
+	private int fx(float px) { return wx + Math.round(px / IW * ww); }
+	private int fy(float py) { return wy + Math.round(py / IH * wh); }
 
-	private int itemH() {
-		int avail = wh - headH() - 16 - 22 - 20;
-		return Mth.clamp(avail / Category.values().length - 2, 11, 17);
-	}
-	private int sideX() { return wx + 6; }
-	private int sideItemW() { return sideW() - 12; }
-	private int catY(int i) { return wy + headH() + 16 + i * (itemH() + 2); }
-	private int catH() { return itemH(); }
-	private int editY() { return wy + wh - itemH() - 5; }
-	private int searchW() { return Mth.clamp(Math.round(ww * 0.30f), 60, 120); }
-	private int searchX() { return wx + ww - pad() - searchW(); }
-	private int searchY() { return wy + (headH() - HEAD_SEARCH_H) / 2; }
+	private int cx() { return fx(500); }
+	private int cy() { return fy(205); }
+	private int cw() { return fx(1936) - fx(500); }
+	private int ch() { return fy(1050) - fy(205); }
+
+	private int sideX() { return fx(28); }
+	private int sideItemW() { return fx(410) - fx(28); }
+	private int catY(int i) { return fy(229 + 96 * i); }
+	private int catH() { return fy(88) - fy(0); }
+	private int editY() { return fy(1072); }
+	private int searchX() { return fx(1420); }
+	private int searchY() { return fy(30); }
+	private int searchW() { return fx(1940) - fx(1420); }
+	private int searchH() { return fy(110) - fy(30); }
 
 	private List<Module> modules() {
 		List<Module> out = new ArrayList<>();
@@ -217,21 +213,9 @@ public class ClickGuiScreen extends Screen {
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x50000000, a));
 
 		float bg = a * Math.max(0.85f, com.witch.module.GuiSettingsModule.menuOpacity());
-		RenderUtil.nine(g, TEX_WINDOW, wx, wy, ww, wh, 10, 998, 598, 22, RenderUtil.alpha(0xFFFFFFFF, bg));
-		int sw0 = sideW();
-		g.fill(wx + sw0, wy + 1, wx + sw0 + 1, wy + wh - 1, RenderUtil.alpha(LINE_C, a));
-		g.fill(wx + sw0 + 1, wy + headH(), wx + ww - 1, wy + headH() + 1, RenderUtil.alpha(LINE_C, a));
-		g.fill(wx + sw0 + 1, wy + wh - footH(), wx + ww - 1, wy + wh - footH() + 1, RenderUtil.alpha(LINE_C, a));
+		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEX_MENU, wx, wy, 0f, 0f, ww, wh, 998, 598, 998, 598, RenderUtil.alpha(0xFFFFFFFF, bg));
 
-		// logo
-		int ls = 12, lx = wx + 9, ly = wy + (headH() - ls) / 2;
-		RenderUtil.roundRect(g, lx, ly, ls, ls, 3, RenderUtil.alpha(ACC, a * 0.9f));
-		RenderUtil.roundRect(g, lx + 1, ly + 1, ls - 2, ls - 2, 2, RenderUtil.alpha(0xFF0A0C0F, a));
-		RenderUtil.roundRect(g, lx + ls / 2 - 1, ly + ls / 2 - 1, 3, 3, 1, RenderUtil.alpha(ACC, a));
-		FontUtil.draw(g, "WITCH", lx + ls + 6, wy + (headH() - fh) / 2, RenderUtil.alpha(TXT, a));
-
-		// categorias
-		FontUtil.draw(g, "CATEGORIES", sideX() + 2, wy + headH() + 4, RenderUtil.alpha(0xFF6B7078, a));
+		// categorias (a lista fica em branco na imagem)
 		Category[] cats = Category.values();
 		int bx = sideX(), bw = sideItemW(), bh = catH();
 		for (int i = 0; i < cats.length; i++) {
@@ -240,28 +224,25 @@ public class ClickGuiScreen extends Screen {
 			boolean sel = c == selected && search.isEmpty();
 			boolean hov = RenderUtil.inside(mx, my, bx, ry, bw, bh);
 			if (sel) {
-				RenderUtil.roundRect(g, bx, ry, bw, bh, 4, RenderUtil.alpha(0xFF1D2025, a));
-				g.fill(bx - 3, ry + 3, bx - 1, ry + bh - 3, RenderUtil.alpha(ACC, a));
+				RenderUtil.roundRect(g, bx, ry, bw, bh, 5, RenderUtil.alpha(0xFF1D2025, a));
+				g.fill(bx - 3, ry + bh / 4, bx - 1, ry + bh - bh / 4, RenderUtil.alpha(ACC, a));
 			} else if (hov) {
-				RenderUtil.roundRect(g, bx, ry, bw, bh, 4, RenderUtil.alpha(0xFF14171B, a));
+				RenderUtil.roundRect(g, bx, ry, bw, bh, 5, RenderUtil.alpha(0xFF14171B, a));
 			}
 			int col = sel ? TXT : (hov ? 0xFFC4C8CE : 0xFF8E939B);
-			CategoryIcons.draw(g, c, bx + 5, ry + (bh - 7) / 2, RenderUtil.alpha(col, a));
+			CategoryIcons.draw(g, c, bx + Math.max(4, bw / 12), ry + (bh - 7) / 2, RenderUtil.alpha(col, a));
 			String nm = c.name().charAt(0) + c.name().substring(1).toLowerCase(Locale.ROOT);
-			FontUtil.draw(g, nm, bx + 18, ry + (bh - fh) / 2, RenderUtil.alpha(col, a));
+			FontUtil.draw(g, nm, bx + Math.max(16, bw / 5), ry + (bh - fh) / 2, RenderUtil.alpha(col, a));
 		}
-		// Edit HUD (onde a referencia tem Settings)
-		g.fill(bx, editY() - 4, bx + bw, editY() - 3, RenderUtil.alpha(LINE_C, a));
+		// "Edit HUD" no lugar do "Settings" (icone ja vem na imagem)
 		boolean eh = RenderUtil.inside(mx, my, bx, editY(), bw, bh);
-		if (eh) RenderUtil.roundRect(g, bx, editY(), bw, bh, 4, RenderUtil.alpha(0xFF14171B, a));
-		FontUtil.draw(g, "Edit HUD", bx + 18, editY() + (bh - fh) / 2, RenderUtil.alpha(eh ? 0xFFC4C8CE : 0xFF8E939B, a));
+		FontUtil.draw(g, "Edit HUD", bx + Math.max(16, bw / 5), editY() + (bh - fh) / 2, RenderUtil.alpha(eh ? TXT : 0xFF9AA0A8, a));
 
-		// cabecalho: titulo + busca
+		// titulo do cabecalho e texto da busca
 		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
-		FontUtil.draw(g, title, wx + sw0 + 10, wy + (headH() - fh) / 2, RenderUtil.alpha(TXT, a));
-		int sx = searchX(), sy = searchY(), sw = searchW();
-		RenderUtil.roundRect(g, sx, sy, sw, HEAD_SEARCH_H, 5, RenderUtil.alpha(searchFocused ? 0xFFD0D3D8 : 0xFF2A2E35, a));
-		RenderUtil.roundRect(g, sx + 1, sy + 1, sw - 2, HEAD_SEARCH_H - 2, 4, RenderUtil.alpha(0xFF111317, a));
+		FontUtil.draw(g, title, fx(778), fy(71) - fh / 2, RenderUtil.alpha(TXT, a));
+		int sx = searchX(), sy = searchY(), sw = searchW(), sh = searchH();
+		if (searchFocused) RenderUtil.roundRect(g, sx, sy, sw, sh, 5, RenderUtil.alpha(0x30FFFFFF, a));
 		String shown;
 		int scol;
 		if (search.isEmpty() && !searchFocused) {
@@ -272,17 +253,11 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			scol = TXT;
 		}
-		FontUtil.draw(g, ModuleRow.fit(shown, sw - 10), sx + 5, sy + (HEAD_SEARCH_H - fh) / 2, RenderUtil.alpha(scol, a));
+		FontUtil.draw(g, ModuleRow.fit(shown, sw - fx(120) + fx(0)), fx(1500), sy + (sh - fh) / 2, RenderUtil.alpha(scol, a));
 
-		// rodape
-		int fy0 = wy + wh - footH();
-		int chipW = FontUtil.width("RSHIFT") + 8;
-		RenderUtil.roundRect(g, cx(), fy0 + 2, chipW, footH() - 4, 3, RenderUtil.alpha(0xFF2A2E35, a));
-		RenderUtil.roundRect(g, cx() + 1, fy0 + 3, chipW - 2, footH() - 6, 2, RenderUtil.alpha(0xFF0A0C0F, a));
-		FontUtil.draw(g, "RSHIFT", cx() + 4, fy0 + (footH() - fh) / 2, RenderUtil.alpha(0xFFB5B9C0, a));
-		FontUtil.draw(g, "toggle GUI", cx() + chipW + 6, fy0 + (footH() - fh) / 2, RenderUtil.alpha(0xFF6B7078, a));
+		// FPS no rodape (RSHIFT toggle GUI ja vem na imagem)
 		String fps = Minecraft.getInstance().getFps() + " FPS";
-		FontUtil.draw(g, fps, wx + ww - 8 - FontUtil.width(fps), fy0 + (footH() - fh) / 2, RenderUtil.alpha(0xFF6B7078, a));
+		FontUtil.draw(g, fps, fx(1940) - FontUtil.width(fps), fy(1116) - fh / 2, RenderUtil.alpha(0xFF6B7078, a));
 
 		// lista de modulos (uma coluna)
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
@@ -366,7 +341,7 @@ public class ClickGuiScreen extends Screen {
 		double mx = click.x(), my = click.y();
 		int button = click.button();
 		int fh = FontUtil.height();
-		searchFocused = RenderUtil.inside(mx, my, searchX(), searchY(), searchW(), HEAD_SEARCH_H);
+		searchFocused = RenderUtil.inside(mx, my, searchX(), searchY(), searchW(), searchH());
 		if (searchFocused) return true;
 		Category[] cats = Category.values();
 		for (int i = 0; i < cats.length; i++) {
