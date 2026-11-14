@@ -15,10 +15,10 @@ public final class ClickGuiMetrics {
 	public static final int SB_VIS = 4;
 	public static final int SB_HIT = 12;
 
-	public static final int LINE = 0xFF3A3A3A;
+	public static final int LINE = 0xFF3A3F47;
 	public static final int SUB_BG = 0xFF0B0B0B;
 	public static final int TXT = 0xFFFFFFFF;
-	public static final int TXT_DIM = 0xFF8E8E8E;
+	public static final int TXT_DIM = 0xFF8E939B;
 
 	private ClickGuiMetrics() {}
 }

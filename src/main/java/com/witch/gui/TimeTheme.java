@@ -9,9 +9,9 @@ public final class TimeTheme {
 	private TimeTheme() {}
 
 	// panel, search, dim, placeholder, input, hover
-	private static final int[] DAY = {0xE6101010, 0xFF1C1C1C, 0xFFB4B4B4, 0xFF6E6E6E, 0xFFFFFFFF, 0x33FFFFFF};
-	private static final int[] SUNSET = {0xE6101010, 0xFF1C1C1C, 0xFFB4B4B4, 0xFF6E6E6E, 0xFFFFFFFF, 0x33FFFFFF};
-	private static final int[] NIGHT = {0xE6101010, 0xFF1C1C1C, 0xFFB4B4B4, 0xFF6E6E6E, 0xFFFFFFFF, 0x33FFFFFF};
+	private static final int[] DAY = {0xE6101010, 0xFF1C1C1C, 0xFFB5B9C0, 0xFF6B7078, 0xFFFFFFFF, 0x33FFFFFF};
+	private static final int[] SUNSET = {0xE6101010, 0xFF1C1C1C, 0xFFB5B9C0, 0xFF6B7078, 0xFFFFFFFF, 0x33FFFFFF};
+	private static final int[] NIGHT = {0xE6101010, 0xFF1C1C1C, 0xFFB5B9C0, 0xFF6B7078, 0xFFFFFFFF, 0x33FFFFFF};
 
 	private static final float[] KEY_H = {0f, 5f, 6.25f, 8f, 16f, 17.75f, 19.5f, 24f};
 	private static final int[][] KEY_P = {NIGHT, NIGHT, SUNSET, DAY, DAY, SUNSET, NIGHT, NIGHT};

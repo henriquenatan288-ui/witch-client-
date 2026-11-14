@@ -7,8 +7,8 @@ import java.util.Random;
 /** Chapeus de bruxa pequenos caindo no fundo da GUI, desenhados so com retangulos (sem shader). */
 public final class LeafParticles {
 	private static final int COUNT = 10;
-	private static final int[] PALETTE = {0xFF3A3A3A, 0xFF555555, 0xFF2A2A2A, 0xFF6A6A6A};
-	private static final int BAND = 0xFFBDBDBD;
+	private static final int[] PALETTE = {0xFF3A3F47, 0xFF555555, 0xFF2A2E35, 0xFF6A6A6A};
+	private static final int BAND = 0xFFB5B9C0;
 
 	private static final class Leaf {
 		float x, y, vx, vy, size, angle, spin, phase;

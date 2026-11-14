@@ -97,7 +97,7 @@ public final class SettingRenderer {
 			int rows = (ColorSetting.PALETTE.length + per - 1) / per;
 			int py = ry + 13 + rows * (SW + SW_GAP) + PICK_GAP - SW_GAP + 1;
 			int px = x + 7, pw = w - 14;
-			RenderUtil.roundRect(g, px - 1, py - 1, pw + 2, SV_H + 2, 3, RenderUtil.alpha(0xFF3A3A3A, a));
+			RenderUtil.roundRect(g, px - 1, py - 1, pw + 2, SV_H + 2, 3, RenderUtil.alpha(0xFF3A3F47, a));
 			for (int cxp = 0; cxp < pw; cxp += 2) {
 				int cw2 = Math.min(2, pw - cxp);
 				int top = ColorSetting.hsvToRgb(cs.hue, (cxp + cw2 / 2f) / pw, 1f);
@@ -125,12 +125,12 @@ public final class SettingRenderer {
 		} else if (s instanceof OreSetting os) {
 			int bx = x + 7;
 			int bY = ry + (sh - 9) / 2;
-			RenderUtil.roundRect(g, bx, bY, 9, 9, 3, RenderUtil.alpha(0xFF3A3A3A, a));
-			RenderUtil.roundRect(g, bx + 1, bY + 1, 7, 7, 2, RenderUtil.alpha(0xFF0C0C0C, a));
+			RenderUtil.roundRect(g, bx, bY, 9, 9, 3, RenderUtil.alpha(0xFF3A3F47, a));
+			RenderUtil.roundRect(g, bx + 1, bY + 1, 7, 7, 2, RenderUtil.alpha(0xFF0F1114, a));
 			if (os.enabled()) RenderUtil.roundRect(g, bx + 2, bY + 2, 5, 5, 1, RenderUtil.alpha(TXT, a));
 			FontUtil.draw(g, os.name, bx + 14, ry + (sh - fh) / 2, RenderUtil.alpha(os.enabled() ? TXT : TXT_DIM, a));
 			int cx = x + w - 6 - 12;
-			RenderUtil.roundRect(g, cx - 1, bY - 1, 14, 11, 3, RenderUtil.alpha(0xFF3A3A3A, a));
+			RenderUtil.roundRect(g, cx - 1, bY - 1, 14, 11, 3, RenderUtil.alpha(0xFF3A3F47, a));
 			RenderUtil.roundRect(g, cx, bY, 12, 9, 2, RenderUtil.alpha(os.color(), a));
 		}
 	}

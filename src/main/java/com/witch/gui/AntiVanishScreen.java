@@ -100,8 +100,8 @@ public class AntiVanishScreen extends Screen {
 				FontUtil.draw(g, rk, bx() + bw() - 34 - rw, y + (ROW - 2 - fh) / 2, 0xFF8A93A8);
 				// caixa de marcacao
 				int cx = bx() + bw() - 24, cy = y + (ROW - 2 - 10) / 2;
-				RenderUtil.roundRect(g, cx, cy, 10, 10, 3, 0xFF3A3A3A);
-				RenderUtil.roundRect(g, cx + 1, cy + 1, 8, 8, 2, 0xFF0C0C0C);
+				RenderUtil.roundRect(g, cx, cy, 10, 10, 3, 0xFF3A3F47);
+				RenderUtil.roundRect(g, cx + 1, cy + 1, 8, 8, 2, 0xFF0F1114);
 				if (r.danger) RenderUtil.roundRect(g, cx + 2, cy + 2, 6, 6, 1, 0xFFFF5555);
 			}
 			y += ROW;

@@ -76,12 +76,12 @@ public class HudEditScreen extends Screen {
 		int total = dw + 8 + rw;
 		int dx0 = (this.width - total) / 2;
 		boolean hd = RenderUtil.inside(mx, my, dx0, by, dw, 16);
-		RenderUtil.roundRect(g, dx0, by, dw, 16, 5, RenderUtil.alpha(hd ? 0xFF2A2A2A : 0xFF121212, 0.9f));
+		RenderUtil.roundRect(g, dx0, by, dw, 16, 5, RenderUtil.alpha(hd ? 0xFF2A2E35 : 0xFF121212, 0.9f));
 		FontUtil.draw(g, "Done", dx0 + 10, by + (16 - FontUtil.height()) / 2, hd ? 0xFFFFFFFF : 0xFFCFCFCF);
 		int rx0 = dx0 + dw + 8;
 		boolean hr = RenderUtil.inside(mx, my, rx0, by, rw, 16);
-		RenderUtil.roundRect(g, rx0, by, rw, 16, 5, RenderUtil.alpha(hr ? 0xFF2A2A2A : 0xFF121212, 0.9f));
-		FontUtil.draw(g, "Reset HUD", rx0 + 10, by + (16 - FontUtil.height()) / 2, hr ? 0xFFFFFFFF : 0xFF8E8E8E);
+		RenderUtil.roundRect(g, rx0, by, rw, 16, 5, RenderUtil.alpha(hr ? 0xFF2A2E35 : 0xFF121212, 0.9f));
+		FontUtil.draw(g, "Reset HUD", rx0 + 10, by + (16 - FontUtil.height()) / 2, hr ? 0xFFFFFFFF : 0xFF8E939B);
 	}
 
 	private void back() {
