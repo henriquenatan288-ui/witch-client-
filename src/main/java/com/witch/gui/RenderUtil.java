@@ -92,6 +92,12 @@ public final class RenderUtil {
 		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GLOW, cx - r, cy - r, 0f, 0f, r * 2, r * 2, 96, 96, 96, 96, color);
 	}
 
+	/** Sombra suave retangular: o brilho radial esticado por tras (tinge pela cor). */
+	public static void softShadow(GuiGraphicsExtractor g, int x, int y, int w, int h, int pad, int color) {
+		if (((color >>> 24) & 0xFF) == 0) return;
+		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GLOW, x - pad, y - pad, 0f, 0f, w + 2 * pad, h + 2 * pad, 96, 96, 96, 96, color);
+	}
+
 	public static boolean inside(double mx, double my, int x, int y, int w, int h) {
 		return mx >= x && mx < x + w && my >= y && my < y + h;
 	}

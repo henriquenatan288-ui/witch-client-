@@ -86,7 +86,6 @@ public class ClickGuiScreen extends Screen {
 		return false;
 	}
 
-	private static final net.minecraft.resources.Identifier TEX_MENU = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_menu.png");
 	private static final net.minecraft.resources.Identifier TEX_CARD_OFF = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_card_off.png");
 	private static final net.minecraft.resources.Identifier TEX_CARD_ON = net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/ui_card_on.png");
 	private static final int ACC = 0xFFFFFFFF; // destaque (branco, como a referencia)
@@ -200,6 +199,47 @@ public class ClickGuiScreen extends Screen {
 		if (moved) g.pose().popMatrix();
 	}
 
+	/** Janela de vidro: sombra suave, borda de luz, miolo translucido, barra lateral e rodape mais escuros. */
+	private void glass(GuiGraphicsExtractor g, float a) {
+		float op = Mth.clamp(com.witch.module.GuiSettingsModule.menuOpacity() * 0.85f, 0.6f, 0.95f) * a;
+		int rad = Math.max(6, ww / 36);
+		int sbX = fx(438), hy = fy(142), fl = fy(1108);
+		RenderUtil.softShadow(g, wx, wy + 6, ww, wh, ww / 10, RenderUtil.alpha(0xFF000000, 0.55f * a));
+		RenderUtil.roundRect(g, wx, wy, ww, wh, rad, RenderUtil.alpha(0xFFFFFFFF, 0.12f * a));
+		RenderUtil.roundRect(g, wx + 1, wy + 1, ww - 2, wh - 2, rad - 1, RenderUtil.alpha(0xFF14171B, op));
+		g.enableScissor(wx, wy, sbX, wy + wh);
+		RenderUtil.roundRect(g, wx + 1, wy + 1, ww - 2, wh - 2, rad - 1, RenderUtil.alpha(0xFF000000, 0.16f * a));
+		g.disableScissor();
+		g.enableScissor(sbX, fl, wx + ww, wy + wh);
+		RenderUtil.roundRect(g, wx + 1, wy + 1, ww - 2, wh - 2, rad - 1, RenderUtil.alpha(0xFF000000, 0.14f * a));
+		g.disableScissor();
+		int line = RenderUtil.alpha(0xFFFFFFFF, 0.07f * a);
+		g.fill(sbX, wy + 1, sbX + 1, wy + wh - 1, line);
+		g.fill(sbX + 1, hy, wx + ww - 1, hy + 1, line);
+		g.fill(sbX + 1, fl, wx + ww - 1, fl + 1, line);
+		g.fill(fx(44), fy(1046), fx(394), fy(1046) + 1, line);
+		g.fill(wx + rad, wy + 1, wx + ww - rad, wy + 2, RenderUtil.alpha(0xFFFFFFFF, 0.16f * a));
+
+		int fh = FontUtil.height();
+		// logo (caixa + ponto) e nome
+		int ls = Math.max(10, fx(88) - fx(42));
+		int lx = fx(42), ly = fy(84) - ls / 2;
+		RenderUtil.roundRect(g, lx, ly, ls, ls, 3, RenderUtil.alpha(0xFFE2E4E8, a));
+		RenderUtil.roundRect(g, lx + 1, ly + 1, ls - 2, ls - 2, 2, RenderUtil.alpha(0xFF0B0D10, a));
+		int dot = Math.max(2, ls / 4);
+		g.fill(lx + (ls - dot) / 2, ly + (ls - dot) / 2, lx + (ls + dot) / 2, ly + (ls + dot) / 2, RenderUtil.alpha(0xFFE2E4E8, a));
+		FontUtil.draw(g, "Witch", fx(112), fy(84) - fh / 2, RenderUtil.alpha(0xFFF2F3F5, a));
+		FontUtil.draw(g, "CATEGORIES", fx(44), fy(192) - fh / 2, RenderUtil.alpha(0xFF8A8F97, a));
+		// dica de tecla no rodape
+		String key = "RSHIFT";
+		int kw = FontUtil.width(key) + 8, kh = fh + 4;
+		int kx = fx(496), ky = fl + (wy + wh - fl - kh) / 2;
+		RenderUtil.roundRect(g, kx, ky, kw, kh, 3, RenderUtil.alpha(0xFFFFFFFF, 0.14f * a));
+		RenderUtil.roundRect(g, kx + 1, ky + 1, kw - 2, kh - 2, 2, RenderUtil.alpha(0xFF0F1114, a));
+		FontUtil.draw(g, key, kx + 4, ky + 2, RenderUtil.alpha(0xFFB5B9C0, a));
+		FontUtil.draw(g, "toggle GUI", kx + kw + 6, ky + 2, RenderUtil.alpha(0xFF8A8F97, a));
+	}
+
 	private void body(GuiGraphicsExtractor g, int mx, int my) {
 		long now = System.nanoTime();
 		float speed = lastNanos == 0 ? 1f : Math.min(3f, (now - lastNanos) / 16_666_667f);
@@ -212,8 +252,7 @@ public class ClickGuiScreen extends Screen {
 
 		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x50000000, a));
 
-		float bg = a * Math.max(0.85f, com.witch.module.GuiSettingsModule.menuOpacity());
-		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEX_MENU, wx, wy, 0f, 0f, ww, wh, 998, 598, 998, 598, RenderUtil.alpha(0xFFFFFFFF, bg));
+		glass(g, a);
 
 		// categorias (a lista fica em branco na imagem)
 		Category[] cats = Category.values();
@@ -240,15 +279,17 @@ public class ClickGuiScreen extends Screen {
 		if (mh) RenderUtil.roundRect(g, bx, my8, bw, bh, 5, RenderUtil.alpha(0xFF14171B, a));
 		CategoryIcons.blit(g, CategoryIcons.MUSIC, bx + Math.max(4, bw / 12) - 1, my8 + (bh - 7) / 2 - 1, 9, RenderUtil.alpha(mh ? 0xFFC4C8CE : 0xFF8E939B, a));
 		FontUtil.draw(g, "Music", bx + Math.max(16, bw / 5), my8 + (bh - fh) / 2, RenderUtil.alpha(mh ? 0xFFC4C8CE : 0xFF8E939B, a));
-		// "Edit HUD" no lugar do "Settings" (icone ja vem na imagem)
+		CategoryIcons.blit(g, CategoryIcons.SLIDERS, bx + Math.max(4, bw / 12) - 1, editY() + (bh - 7) / 2 - 1, 9, RenderUtil.alpha(0xFFB5B9C0, a));
 		boolean eh = RenderUtil.inside(mx, my, bx, editY(), bw, bh);
 		FontUtil.draw(g, "Edit HUD", bx + Math.max(16, bw / 5), editY() + (bh - fh) / 2, RenderUtil.alpha(eh ? TXT : 0xFF9AA0A8, a));
 
 		// titulo do cabecalho e texto da busca
 		String title = search.isEmpty() ? selected.name().charAt(0) + selected.name().substring(1).toLowerCase(Locale.ROOT) : "Search";
-		FontUtil.draw(g, title, fx(778), fy(71) - fh / 2, RenderUtil.alpha(TXT, a));
+		FontUtil.draw(g, title, fx(530), fy(71) - fh / 2, RenderUtil.alpha(TXT, a));
 		int sx = searchX(), sy = searchY(), sw = searchW(), sbh = searchH();
-		if (searchFocused) RenderUtil.roundRect(g, sx, sy, sw, sbh, 5, RenderUtil.alpha(0x30FFFFFF, a));
+		RenderUtil.roundRect(g, sx, sy, sw, sbh, 5, RenderUtil.alpha(searchFocused ? 0x55FFFFFF : 0x18FFFFFF, a));
+		RenderUtil.roundRect(g, sx + 1, sy + 1, sw - 2, sbh - 2, 4, RenderUtil.alpha(0x47000000, a));
+		CategoryIcons.blit(g, CategoryIcons.SEARCH, fx(1450), sy + (sbh - 8) / 2, 8, RenderUtil.alpha(0xFF8A8F97, a));
 		String shown;
 		int scol;
 		if (search.isEmpty() && !searchFocused) {
@@ -293,6 +334,7 @@ public class ClickGuiScreen extends Screen {
 			float t = m.toggleAnim;
 			int border = RenderUtil.mix(RenderUtil.mix(0xFF262A31, 0xFF3A3F47, m.hoverAnim), 0xFFE2E4E8, t);
 			int fill = RenderUtil.mix(RenderUtil.mix(0xFF16191E, 0xFF1B1F25, m.hoverAnim), 0xFF1D2025, t);
+			if (t > 0.02f) RenderUtil.roundRect(g, sx0 - 2, sy0 - 2, sl.w + 4, CARD + 4, 7, RenderUtil.alpha(0xFFFFFFFF, 0.06f * t * a));
 			RenderUtil.roundRect(g, sx0, sy0, sl.w, CARD, 5, RenderUtil.alpha(border, a));
 			RenderUtil.roundRect(g, sx0 + 1, sy0 + 1, sl.w - 2, CARD - 2, 4, RenderUtil.alpha(fill, a));
 			boolean has = !m.settings().isEmpty();

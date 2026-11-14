@@ -24,6 +24,8 @@ public final class CategoryIcons {
 	}
 
 	public static final Identifier MUSIC = Identifier.fromNamespaceAndPath("witch", "textures/gui/cat_music.png");
+	public static final Identifier SEARCH = Identifier.fromNamespaceAndPath("witch", "textures/gui/ico_search.png");
+	public static final Identifier SLIDERS = Identifier.fromNamespaceAndPath("witch", "textures/gui/ico_sliders.png");
 	public static final Identifier CHEV_DOWN = Identifier.fromNamespaceAndPath("witch", "textures/gui/chev_down.png");
 	public static final Identifier CHEV_UP = Identifier.fromNamespaceAndPath("witch", "textures/gui/chev_up.png");
 
