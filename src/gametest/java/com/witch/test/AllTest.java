@@ -43,6 +43,14 @@ public class AllTest implements FabricClientGameTest {
 		c.waitTicks(140);
 		c.takeScreenshot("03-title");
 
+		c.runOnClient(mc -> {
+			for (Class<?> k : new Class<?>[] {net.minecraft.client.gui.screens.Screen.class, net.minecraft.client.gui.GuiGraphicsExtractor.class, net.minecraft.client.renderer.GameRenderer.class}) {
+				for (java.lang.reflect.Method m : k.getDeclaredMethods()) {
+					String n = m.getName().toLowerCase();
+					if (n.contains("blur") || n.contains("background")) System.out.println("MUSICTEST refl " + k.getSimpleName() + "." + m.getName() + java.util.Arrays.toString(m.getParameterTypes()));
+				}
+			}
+		});
 		c.runOnClient(mc -> mc.gui.setScreen(new ClickGuiScreen()));
 		c.waitTicks(40);
 		c.takeScreenshot("04-clickgui");
