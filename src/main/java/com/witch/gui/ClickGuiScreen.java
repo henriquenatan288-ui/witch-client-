@@ -238,6 +238,7 @@ public class ClickGuiScreen extends Screen {
 		int my8 = catY(cats.length);
 		boolean mh = RenderUtil.inside(mx, my, bx, my8, bw, bh);
 		if (mh) RenderUtil.roundRect(g, bx, my8, bw, bh, 5, RenderUtil.alpha(0xFF14171B, a));
+		CategoryIcons.blit(g, CategoryIcons.MUSIC, bx + Math.max(4, bw / 12) - 1, my8 + (bh - 7) / 2 - 1, 9, RenderUtil.alpha(mh ? 0xFFC4C8CE : 0xFF8E939B, a));
 		FontUtil.draw(g, "Music", bx + Math.max(16, bw / 5), my8 + (bh - fh) / 2, RenderUtil.alpha(mh ? 0xFFC4C8CE : 0xFF8E939B, a));
 		// "Edit HUD" no lugar do "Settings" (icone ja vem na imagem)
 		boolean eh = RenderUtil.inside(mx, my, bx, editY(), bw, bh);
@@ -265,7 +266,7 @@ public class ClickGuiScreen extends Screen {
 		FontUtil.draw(g, fps, fx(1940) - FontUtil.width(fps), fy(1116) - fh / 2, RenderUtil.alpha(0xFF6B7078, a));
 		String pf = "Perfis";
 		boolean ph = RenderUtil.inside(mx, my, fx(1940) - FontUtil.width(fps) - FontUtil.width(pf) - 16, fy(1116) - fh / 2 - 2, FontUtil.width(pf) + 4, fh + 4);
-		FontUtil.draw(g, pf, fx(1940) - FontUtil.width(fps) - FontUtil.width(pf) - 14, fy(1116) - fh / 2, RenderUtil.alpha(ph ? 0xFFFFFFFF : 0xFF8E939B, a));
+		FontUtil.draw(g, pf, fx(1940) - FontUtil.width(fps) - FontUtil.width(pf) - 14, fy(1116) - fh / 2, RenderUtil.alpha(ph ? 0xFFE2E4E8 : 0xFF6B7078, a));
 
 		// lista de modulos (uma coluna)
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
@@ -298,8 +299,7 @@ public class ClickGuiScreen extends Screen {
 			boolean open = OPEN.contains(m);
 			int right = sx0 + sl.w - 6;
 			if (has) {
-				String ar = open ? "^" : "v";
-				FontUtil.draw(g, ar, right - FontUtil.width(ar), sy0 + (CARD - fh) / 2, RenderUtil.alpha(open ? TXT : 0xFF8E939B, a));
+				CategoryIcons.blit(g, open ? CategoryIcons.CHEV_UP : CategoryIcons.CHEV_DOWN, right - 9, sy0 + (CARD - 9) / 2, 9, RenderUtil.alpha(open ? TXT : 0xFF8E939B, a));
 				right -= 14;
 			}
 			int swx = right - 20, swy = sy0 + (CARD - 10) / 2;
