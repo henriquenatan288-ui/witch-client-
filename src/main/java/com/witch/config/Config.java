@@ -26,7 +26,34 @@ public final class Config {
 		return FabricLoader.getInstance().getConfigDir().resolve("witch.json");
 	}
 
+	/** Perfis: 5 espacos fixos (witch-profile-N.json), mesmo formato do witch.json. */
+	public static final int PROFILES = 5;
+
+	public static Path profileFile(int n) {
+		return FabricLoader.getInstance().getConfigDir().resolve("witch-profile-" + n + ".json");
+	}
+
+	public static boolean profileExists(int n) {
+		return Files.exists(profileFile(n));
+	}
+
+	public static void saveProfile(int n) {
+		save(profileFile(n));
+	}
+
+	/** Carrega o perfil por cima do estado atual e grava como config ativa. */
+	public static boolean loadProfile(int n) {
+		if (!profileExists(n)) return false;
+		load(profileFile(n));
+		save();
+		return true;
+	}
+
 	public static void save() {
+		save(file());
+	}
+
+	public static void save(Path target) {
 		JsonObject root = new JsonObject();
 		root.addProperty("_font", com.witch.gui.FontUtil.isCustom());
 		com.google.gson.JsonArray dang = new com.google.gson.JsonArray();
@@ -43,8 +70,7 @@ public final class Config {
 			root.add(m.name, o);
 		}
 		// escreve num arquivo temporario e troca no fim: um crash no meio nunca deixa o witch.json pela metade
-		Path target = file();
-		Path tmp = target.resolveSibling("witch.json.tmp");
+		Path tmp = target.resolveSibling(target.getFileName() + ".tmp");
 		try {
 			try (Writer w = Files.newBufferedWriter(tmp)) {
 				GSON.toJson(root, w);
@@ -60,7 +86,10 @@ public final class Config {
 	}
 
 	public static void load() {
-		Path f = file();
+		load(file());
+	}
+
+	public static void load(Path f) {
 		if (!Files.exists(f)) return;
 		try (Reader r = Files.newBufferedReader(f)) {
 			JsonElement parsed = JsonParser.parseReader(r);
