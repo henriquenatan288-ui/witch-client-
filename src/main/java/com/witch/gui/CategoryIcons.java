@@ -23,6 +23,15 @@ public final class CategoryIcons {
 		}
 	}
 
+	public static final Identifier MUSIC = Identifier.fromNamespaceAndPath("witch", "textures/gui/cat_music.png");
+	public static final Identifier CHEV_DOWN = Identifier.fromNamespaceAndPath("witch", "textures/gui/chev_down.png");
+	public static final Identifier CHEV_UP = Identifier.fromNamespaceAndPath("witch", "textures/gui/chev_up.png");
+
+	/** Icone avulso (PNG 48x48 branco) desenhado em size x size, pintado pela cor. */
+	public static void blit(GuiGraphicsExtractor g, Identifier id, int x, int y, int size, int color) {
+		g.blit(RenderPipelines.GUI_TEXTURED, id, x, y, 0f, 0f, size, size, TEX, TEX, TEX, TEX, color);
+	}
+
 	/** (x, y) e o canto da area antiga 7x7; o icone novo (9x9) fica centrado nela. */
 	public static void draw(GuiGraphicsExtractor g, Category c, int x, int y, int color) {
 		g.blit(RenderPipelines.GUI_TEXTURED, IDS.get(c), x - 1, y - 1, 0f, 0f, SIZE, SIZE, TEX, TEX, TEX, TEX, color);
