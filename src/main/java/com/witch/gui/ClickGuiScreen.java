@@ -116,7 +116,7 @@ public class ClickGuiScreen extends Screen {
 	private int catY(int i) { return fy(229 + 96 * i); }
 	private int catH() { return fy(88) - fy(0); }
 	private int editY() { return fy(1072); }
-	private int searchX() { return fx(1420); }
+	private int searchX() { return fx(1340); }
 	private int searchY() { return fy(30); }
 	private int searchW() { return fx(1940) - fx(1420); }
 	private int searchH() { return fy(110) - fy(30); }
@@ -300,7 +300,7 @@ public class ClickGuiScreen extends Screen {
 		int sx = searchX(), sy = searchY(), sw = searchW(), sbh = searchH();
 		RenderUtil.roundRect(g, sx, sy, sw, sbh, 5, RenderUtil.alpha(searchFocused ? 0x55FFFFFF : 0x18FFFFFF, a));
 		RenderUtil.roundRect(g, sx + 1, sy + 1, sw - 2, sbh - 2, 4, RenderUtil.alpha(0x47000000, a));
-		CategoryIcons.blit(g, CategoryIcons.SEARCH, fx(1450), sy + (sbh - 8) / 2, 8, RenderUtil.alpha(0xFF8A8F97, a));
+		CategoryIcons.blit(g, CategoryIcons.SEARCH, fx(1370), sy + (sbh - 8) / 2, 8, RenderUtil.alpha(0xFF8A8F97, a));
 		String shown;
 		int scol;
 		if (search.isEmpty() && !searchFocused) {
@@ -311,7 +311,7 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			scol = TXT;
 		}
-		FontUtil.draw(g, ModuleRow.fit(shown, fx(1940) - fx(1516) - 6), fx(1516), sy + (sbh - fh) / 2, RenderUtil.alpha(scol, a));
+		FontUtil.draw(g, ModuleRow.fit(shown, fx(1940) - fx(1436) - 6), fx(1436), sy + (sbh - fh) / 2, RenderUtil.alpha(scol, a));
 
 		// FPS no rodape (RSHIFT toggle GUI ja vem na imagem)
 		String fps = Minecraft.getInstance().getFps() + " FPS";
