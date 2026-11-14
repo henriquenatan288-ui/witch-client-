@@ -188,6 +188,12 @@ public class ClickGuiScreen extends Screen {
 			case 5 -> sc = 0.6f + 0.4f * e + 0.10f * (float) Math.sin(Math.PI * e);
 			default -> { }
 		}
+		// desfoque nativo do jogo (o mesmo do menu de pausa); some se a opcao "Menu Background Blurriness" for 0
+		try {
+			this.extractBlurredBackground(g);
+		} catch (Throwable ignored) {
+			// sem desfoque: o painel continua translucido
+		}
 		boolean moved = tx != 0f || ty != 0f || sc != 1f;
 		if (moved) {
 			g.pose().pushMatrix();
@@ -201,7 +207,7 @@ public class ClickGuiScreen extends Screen {
 
 	/** Janela de vidro: sombra suave, borda de luz, miolo translucido, barra lateral e rodape mais escuros. */
 	private void glass(GuiGraphicsExtractor g, float a) {
-		float op = Mth.clamp(com.witch.module.GuiSettingsModule.menuOpacity() * 0.85f, 0.6f, 0.95f) * a;
+		float op = Mth.clamp(com.witch.module.GuiSettingsModule.menuOpacity() * 0.7f, 0.45f, 0.9f) * a;
 		int rad = Math.max(6, ww / 36);
 		int sbX = fx(438), hy = fy(142), fl = fy(1108);
 		RenderUtil.softShadow(g, wx, wy + 6, ww, wh, ww / 10, RenderUtil.alpha(0xFF000000, 0.55f * a));
@@ -261,7 +267,7 @@ public class ClickGuiScreen extends Screen {
 		clampScroll();
 		int fh = FontUtil.height();
 
-		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x50000000, a));
+		g.fill(0, 0, this.width, this.height, RenderUtil.alpha(0x30000000, a));
 
 		glass(g, a);
 
