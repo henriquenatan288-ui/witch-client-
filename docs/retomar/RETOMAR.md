@@ -61,3 +61,13 @@ NAO rodar simulacao. 1 build por rodada. Responder em PT, curto, direto.
 - NAO fazer: bypass de anticheat (os prints do Larp tem), esconder de staff, grief.
 - Proximo passo sugerido: usuario escolhe a 1a peca (ClickGUI ou ceu com imagem). Ele vai estudar clients de madrugada e trazer referencias/prints do que quer por tela.
 - Pendente menor: silenciar musica do MC quando o player toca; volume do player seguir o volume geral. Nao verificado em aparelho: som real no celular, MP3 real, sinal do giro da skin.
+
+## Receita tecnica (para sessao nova)
+- Memoria do usuario esta ativa agora (perfil, preferencias, /areas/witch-client.md). Ler isso + este arquivo.
+- Simulacao visual: branch `visual-test` roda workflow `visual.yml` (xvfb, GL por software, `runClientGametest`); resultado vai para branch `visual-shots`. Baixar: `git fetch origin visual-shots; git --work-tree=/tmp/x checkout FETCH_HEAD -- .; git reset -q`. Entrada do gametest em src/gametest/resources/fabric.mod.json (AllTest). So rodar quando o usuario pedir (gasta limite). Para testar mudancas: merge work46 em visual-test.
+- Falha "BUILD FAILED" no fim do gametest e ruido (esperava tela de titulo).
+- API 26.x: mc.gui.setScreen, GuiGraphicsExtractor/extractRenderState, MouseButtonEvent, g.pose() Matrix3x2fStack, g.blit(RenderPipelines.GUI_TEXTURED, id, x,y,u,v,w,h,rw,rh,tw,th,cor), Identifier.fromNamespaceAndPath. Texturas GUI so ficam suaves com .png.mcmeta {"texture":{"blur":true}}.
+- RenderUtil.roundRect ja e PNG (round.png tintado, 9 blits). RenderUtil.glow usa glow.png.
+- Compila so no CI (GitHub Actions). Erros de javac: anotacoes do check-run (log exige login).
+- Musica: MusicPlayer (OpenAL + JLayer p/ MP3 + STBVorbis p/ OGG; nao liberar manualmente o buffer do stb).
+- Hook "unpushed commits" costuma ser falso alarme: rodar `git fetch` e comparar `git ls-remote origin work46 main`.
