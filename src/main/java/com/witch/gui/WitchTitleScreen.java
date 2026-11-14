@@ -78,6 +78,7 @@ public class WitchTitleScreen extends Screen {
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
 		int lw = 58;
 		int lx = w / 2 - lw / 2;
+		RenderUtil.glow(g, w / 2, 6 + WitchLogo.height(lw) / 2, Math.round(lw * 1.1f), RenderUtil.alpha(0xFFFFFFFF, 0.14f));
 		WitchLogo.draw(g, lx, 6, lw, 0.85f + 0.15f * pulse);
 
 		// area do menu
@@ -85,7 +86,7 @@ public class WitchTitleScreen extends Screen {
 		menuY = Math.max(78, h / 2 - itemH * 5 / 2 + 8);
 		spaced(g, "WELCOME BACK", menuX, menuY - 46, 0xFFA89BE8);
 		String nick = TitleSkin.nick();
-		FontUtil.draw(g, nick, menuX + 1, menuY - 33, 0xFF2A2A2A);
+		FontUtil.draw(g, nick, menuX + 1, menuY - 33, 0xFF2A2E35);
 		FontUtil.draw(g, nick, menuX, menuY - 34, 0xFFFFFFFF);
 
 		if (!model3d(g, w, h, sec, mx, my)) walker(g, w, h, sec);
@@ -101,7 +102,7 @@ public class WitchTitleScreen extends Screen {
 			int lv = Math.round(0x90 + 0x6F * ha);
 			UiTex.titleButton(g, bx, y, bw, bh, (lv << 16) | (lv << 8) | lv, 0.95f * ent);
 			int shift = Math.round(2 * ha);
-			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.alpha(RenderUtil.mix(0xFFC8C8C8, 0xFFFFFFFF, ha), ent));
+			FontUtil.draw(g, LABELS[i], bx + 14 + shift, y + (bh - FontUtil.height()) / 2 + 1, RenderUtil.alpha(RenderUtil.mix(0xFFB5B9C0, 0xFFFFFFFF, ha), ent));
 		}
 
 		FontUtil.draw(g, "Witch Client  -  Minecraft 26.2", 8, h - 12, 0xFF666666);
@@ -269,7 +270,7 @@ public class WitchTitleScreen extends Screen {
 			skinWidget.setY(y);
 
 			int groundY = h - 20;
-			g.fill(0, groundY, w, groundY + 1, RenderUtil.alpha(0xFFC8C8C8, 0.40f));
+			g.fill(0, groundY, w, groundY + 1, RenderUtil.alpha(0xFFB5B9C0, 0.40f));
 			g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF1E1E1E, 0.7f));
 			int cx = x + mw / 2;
 			RenderUtil.roundRect(g, cx - mw / 2, groundY - 2, mw, 4, 2, RenderUtil.alpha(0xFF000000, 0.45f));
@@ -287,8 +288,8 @@ public class WitchTitleScreen extends Screen {
 					int nw = FontUtil.width(nick) + 12;
 					int nx = cx - nw / 2;
 					int ny = y - 14 + Math.round((1f - na) * 6f);
-					RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF0C0C0C, 0.85f * na));
-					RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFC8C8C8, 0.9f * na));
+					RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF0F1114, 0.85f * na));
+					RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFB5B9C0, 0.9f * na));
 					FontUtil.draw(g, nick, nx + 6, ny + 3, RenderUtil.alpha(0xFFFFFFFF, na));
 				}
 			}
@@ -357,7 +358,7 @@ public class WitchTitleScreen extends Screen {
 		double turnT = (stopX - startX) / speed;
 		double since = t - turnT;
 
-		g.fill(0, groundY, w, groundY + 1, RenderUtil.alpha(0xFFC8C8C8, 0.40f));
+		g.fill(0, groundY, w, groundY + 1, RenderUtil.alpha(0xFFB5B9C0, 0.40f));
 		g.fill(0, groundY + 1, w, groundY + 3, RenderUtil.alpha(0xFF1E1E1E, 0.7f));
 		RenderUtil.roundRect(g, (int) cx - 7 * s, groundY - 1, 14 * s, 2, 1, RenderUtil.alpha(0xFF000000, 0.4f));
 
@@ -419,8 +420,8 @@ public class WitchTitleScreen extends Screen {
 				int nw = FontUtil.width(nick) + 12;
 				int nx = (int) cx - nw / 2;
 				int ny = top - 20 + Math.round((1f - na) * 6f);
-				RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF0C0C0C, 0.85f * na));
-				RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFC8C8C8, 0.9f * na));
+				RenderUtil.roundRect(g, nx, ny, nw, 14, 4, RenderUtil.alpha(0xFF0F1114, 0.85f * na));
+				RenderUtil.roundRect(g, nx, ny + 12, nw, 2, 1, RenderUtil.alpha(0xFFB5B9C0, 0.9f * na));
 				FontUtil.draw(g, nick, nx + 6, ny + 3, RenderUtil.alpha(0xFFFFFFFF, na));
 			}
 		}
@@ -450,7 +451,7 @@ public class WitchTitleScreen extends Screen {
 						if (gl[row + 1].charAt(col) != '1') continue;
 						int px = x + col * s;
 						int py = y + row * s;
-						g.fill(px, py + 1, px + s, py + s + 1, RenderUtil.alpha(0xFF2A2A2A, 0.9f));
+						g.fill(px, py + 1, px + s, py + s + 1, RenderUtil.alpha(0xFF2A2E35, 0.9f));
 					}
 				}
 				for (int row = 0; row < 7; row++) {

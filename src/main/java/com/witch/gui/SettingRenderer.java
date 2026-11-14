@@ -68,11 +68,11 @@ public final class SettingRenderer {
 			IntSetting t = (IntSetting) s;
 			boolean on = t.get() == 1;
 			FontUtil.draw(g, toggleName(t.name), x + 7, ry + (sh - fh) / 2, RenderUtil.alpha(on ? TXT : TXT_DIM, a));
-			int sx = x + w - 6 - 18;
-			int sy = ry + (sh - 9) / 2;
-			RenderUtil.roundRect(g, sx, sy, 18, 9, 4, RenderUtil.alpha(on ? Theme.accent() : 0xFF2A2A2A, a * (on ? 0.9f : 1f)));
-			int kx = on ? sx + 10 : sx + 1;
-			RenderUtil.roundRect(g, kx, sy + 1, 7, 7, 3, RenderUtil.alpha(on ? 0xFF111111 : 0xFFA8A8A8, a));
+			int sx = x + w - 6 - 20;
+			int sy = ry + (sh - 10) / 2;
+			RenderUtil.roundRect(g, sx, sy, 20, 10, 5, RenderUtil.alpha(on ? 0xFFFFFFFF : 0xFF3A3E45, a));
+			int kx = on ? sx + 11 : sx + 1;
+			RenderUtil.roundRect(g, kx, sy + 1, 8, 8, 4, RenderUtil.alpha(on ? 0xFF0A0C0F : 0xFF8A8F97, a));
 		} else if (s instanceof IntSetting is) {
 			FontUtil.draw(g, is.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
 			String val = is.get() + is.suffix;
@@ -80,10 +80,11 @@ public final class SettingRenderer {
 			int tx = x + 7;
 			int tw = w - 14;
 			int ty = ry + fh + 8;
-			RenderUtil.roundRect(g, tx, ty, tw, 3, 1, RenderUtil.alpha(0xFF2A2A2A, a));
+			RenderUtil.roundRect(g, tx, ty, tw, 3, 1, RenderUtil.alpha(0xFF2A2E35, a));
 			int fw = Math.round(tw * is.fraction());
-			if (fw > 0) RenderUtil.roundRect(g, tx, ty, fw, 3, 1, RenderUtil.alpha(Theme.accent(), a));
-			RenderUtil.roundRect(g, tx + fw - 2, ty - 2, 4, 7, 2, RenderUtil.alpha(TXT, a));
+			if (fw > 0) RenderUtil.roundRect(g, tx, ty, fw, 3, 1, RenderUtil.alpha(0xFFFFFFFF, a));
+			RenderUtil.roundRect(g, tx + fw - 4, ty - 3, 9, 9, 4, RenderUtil.alpha(0xFF3A3F47, a));
+			RenderUtil.roundRect(g, tx + fw - 3, ty - 2, 7, 7, 3, RenderUtil.alpha(0xFFFFFFFF, a));
 		} else if (s instanceof ColorSetting cs) {
 			FontUtil.draw(g, cs.name, x + 7, ry + 3, RenderUtil.alpha(TXT_DIM, a));
 			int per = Math.max(1, (w - 16) / (SW + SW_GAP));
@@ -96,7 +97,7 @@ public final class SettingRenderer {
 			int rows = (ColorSetting.PALETTE.length + per - 1) / per;
 			int py = ry + 13 + rows * (SW + SW_GAP) + PICK_GAP - SW_GAP + 1;
 			int px = x + 7, pw = w - 14;
-			RenderUtil.roundRect(g, px - 1, py - 1, pw + 2, SV_H + 2, 3, RenderUtil.alpha(0xFF3A3A3A, a));
+			RenderUtil.roundRect(g, px - 1, py - 1, pw + 2, SV_H + 2, 3, RenderUtil.alpha(0xFF3A3F47, a));
 			for (int cxp = 0; cxp < pw; cxp += 2) {
 				int cw2 = Math.min(2, pw - cxp);
 				int top = ColorSetting.hsvToRgb(cs.hue, (cxp + cw2 / 2f) / pw, 1f);
@@ -118,17 +119,18 @@ public final class SettingRenderer {
 			String lab = ks.listening ? "..." : ks.label();
 			int cw = Math.max(26, FontUtil.width(lab) + 10);
 			int cx = x + w - 6 - cw;
-			RenderUtil.roundRect(g, cx, ry + 2, cw, sh - 4, 3, RenderUtil.alpha(ks.listening ? 0xFF4A4A4A : 0xFF222222, a));
-			FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (sh - fh) / 2, RenderUtil.alpha(TXT, a));
+			RenderUtil.roundRect(g, cx, ry + 2, cw, sh - 4, 3, RenderUtil.alpha(ks.listening ? 0xFFE2E4E8 : 0xFF3A3F47, a));
+			RenderUtil.roundRect(g, cx + 1, ry + 3, cw - 2, sh - 6, 2, RenderUtil.alpha(0xFF0F1114, a));
+			FontUtil.draw(g, lab, cx + (cw - FontUtil.width(lab)) / 2, ry + (sh - fh) / 2, RenderUtil.alpha(0xFFB5B9C0, a));
 		} else if (s instanceof OreSetting os) {
 			int bx = x + 7;
 			int bY = ry + (sh - 9) / 2;
-			RenderUtil.roundRect(g, bx, bY, 9, 9, 3, RenderUtil.alpha(0xFF3A3A3A, a));
-			RenderUtil.roundRect(g, bx + 1, bY + 1, 7, 7, 2, RenderUtil.alpha(0xFF0C0C0C, a));
+			RenderUtil.roundRect(g, bx, bY, 9, 9, 3, RenderUtil.alpha(0xFF3A3F47, a));
+			RenderUtil.roundRect(g, bx + 1, bY + 1, 7, 7, 2, RenderUtil.alpha(0xFF0F1114, a));
 			if (os.enabled()) RenderUtil.roundRect(g, bx + 2, bY + 2, 5, 5, 1, RenderUtil.alpha(TXT, a));
 			FontUtil.draw(g, os.name, bx + 14, ry + (sh - fh) / 2, RenderUtil.alpha(os.enabled() ? TXT : TXT_DIM, a));
 			int cx = x + w - 6 - 12;
-			RenderUtil.roundRect(g, cx - 1, bY - 1, 14, 11, 3, RenderUtil.alpha(0xFF3A3A3A, a));
+			RenderUtil.roundRect(g, cx - 1, bY - 1, 14, 11, 3, RenderUtil.alpha(0xFF3A3F47, a));
 			RenderUtil.roundRect(g, cx, bY, 12, 9, 2, RenderUtil.alpha(os.color(), a));
 		}
 	}

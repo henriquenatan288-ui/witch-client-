@@ -83,6 +83,15 @@ public final class RenderUtil {
 		}
 	}
 
+	private static final net.minecraft.resources.Identifier GLOW =
+			net.minecraft.resources.Identifier.fromNamespaceAndPath("witch", "textures/gui/glow.png");
+
+	/** Brilho suave (PNG radial pre-suavizado, tintado pela cor) centrado em cx,cy com raio r. */
+	public static void glow(GuiGraphicsExtractor g, int cx, int cy, int r, int color) {
+		if (r <= 0 || ((color >>> 24) & 0xFF) == 0) return;
+		g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GLOW, cx - r, cy - r, 0f, 0f, r * 2, r * 2, 96, 96, 96, 96, color);
+	}
+
 	public static boolean inside(double mx, double my, int x, int y, int w, int h) {
 		return mx >= x && mx < x + w && my >= y && my < y + h;
 	}

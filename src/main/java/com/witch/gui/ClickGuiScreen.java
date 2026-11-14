@@ -263,6 +263,9 @@ public class ClickGuiScreen extends Screen {
 		// FPS no rodape (RSHIFT toggle GUI ja vem na imagem)
 		String fps = Minecraft.getInstance().getFps() + " FPS";
 		FontUtil.draw(g, fps, fx(1940) - FontUtil.width(fps), fy(1116) - fh / 2, RenderUtil.alpha(0xFF6B7078, a));
+		String pf = "Perfis";
+		boolean ph = RenderUtil.inside(mx, my, fx(1940) - FontUtil.width(fps) - FontUtil.width(pf) - 16, fy(1116) - fh / 2 - 2, FontUtil.width(pf) + 4, fh + 4);
+		FontUtil.draw(g, pf, fx(1940) - FontUtil.width(fps) - FontUtil.width(pf) - 14, fy(1116) - fh / 2, RenderUtil.alpha(ph ? 0xFFFFFFFF : 0xFF8E939B, a));
 
 		// lista de modulos (uma coluna)
 		int cx = cx(), cy = cy(), cw = cw(), ch = ch();
@@ -361,6 +364,14 @@ public class ClickGuiScreen extends Screen {
 		if (RenderUtil.inside(mx, my, sideX(), catY(Category.values().length), sideItemW(), catH())) {
 			Minecraft.getInstance().gui.setScreen(new MusicScreen());
 			return true;
+		}
+		{
+			String fpsT = Minecraft.getInstance().getFps() + " FPS", pfT = "Perfis";
+			int fhh = FontUtil.height();
+			if (RenderUtil.inside(mx, my, fx(1940) - FontUtil.width(fpsT) - FontUtil.width(pfT) - 16, fy(1116) - fhh / 2 - 2, FontUtil.width(pfT) + 4, fhh + 4)) {
+				Minecraft.getInstance().gui.setScreen(new ProfilesScreen());
+				return true;
+			}
 		}
 		if (RenderUtil.inside(mx, my, sideX(), editY(), sideItemW(), catH())) {
 			Minecraft.getInstance().gui.setScreen(new HudEditScreen());

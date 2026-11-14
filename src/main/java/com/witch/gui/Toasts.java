@@ -47,7 +47,7 @@ public final class Toasts {
 			RenderUtil.panel(g, x, y, bw, bh, a);
 			RenderUtil.roundRect(g, x + 6, y + bh / 2 - 1, 3, 3, 1, RenderUtil.alpha(t.on ? 0xFFFFFFFF : 0xFF5A5A5A, a));
 			FontUtil.draw(g, t.name, x + 13, y + 3, RenderUtil.alpha(0xFFFFFFFF, a));
-			FontUtil.draw(g, state, x + 13 + FontUtil.width(t.name) + 8, y + 3, RenderUtil.alpha(t.on ? 0xFFBDBDBD : 0xFF6A6A6A, a));
+			FontUtil.draw(g, state, x + 13 + FontUtil.width(t.name) + 8, y + 3, RenderUtil.alpha(t.on ? 0xFFB5B9C0 : 0xFF6A6A6A, a));
 			y += bh + 2;
 		}
 	}
