@@ -229,15 +229,26 @@ public class ClickGuiScreen extends Screen {
 		int dot = Math.max(2, ls / 4);
 		g.fill(lx + (ls - dot) / 2, ly + (ls - dot) / 2, lx + (ls + dot) / 2, ly + (ls + dot) / 2, RenderUtil.alpha(0xFFE2E4E8, a));
 		FontUtil.draw(g, "Witch", fx(112), fy(84) - fh / 2, RenderUtil.alpha(0xFFF2F3F5, a));
-		FontUtil.draw(g, "CATEGORIES", fx(44), fy(192) - fh / 2, RenderUtil.alpha(0xFF8A8F97, a));
+		small(g, "CATEGORIES", fx(44), fy(192), RenderUtil.alpha(0xFF8A8F97, a));
 		// dica de tecla no rodape
 		String key = "RSHIFT";
-		int kw = FontUtil.width(key) + 8, kh = fh + 4;
+		int kw = Math.round(FontUtil.width(key) * SMALL) + 8, kh = Math.round(fh * SMALL) + 4;
 		int kx = fx(496), ky = fl + (wy + wh - fl - kh) / 2;
 		RenderUtil.roundRect(g, kx, ky, kw, kh, 3, RenderUtil.alpha(0xFFFFFFFF, 0.14f * a));
 		RenderUtil.roundRect(g, kx + 1, ky + 1, kw - 2, kh - 2, 2, RenderUtil.alpha(0xFF0F1114, a));
-		FontUtil.draw(g, key, kx + 4, ky + 2, RenderUtil.alpha(0xFFB5B9C0, a));
-		FontUtil.draw(g, "toggle GUI", kx + kw + 6, ky + 2, RenderUtil.alpha(0xFF8A8F97, a));
+		small(g, key, kx + 4, ky + kh / 2f, RenderUtil.alpha(0xFFB5B9C0, a));
+		small(g, "toggle GUI", kx + kw + 6, ky + kh / 2f, RenderUtil.alpha(0xFF8A8F97, a));
+	}
+
+	private static final float SMALL = 0.72f;
+
+	/** Texto pequeno (escala), centrado na vertical em cy. */
+	private static void small(GuiGraphicsExtractor g, String t, int x, float cy, int color) {
+		g.pose().pushMatrix();
+		g.pose().translate(x, cy - FontUtil.height() * SMALL / 2f);
+		g.pose().scale(SMALL, SMALL);
+		FontUtil.draw(g, t, 0, 0, color);
+		g.pose().popMatrix();
 	}
 
 	private void body(GuiGraphicsExtractor g, int mx, int my) {
@@ -300,7 +311,7 @@ public class ClickGuiScreen extends Screen {
 			shown = search + (blink ? "|" : "");
 			scol = TXT;
 		}
-		FontUtil.draw(g, ModuleRow.fit(shown, fx(1940) - fx(1500) - 6), fx(1500), sy + (sbh - fh) / 2, RenderUtil.alpha(scol, a));
+		FontUtil.draw(g, ModuleRow.fit(shown, fx(1940) - fx(1516) - 6), fx(1516), sy + (sbh - fh) / 2, RenderUtil.alpha(scol, a));
 
 		// FPS no rodape (RSHIFT toggle GUI ja vem na imagem)
 		String fps = Minecraft.getInstance().getFps() + " FPS";
