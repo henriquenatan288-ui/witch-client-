@@ -78,6 +78,7 @@ public class WitchTitleScreen extends Screen {
 		float pulse = 0.55f + 0.45f * (float) Math.sin(sec * 2.0);
 		int lw = 58;
 		int lx = w / 2 - lw / 2;
+		RenderUtil.glow(g, w / 2, 6 + WitchLogo.height(lw) / 2, Math.round(lw * 1.1f), RenderUtil.alpha(0xFFFFFFFF, 0.14f));
 		WitchLogo.draw(g, lx, 6, lw, 0.85f + 0.15f * pulse);
 
 		// area do menu
