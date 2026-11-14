@@ -50,3 +50,14 @@ NAO rodar simulacao. 1 build por rodada. Responder em PT, curto, direto.
 ## Referencias
 - Video do Larp Client (sequencia): preto -> logo+nome+"Press to enter" -> arrasto com esticar -> fundo de ondas -> menu centralizado -> skin gira a direita.
 - Cartoes e janela da GUI: docs/retomar/ref-gui-*.png (cartoes devem ser desenhados por codigo, janela usa ui_menu.png).
+
+---
+## Atualizacao 13/11 (noite) - NOVA DIRECAO: qualidade, nao pressa
+- main = work46 = f75e9aa (build verde). Nada pendente de push.
+- Feito hoje: glow.png da logo (enter + titulo), ajustes expandidos do ClickGUI no estilo dos cartoes, paleta de cinzas unificada (+ constantes no Theme), perfis de config (5 slots, tela Perfis no rodape do ClickGUI), tooltips dos 75 modulos sem descricao.
+- Decisao do usuario: parar de fazer rapido/simples ("copia barata"). Focar em APARENCIA. Lista modulos fica parada.
+- Regra de trabalho acordada: uma peca por vez; so "pronto" depois de rodar a simulacao visual (branch visual-test), olhar os prints e comparar com a referencia; se precisar shader/arte do usuario, avisar antes em vez de remendar.
+- Desejos do usuario (referencia: Larp): ClickGUI serio com vidro e animacao smooth; ceu personalizavel com qualquer PNG; glow em itens (chao; item da mao nao sai sem shader); shaders; tracers "perfeitos" (perguntar o que esta errado); efeitos smooth; mais opcoes de HUD; Sus chunk/solo com relog automatico para confirmar; paleta personalizavel. "Variaveis" = nao entendi, perguntar.
+- NAO fazer: bypass de anticheat (os prints do Larp tem), esconder de staff, grief.
+- Proximo passo sugerido: usuario escolhe a 1a peca (ClickGUI ou ceu com imagem). Ele vai estudar clients de madrugada e trazer referencias/prints do que quer por tela.
+- Pendente menor: silenciar musica do MC quando o player toca; volume do player seguir o volume geral. Nao verificado em aparelho: som real no celular, MP3 real, sinal do giro da skin.
