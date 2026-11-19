@@ -73,6 +73,7 @@ public final class ModuleManager {
 		MODULES.add(new GalaxyModule());
 		MODULES.add(new PlayersGalaxyModule());
 		MODULES.add(new ElytraShaderModule());
+		MODULES.add(new ChinaHatModule());
 		MODULES.add(new GlowItemsModule());
 		MODULES.add(new NoLegsModule());
 		MODULES.add(new FireHeadModule());
@@ -195,7 +196,7 @@ public final class ModuleManager {
 						"FOV Changer", "Render Distance"},
 				// efeitos
 				{"EFFECTS", "Particles 3D", "Particles 2D"},
-				{"AVATAR", "Players Galaxy", "No Legs", "Fire Head"},
+				{"AVATAR", "Players Galaxy", "China Hat", "No Legs", "Fire Head"},
 				{"SHADERS", "Galaxy", "Elytra Shader", "Glow Items", "Filter", "Mirror Floor"},
 				// HUD: o que so mostra informacao na tela
 				{"HUD", "Mob Counter", "Nearby Players", "Weather HUD", "Armor HUD", "Coords HUD", "Inventory Counter", "Item Count",

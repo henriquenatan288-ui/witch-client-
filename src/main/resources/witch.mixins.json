@@ -27,6 +27,7 @@
     "AvatarRendererMixin",
     "PlayerModelMixin",
     "RenderTypesMixin",
+    "ChinaHatMixin",
     "TridentSpecialRendererMixin"
   ],
   "injectors": {
